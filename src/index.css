@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --primary-yellow: #FFD100;
+    --primary-yellow-hover: #E5BB00;
+    --accent-gold: #F59E0B;
+    --dark-bg: #181B20;
+    --dark-card: #22262E;
+    --dark-border: #333842;
+    --slate-text: #0F172A;
+  }
+
+  body {
+    font-family: 'Inter', 'Noto Sans Tamil', system-ui, -apple-system, sans-serif;
+    background-color: #F8FAFC;
+    color: #0F172A;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #181B20;
+}
+::-webkit-scrollbar-thumb {
+  background: #FFD100;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #F59E0B;
+}
+
+/* Printable ID Card & Donation Receipt styles */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .printable-area, .printable-area * {
+    visibility: visible;
+  }
+  .printable-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* Glassmorphism card helpers */
+.glass-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.glass-card-dark {
+  background: rgba(24, 27, 32, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(51, 56, 66, 0.8);
+}
+
+/* Gold Header strip matching user reference image */
+.gold-header-strip {
+  border-top: 5px solid #FFD100;
+}
+
+/* Shimmer animation */
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
