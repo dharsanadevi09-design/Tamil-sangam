@@ -30,24 +30,24 @@ export const PublicVerification: React.FC<PublicVerificationProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 my-8 relative">
+      <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-slate-800 my-8 relative">
         
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 text-slate-400 hover:text-slate-700 p-1 rounded-lg"
+          className="absolute right-4 top-4 text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 rounded-lg"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Verification Header */}
         <div className="text-center space-y-2 mb-6">
-          <div className="w-14 h-14 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mx-auto shadow-inner border border-amber-300">
+          <div className="w-14 h-14 bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-yellow-400 rounded-full flex items-center justify-center mx-auto shadow-inner border border-amber-300 dark:border-yellow-400/40">
             <ShieldCheck className="w-8 h-8" />
           </div>
-          <h3 className="text-xl font-extrabold text-slate-900">
+          <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
             {currentLang === 'ta' ? 'தமிழ் சங்கம் - உறுப்பினர் சரிபார்ப்பு' : 'Official Membership Verification Portal'}
           </h3>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             {currentLang === 'ta' ? 'QR அட்டை / உறுப்பினர் எண் உள்ளிட்டு சரிபார்க்கலாம்' : 'Enter Membership Number or Scan QR Code to verify validity'}
           </p>
         </div>
@@ -60,11 +60,11 @@ export const PublicVerification: React.FC<PublicVerificationProps> = ({
               placeholder="e.g. TS-TN-2026-000001 or APP-1001"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-4 pr-12 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+              className="w-full pl-4 pr-12 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none"
             />
             <button
               type="submit"
-              className="absolute right-2 top-2 bg-slate-900 hover:bg-yellow-400 text-white hover:text-slate-900 p-2 rounded-lg transition-colors"
+              className="absolute right-2 top-2 bg-slate-900 dark:bg-yellow-400 hover:bg-yellow-400 dark:hover:bg-yellow-300 text-white dark:text-slate-950 hover:text-slate-900 p-2 rounded-lg transition-colors cursor-pointer"
             >
               <Search className="w-4 h-4" />
             </button>

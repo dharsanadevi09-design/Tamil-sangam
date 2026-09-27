@@ -21,7 +21,7 @@ export const NewsPage: React.FC<NewsPageProps> = ({ currentLang }) => {
   });
 
   return (
-    <div className="bg-slate-50 py-12">
+    <div className="bg-slate-50 dark:bg-slate-950 py-12 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
         
         {/* Banner Header */}
@@ -51,15 +51,15 @@ export const NewsPage: React.FC<NewsPageProps> = ({ currentLang }) => {
         </div>
 
         {/* Categories Bar */}
-        <div className="flex flex-wrap items-center gap-2 text-xs font-bold border-b border-slate-200 pb-4">
+        <div className="flex flex-wrap items-center gap-2 text-xs font-bold border-b border-slate-200 dark:border-slate-800 pb-4">
           {['ALL', 'News', 'Press Release', 'Announcement', 'Circular', 'Public Notice'].map(cat => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-xl transition-all ${
+              className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
                 selectedCategory === cat
-                  ? 'bg-slate-900 text-yellow-400 shadow'
-                  : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                  ? 'bg-slate-900 dark:bg-yellow-400 text-yellow-400 dark:text-slate-950 shadow font-extrabold'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'
               }`}
             >
               {cat === 'ALL' ? 'All Updates' : cat}
@@ -69,25 +69,25 @@ export const NewsPage: React.FC<NewsPageProps> = ({ currentLang }) => {
 
         {/* Selected Article Detail View */}
         {selectedArticle && (
-          <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-2xl border-2 border-yellow-400 space-y-4">
-            <div className="flex items-center justify-between border-b pb-3">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 shadow-2xl border-2 border-yellow-400 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
               <span className="bg-yellow-400 text-slate-950 font-black text-xs px-2.5 py-0.5 rounded">
                 {selectedArticle.category}
               </span>
               <button
                 onClick={() => setSelectedArticle(null)}
-                className="text-xs font-bold text-slate-500 hover:text-slate-900"
+                className="text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
               >
                 Close Article ✕
               </button>
             </div>
 
-            <h2 className="text-2xl font-extrabold text-slate-900">{selectedArticle.titleTamil}</h2>
-            <h3 className="text-base font-bold text-amber-700">{selectedArticle.title}</h3>
+            <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">{selectedArticle.titleTamil}</h2>
+            <h3 className="text-base font-bold text-amber-700 dark:text-yellow-400">{selectedArticle.title}</h3>
             <p className="text-xs text-slate-400">Published on: {selectedArticle.date}</p>
 
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs text-slate-700 leading-relaxed space-y-3">
-              <p className="font-semibold text-slate-900">{selectedArticle.summary}</p>
+            <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-300 leading-relaxed space-y-3">
+              <p className="font-semibold text-slate-900 dark:text-white">{selectedArticle.summary}</p>
               <p>{selectedArticle.content}</p>
             </div>
           </div>
@@ -99,35 +99,35 @@ export const NewsPage: React.FC<NewsPageProps> = ({ currentLang }) => {
             <div
               key={item.id}
               onClick={() => setSelectedArticle(item)}
-              className="cursor-pointer bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-md hover:shadow-xl hover:border-yellow-400/60 transition-all flex flex-col justify-between"
+              className="cursor-pointer bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md hover:shadow-xl hover:border-yellow-400/60 transition-all flex flex-col justify-between"
             >
               <div className="h-2 bg-yellow-400" />
 
               <div className="p-6 space-y-3 flex-1 flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center justify-between text-[10px] text-slate-500 mb-2">
-                    <span className="bg-slate-100 text-slate-800 font-bold px-2 py-0.5 rounded uppercase">
+                  <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 mb-2">
+                    <span className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold px-2 py-0.5 rounded uppercase">
                       {item.category}
                     </span>
                     <span className="flex items-center gap-1 font-medium">
-                      <Calendar className="w-3 h-3 text-amber-600" /> {item.date}
+                      <Calendar className="w-3 h-3 text-amber-600 dark:text-yellow-400" /> {item.date}
                     </span>
                   </div>
 
-                  <h3 className="font-extrabold text-base text-slate-900 line-clamp-2">
+                  <h3 className="font-extrabold text-base text-slate-900 dark:text-white line-clamp-2">
                     {item.titleTamil}
                   </h3>
-                  <p className="text-xs font-bold text-amber-700 mb-2 line-clamp-1">
+                  <p className="text-xs font-bold text-amber-700 dark:text-yellow-400 mb-2 line-clamp-1">
                     {item.title}
                   </p>
-                  <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
+                  <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-3 leading-relaxed">
                     {item.summary}
                   </p>
                 </div>
 
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-900">
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
                   <span>Read Full Article</span>
-                  <ArrowRight className="w-4 h-4 text-amber-600" />
+                  <ArrowRight className="w-4 h-4 text-amber-600 dark:text-yellow-400" />
                 </div>
               </div>
 

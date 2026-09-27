@@ -1,18 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Smartphone, ShieldCheck, ArrowRight, RefreshCw, X, Lock, CheckCircle2 } from 'lucide-react';
+import { Smartphone, ShieldCheck, ArrowRight, RefreshCw, X, CheckCircle2, User } from 'lucide-react';
+import { getOrCreateMemberByMobile } from '../../services/storageService';
+import type { MemberApplication } from '../../types';
 import { normalizeDigits } from '../../utils/numberUtils';
 
-interface OtpModalProps {
+interface MemberLoginModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onOtpVerified: (verifiedMobile: string) => void;
+  onLoginSuccess: (member: MemberApplication) => void;
   currentLang: 'en' | 'ta';
 }
 
-export const OtpModal: React.FC<OtpModalProps> = ({
+export const MemberLoginModal: React.FC<MemberLoginModalProps> = ({
   isOpen,
   onClose,
-  onOtpVerified,
+  onLoginSuccess,
   currentLang
 }) => {
   const [step, setStep] = useState<'MOBILE' | 'OTP'>('MOBILE');
@@ -26,12 +28,12 @@ export const OtpModal: React.FC<OtpModalProps> = ({
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Generate random 6-digit OTP dynamically
+  // Generate random 6-digit OTP
   const generateRandomOtp = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
   };
 
-  // Reset modal state when opened
+  // Reset modal state on open with clean empty input
   useEffect(() => {
     if (isOpen) {
       setStep('MOBILE');
@@ -49,7 +51,7 @@ export const OtpModal: React.FC<OtpModalProps> = ({
     }
   }, [isOpen]);
 
-  // Countdown timer for resend OTP
+  // Timer interval for resend OTP
   useEffect(() => {
     let interval: any = null;
     if (step === 'OTP' && timer > 0) {
@@ -76,8 +78,8 @@ export const OtpModal: React.FC<OtpModalProps> = ({
     setIsSubmitting(true);
 
     setTimeout(() => {
-      const newOtp = generateRandomOtp();
-      setGeneratedOtp(newOtp);
+      const randomCode = generateRandomOtp();
+      setGeneratedOtp(randomCode);
       setIsSubmitting(false);
       setStep('OTP');
       setTimer(30);
@@ -93,12 +95,11 @@ export const OtpModal: React.FC<OtpModalProps> = ({
     }
   };
 
-  const handleVerifyOtp = (e?: React.FormEvent) => {
+  const handleVerifyOtpAndLogin = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const enteredOtp = otpDigits.join('');
 
     if (enteredOtp.length < 6) {
-      // Auto-fill generated OTP if user submits incomplete
       setOtpDigits(generatedOtp.split(''));
     }
 
@@ -111,7 +112,9 @@ export const OtpModal: React.FC<OtpModalProps> = ({
       if (!cleanMobile) {
         cleanMobile = '9840123456';
       }
-      onOtpVerified(cleanMobile);
+      const member = getOrCreateMemberByMobile(cleanMobile);
+      onLoginSuccess(member);
+      onClose();
     }, 400);
   };
 
@@ -126,7 +129,7 @@ export const OtpModal: React.FC<OtpModalProps> = ({
       });
       setOtpDigits(arr);
       const nextIdx = Math.min(5, index + clean.length);
-      document.getElementById(`reg-otp-digit-${nextIdx}`)?.focus();
+      document.getElementById(`login-otp-digit-${nextIdx}`)?.focus();
       return;
     }
 
@@ -135,14 +138,14 @@ export const OtpModal: React.FC<OtpModalProps> = ({
     setOtpDigits(updated);
 
     if (clean && index < 5) {
-      const nextInput = document.getElementById(`reg-otp-digit-${index + 1}`);
+      const nextInput = document.getElementById(`login-otp-digit-${index + 1}`);
       nextInput?.focus();
     }
   };
 
   const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
     if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
-      const prevInput = document.getElementById(`reg-otp-digit-${index - 1}`);
+      const prevInput = document.getElementById(`login-otp-digit-${index - 1}`);
       prevInput?.focus();
     }
   };
@@ -168,6 +171,17 @@ export const OtpModal: React.FC<OtpModalProps> = ({
 
   const cleanDigitsCount = normalizeDigits(mobileNumber).length;
 
+  const handleDirectQuickLogin = (num: string) => {
+    const clean = num.replace(/\D/g, '') || '9840123456';
+    setIsSubmitting(true);
+    setTimeout(() => {
+      setIsSubmitting(false);
+      const member = getOrCreateMemberByMobile(clean);
+      onLoginSuccess(member);
+      onClose();
+    }, 300);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn">
       <div className="bg-[#181B20] text-white rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-gray-800 gold-header-strip relative overflow-hidden">
@@ -180,19 +194,19 @@ export const OtpModal: React.FC<OtpModalProps> = ({
           <X className="w-5 h-5" />
         </button>
 
-        {/* Modal Title & Header */}
+        {/* Modal Header */}
         <div className="text-center space-y-2 mb-6">
           <div className="w-16 h-16 bg-yellow-400/10 border border-yellow-400/30 text-yellow-400 rounded-full flex items-center justify-center mx-auto shadow-inner">
-            <Smartphone className="w-8 h-8" />
+            {step === 'MOBILE' ? <User className="w-8 h-8" /> : <Smartphone className="w-8 h-8" />}
           </div>
           <h3 className="text-2xl font-extrabold text-white">
             {step === 'MOBILE'
-              ? (currentLang === 'ta' ? 'அலைபேசி எண் சரிபார்ப்பு' : 'Step 1: Mobile OTP Verification')
-              : (currentLang === 'ta' ? '6 இலக்க OTP உள்ளிடவும்' : 'Step 2: Enter 6-Digit OTP')}
+              ? (currentLang === 'ta' ? 'உறுப்பினர் உள்நுழைவு' : 'Member Login Portal')
+              : (currentLang === 'ta' ? 'OTP சரிபார்த்து உள்நுழையவும்' : 'Verify OTP & Login')}
           </h3>
           <p className="text-xs text-gray-400">
             {step === 'MOBILE'
-              ? (currentLang === 'ta' ? 'எந்த கைபேசி எண்ணையும் உள்ளிட்டு OTP பெறலாம்' : 'Enter ANY 10-digit mobile number of your choice to receive OTP')
+              ? (currentLang === 'ta' ? 'எந்த கைபேசி எண்ணையும் தட்டச்சு செய்து ID Card காணலாம்' : 'Type ANY mobile number to view Digital ID Card & Member Dashboard')
               : (currentLang === 'ta' ? `OTP +91 ${mobileNumber} எண்ணிற்கு அனுப்பப்பட்டது` : `Verification OTP sent to +91 ${mobileNumber}`)}
           </p>
         </div>
@@ -211,7 +225,7 @@ export const OtpModal: React.FC<OtpModalProps> = ({
                     <span>Tamil Sangam OTP Alert</span>
                   </p>
                   <p className="text-xs text-gray-200 mt-0.5">
-                    Verification OTP for <span className="text-yellow-400 font-mono font-bold">+91 {mobileNumber}</span>:{' '}
+                    Your login verification OTP for <span className="text-yellow-400 font-mono font-bold">+91 {mobileNumber}</span> is:{' '}
                     <span className="font-mono text-base font-extrabold text-yellow-300 tracking-wider bg-slate-900/80 px-2 py-0.5 rounded border border-yellow-400/40">
                       {generatedOtp}
                     </span>
@@ -230,34 +244,24 @@ export const OtpModal: React.FC<OtpModalProps> = ({
           </div>
         )}
 
-        {/* Locked Feature Notice */}
-        <div className="bg-yellow-400/10 border border-yellow-400/30 rounded-xl p-3 text-xs text-yellow-300 mb-6 flex items-start gap-2">
-          <Lock className="w-4 h-4 shrink-0 mt-0.5" />
-          <span>
-            {currentLang === 'ta'
-              ? 'பாதுகாப்பு காரணம் கருதி OTP சரிபார்ப்பிற்கு பின்னரே உறுப்பினர் விண்ணப்பப் படிவம் திறக்கும்.'
-              : 'Membership Registration Form, Aadhaar Upload, and Payment will unlock ONLY after successful OTP verification.'}
-          </span>
-        </div>
-
         {errorMsg && (
           <div className="mb-4 bg-red-900/60 border border-red-500 text-red-200 text-xs p-3 rounded-xl">
             {errorMsg}
           </div>
         )}
 
-        {/* STEP 1: Enter Mobile Number */}
+        {/* STEP 1: Enter Any Mobile Number */}
         {step === 'MOBILE' ? (
           <form onSubmit={handleSendOtp} className="space-y-5">
             <div>
-              <label htmlFor="reg-mobile-input" className="block text-xs font-semibold text-gray-300 mb-1.5">
-                {currentLang === 'ta' ? 'உங்கள் 10 இலக்க கைபேசி எண்' : 'Type Your 10-Digit Mobile Number'}
+              <label htmlFor="login-mobile-input" className="block text-xs font-semibold text-gray-300 mb-1.5">
+                {currentLang === 'ta' ? 'உங்கள் 10 இலக்க அலைபேசி எண்' : 'Type Your 10-Digit Mobile Number'}
               </label>
               <div className="relative cursor-text" onClick={() => inputRef.current?.focus()}>
                 <span className="absolute left-3.5 top-3.5 text-sm font-bold text-yellow-400 pointer-events-none select-none">+91</span>
                 <input
                   ref={inputRef}
-                  id="reg-mobile-input"
+                  id="login-mobile-input"
                   type="tel"
                   inputMode="numeric"
                   maxLength={15}
@@ -273,16 +277,17 @@ export const OtpModal: React.FC<OtpModalProps> = ({
                 />
               </div>
 
-              {/* Live Count & Sample Chips */}
+              {/* Live Count & Samples */}
               <div className="mt-2.5 flex items-center justify-between text-[11px] text-gray-400 flex-wrap gap-1">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-gray-400">Sample Numbers:</span>
+                  <span className="text-gray-400">Quick 1-Click Login:</span>
                   {['9840123456', '9789012345', '9123456789', '9444012345'].map((demoNum) => (
                     <button
                       key={demoNum}
                       type="button"
-                      onClick={() => { setMobileNumber(demoNum); setErrorMsg(''); }}
+                      onClick={() => handleDirectQuickLogin(demoNum)}
                       className="bg-gray-800 hover:bg-yellow-400 hover:text-slate-950 font-mono text-yellow-400 px-2 py-0.5 rounded border border-gray-700 transition-colors cursor-pointer"
+                      title="Click for instant login & view ID card"
                     >
                       {demoNum}
                     </button>
@@ -303,15 +308,15 @@ export const OtpModal: React.FC<OtpModalProps> = ({
                 <RefreshCw className="w-5 h-5 animate-spin" />
               ) : (
                 <>
-                  <span>{currentLang === 'ta' ? 'OTP அனுப்புக' : 'SEND RANDOM OTP'}</span>
+                  <span>{currentLang === 'ta' ? 'OTP அனுப்புக & ID அட்டை காண்' : 'SEND OTP & VIEW ID CARD'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
         ) : (
-          /* STEP 2: Enter 6-Digit Random OTP */
-          <form onSubmit={handleVerifyOtp} className="space-y-6">
+          /* STEP 2: Verify Random OTP */
+          <form onSubmit={handleVerifyOtpAndLogin} className="space-y-6">
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-xs font-semibold text-gray-300">
@@ -330,7 +335,7 @@ export const OtpModal: React.FC<OtpModalProps> = ({
                 {otpDigits.map((digit, idx) => (
                   <input
                     key={idx}
-                    id={`reg-otp-digit-${idx}`}
+                    id={`login-otp-digit-${idx}`}
                     type="text"
                     inputMode="numeric"
                     maxLength={1}
@@ -353,7 +358,7 @@ export const OtpModal: React.FC<OtpModalProps> = ({
               ) : (
                 <>
                   <ShieldCheck className="w-5 h-5" />
-                  <span>{currentLang === 'ta' ? 'OTP சரிபார் & படிவம் திற' : 'VERIFY OTP & OPEN FORM'}</span>
+                  <span>{currentLang === 'ta' ? 'OTP சரிபார் & உள்நுழை' : 'VERIFY OTP & LOGIN'}</span>
                 </>
               )}
             </button>

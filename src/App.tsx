@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { Hero } from './components/Hero';
@@ -8,6 +8,7 @@ import { NewsPage } from './components/NewsPage';
 import { ContactPage } from './components/ContactPage';
 
 import { OtpModal } from './components/MembershipFlow/OtpModal';
+import { MemberLoginModal } from './components/MembershipFlow/MemberLoginModal';
 import { RegistrationForm } from './components/MembershipFlow/RegistrationForm';
 import { ReviewAndPaymentModal } from './components/MembershipFlow/ReviewAndPaymentModal';
 import { PublicVerification } from './components/IdCard/PublicVerification';
@@ -17,12 +18,15 @@ import { MemberDashboard } from './components/MemberDashboard/MemberDashboard';
 import { AdminDashboard } from './components/AdminDashboard/AdminDashboard';
 import { AdminLoginModal } from './components/AdminLoginModal';
 
-import { addMemberApplication, getEvents, getOrCreateMemberByMobile } from './services/storageService';
+import { addMemberApplication, getEvents } from './services/storageService';
 import type { MemberApplication, DonationRecord } from './types';
-import { Users } from 'lucide-react';
 
 export function App() {
   const [currentLang, setCurrentLang] = useState<'en' | 'ta'>('en');
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('theme');
+    return (saved === 'light' || saved === 'dark') ? saved : 'dark';
+  });
   const [activeTab, setActiveTab] = useState('home');
 
   // Modals & Workflows
@@ -40,13 +44,26 @@ export function App() {
   // User Sessions & Member Login
   const [loggedInMember, setLoggedInMember] = useState<MemberApplication | null>(null);
   const [isMemberLoginModalOpen, setIsMemberLoginModalOpen] = useState(false);
-  const [loginMobileInput, setLoginMobileInput] = useState('9840123456');
 
   // Admin Access & Password Security (p@$$word)
   const [isAdminPortalActive, setIsAdminPortalActive] = useState(false);
   const [isAdminPasswordModalOpen, setIsAdminPasswordModalOpen] = useState(false);
 
   const [selectedPasaraiId, setSelectedPasaraiId] = useState<string | undefined>(undefined);
+
+  // Sync theme with HTML root document & body
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.body.classList.add('dark-theme');
+      document.body.classList.remove('light-theme');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.body.classList.add('light-theme');
+      document.body.classList.remove('dark-theme');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
 
   // Check URL path/hash for /admin & open site login prompt
   useEffect(() => {
@@ -65,6 +82,10 @@ export function App() {
 
   const handleToggleLang = () => {
     setCurrentLang(prev => (prev === 'en' ? 'ta' : 'en'));
+  };
+
+  const handleToggleTheme = () => {
+    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
   };
 
   // STEP 1: OTP Verified -> Unlocks Registration Form
@@ -107,25 +128,15 @@ export function App() {
     setIsVerifyModalOpen(true);
   };
 
-  // Seamless login for ANY mobile number or ID entered by user
-  const handleMemberLoginSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!loginMobileInput.trim()) return;
-
-    const member = getOrCreateMemberByMobile(loginMobileInput.trim());
-    setLoggedInMember(member);
-    setIsMemberLoginModalOpen(false);
-    setActiveTab('member-dashboard');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   const handleAdminAuthSuccess = () => {
     setIsAdminPasswordModalOpen(false);
     setIsAdminPortalActive(true);
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 font-sans">
+    <div className={`min-h-screen flex flex-col font-sans transition-colors duration-300 ${
+      theme === 'dark' ? 'dark bg-slate-900 text-white' : 'bg-slate-50 text-slate-900'
+    }`}>
       
       {/* Main Header */}
       <Header
@@ -135,6 +146,8 @@ export function App() {
         onOpenMemberLogin={() => setIsMemberLoginModalOpen(true)}
         currentLang={currentLang}
         onToggleLang={handleToggleLang}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
         activeTab={activeTab}
         setActiveTab={(tab) => {
           setIsAdminPortalActive(false);
@@ -217,7 +230,9 @@ export function App() {
 
             {/* 4. DEDICATED EVENTS PAGE */}
             {activeTab === 'events' && (
-              <section className="py-16 bg-slate-100 min-h-[60vh]">
+              <section className={`py-16 min-h-[60vh] transition-colors duration-300 ${
+                theme === 'dark' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-900'
+              }`}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
                   <div className="bg-[#181B20] text-white rounded-3xl p-8 shadow-2xl gold-header-strip">
                     <span className="bg-yellow-400 text-slate-950 font-black text-xs px-3 py-1 rounded uppercase">
@@ -229,23 +244,27 @@ export function App() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {getEvents().map((evt) => (
-                      <div key={evt.id} className="bg-white rounded-2xl overflow-hidden shadow-lg border border-slate-200 flex flex-col sm:flex-row">
+                      <div key={evt.id} className={`rounded-2xl overflow-hidden shadow-lg border flex flex-col sm:flex-row transition-colors ${
+                        theme === 'dark' ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
+                      }`}>
                         <img src={evt.bannerUrl} alt="" className="w-full sm:w-48 h-48 object-cover shrink-0" />
                         <div className="p-5 flex flex-col justify-between space-y-3">
                           <div>
                             <span className="bg-slate-900 text-yellow-400 text-[10px] font-bold px-2 py-0.5 rounded">
                               {evt.district} District
                             </span>
-                            <h3 className="font-extrabold text-base text-slate-900 mt-1">{evt.titleTamil}</h3>
-                            <p className="text-xs text-slate-500">{evt.title}</p>
-                            <p className="text-xs text-slate-600 mt-2 line-clamp-2">{evt.description}</p>
+                            <h3 className={`font-extrabold text-base mt-1 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{evt.titleTamil}</h3>
+                            <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-slate-500'}`}>{evt.title}</p>
+                            <p className={`text-xs mt-2 line-clamp-2 ${theme === 'dark' ? 'text-gray-300' : 'text-slate-600'}`}>{evt.description}</p>
                           </div>
 
-                          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                            <span className="font-bold text-amber-700">Date: {evt.date}</span>
+                          <div className={`pt-2 border-t flex items-center justify-between text-xs ${
+                            theme === 'dark' ? 'border-slate-700' : 'border-slate-100'
+                          }`}>
+                            <span className="font-bold text-amber-500">Date: {evt.date}</span>
                             <button
                               onClick={() => setIsOtpModalOpen(true)}
-                              className="bg-yellow-400 text-slate-950 font-extrabold px-3 py-1.5 rounded-lg text-xs hover:bg-yellow-300"
+                              className="bg-yellow-400 text-slate-950 font-extrabold px-3 py-1.5 rounded-lg text-xs hover:bg-yellow-300 transition-colors"
                             >
                               Register Event
                             </button>
@@ -273,7 +292,7 @@ export function App() {
 
       </main>
 
-      {/* STEP 1: MOBILE OTP MODAL */}
+      {/* STEP 1: REGISTRATION MOBILE OTP MODAL */}
       <OtpModal
         isOpen={isOtpModalOpen}
         onClose={() => setIsOtpModalOpen(false)}
@@ -329,49 +348,17 @@ export function App() {
         </div>
       )}
 
-      {/* MEMBER LOGIN MODAL */}
-      {isMemberLoginModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-[#181B20] text-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-gray-800 gold-header-strip relative">
-            <button onClick={() => setIsMemberLoginModalOpen(false)} className="absolute right-4 top-4 text-gray-400">✕</button>
-            
-            <div className="text-center space-y-2 mb-4">
-              <div className="w-12 h-12 bg-yellow-400/10 text-yellow-400 rounded-full flex items-center justify-center mx-auto">
-                <Users className="w-6 h-6" />
-              </div>
-              <h3 className="font-extrabold text-lg text-white">Member Login Portal</h3>
-              <p className="text-xs text-gray-400">Type ANY mobile number or ID to login instantly</p>
-            </div>
-
-            <form onSubmit={handleMemberLoginSubmit} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-gray-300 font-semibold mb-1">Mobile / Membership Number</label>
-                <input
-                  type="text"
-                  value={loginMobileInput}
-                  onChange={(e) => setLoginMobileInput(e.target.value)}
-                  placeholder="Enter ANY mobile number..."
-                  className="w-full p-3 bg-gray-900 border border-gray-700 rounded-xl text-white font-semibold"
-                  required
-                  autoFocus
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-extrabold py-3.5 rounded-xl uppercase tracking-wider text-xs shadow-lg"
-              >
-                LOGIN TO MEMBER DASHBOARD
-              </button>
-
-              <div className="bg-gray-800/60 p-2.5 rounded-lg text-[10px] text-gray-400 space-y-1">
-                <p className="font-bold text-yellow-400">Instant Login Enabled:</p>
-                <p>Type ANY number (e.g. <code className="text-white font-mono">9840123456</code>, <code className="text-white font-mono">9789012345</code>, or any number of your choice) to log in immediately!</p>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* DEDICATED MEMBER LOGIN MODAL (Any Mobile Number -> Random OTP -> Verify -> Login) */}
+      <MemberLoginModal
+        isOpen={isMemberLoginModalOpen}
+        onClose={() => setIsMemberLoginModalOpen(false)}
+        onLoginSuccess={(member) => {
+          setLoggedInMember(member);
+          setActiveTab('member-dashboard');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        currentLang={currentLang}
+      />
 
       {/* ADMIN PASSWORD VERIFICATION MODAL (Triggered by /admin) */}
       <AdminLoginModal

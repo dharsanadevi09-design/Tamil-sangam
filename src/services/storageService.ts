@@ -47,6 +47,11 @@ export const saveMembers = (members: MemberApplication[]) => {
   localStorage.setItem(KEYS.MEMBERS, JSON.stringify(members));
 };
 
+export const deleteMember = (id: string): void => {
+  const members = getMembers().filter(m => m.id !== id);
+  saveMembers(members);
+};
+
 export const getMemberById = (id: string): MemberApplication | undefined => {
   const members = getMembers();
   const cleanId = id.trim();
@@ -219,6 +224,11 @@ export const addDonation = (donationData: Omit<DonationRecord, 'id' | 'receiptNu
   return newDonation;
 };
 
+export const deleteDonation = (id: string): void => {
+  const list = getDonations().filter(d => d.id !== id);
+  localStorage.setItem(KEYS.DONATIONS, JSON.stringify(list));
+};
+
 // Events
 export const getEvents = (): EventItem[] => {
   initStorage();
@@ -238,11 +248,33 @@ export const addEvent = (eventData: Omit<EventItem, 'id' | 'registeredCount'>): 
   return newEvent;
 };
 
+export const deleteEvent = (id: string): void => {
+  const events = getEvents().filter(e => e.id !== id);
+  localStorage.setItem(KEYS.EVENTS, JSON.stringify(events));
+};
+
 // News
 export const getNews = (): NewsItem[] => {
   initStorage();
   const data = localStorage.getItem(KEYS.NEWS);
   return data ? JSON.parse(data) : INITIAL_NEWS;
+};
+
+export const addNews = (newsData: Omit<NewsItem, 'id' | 'date'>): NewsItem => {
+  const news = getNews();
+  const newNews: NewsItem = {
+    ...newsData,
+    id: `NEWS-${Date.now().toString().slice(-4)}`,
+    date: new Date().toISOString().split('T')[0]
+  };
+  news.unshift(newNews);
+  localStorage.setItem(KEYS.NEWS, JSON.stringify(news));
+  return newNews;
+};
+
+export const deleteNews = (id: string): void => {
+  const news = getNews().filter(n => n.id !== id);
+  localStorage.setItem(KEYS.NEWS, JSON.stringify(news));
 };
 
 // Certificates
@@ -265,6 +297,11 @@ export const addCertificate = (certData: Omit<CertificateItem, 'id' | 'certifica
   certs.unshift(newCert);
   localStorage.setItem(KEYS.CERTIFICATES, JSON.stringify(certs));
   return newCert;
+};
+
+export const deleteCertificate = (id: string): void => {
+  const certs = getCertificates().filter(c => c.id !== id);
+  localStorage.setItem(KEYS.CERTIFICATES, JSON.stringify(certs));
 };
 
 // Categories

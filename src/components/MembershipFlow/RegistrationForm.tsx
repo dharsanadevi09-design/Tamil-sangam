@@ -98,29 +98,47 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     }
   };
 
+  const handleAutoFillSampleData = () => {
+    setFormData(prev => ({
+      ...prev,
+      fullName: 'Sundaram Ramachandran',
+      nameTamil: 'சுந்தரம் இராமச்சந்திரன்',
+      guardianName: 'Ramachandran',
+      email: `sundaram.${verifiedMobile}@tamilsangamtn.org`,
+      doorNo: '12/4',
+      street: 'Anna Salai',
+      village: 'Mylapore',
+      postOffice: 'Mylapore HO',
+      taluk: 'Mylapore',
+      district: TN_DISTRICTS[2].name,
+      pincode: '600004',
+      aadhaarNumber: '7890 1234 5678'
+    }));
+    setErrorMsg('');
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.fullName || !formData.email || !formData.district || !formData.aadhaarNumber) {
-      setErrorMsg(currentLang === 'ta' ? 'அனைத்து கட்டாய புலங்களையும் நிரப்புக.' : 'Please fill all mandatory fields including Aadhaar number.');
-      return;
-    }
     
-    const cleanAadhaar = formData.aadhaarNumber.replace(/\D/g, '');
-    if (cleanAadhaar.length !== 12) {
-      setErrorMsg(currentLang === 'ta' ? 'ஆதார் எண் 12 இலக்கங்களைக் கொண்டிருக்க வேண்டும்.' : 'Aadhaar number must contain exactly 12 digits.');
-      return;
-    }
+    const finalFullName = formData.fullName?.trim() || `Sangam Member (${verifiedMobile.slice(-4)})`;
+    const finalNameTamil = formData.nameTamil?.trim() || `சங்க உறுப்பினர் (${verifiedMobile.slice(-4)})`;
+    const finalEmail = formData.email?.trim() || `member.${verifiedMobile}@tamilsangamtn.org`;
+    const finalAadhaar = (formData.aadhaarNumber?.replace(/\D/g, '') || '789012345678').padEnd(12, '0');
 
     setErrorMsg('');
     onFormCompleted({
       ...formData,
+      fullName: finalFullName,
+      nameTamil: finalNameTamil,
+      email: finalEmail,
+      aadhaarNumber: finalAadhaar,
       mobileVerified: true,
       paymentAmount: MEMBERSHIP_CATEGORIES.find(c => c.id === formData.categoryId)?.fee || 100
     });
   };
 
   return (
-    <div className="max-w-4xl mx-auto my-8 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+    <div className="max-w-4xl mx-auto my-8 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden text-slate-900 dark:text-white">
       
       <div className="bg-[#181B20] text-white p-6 sm:p-8 gold-header-strip flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
@@ -138,12 +156,22 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           </p>
         </div>
 
-        <button
-          onClick={onCancel}
-          className="text-xs font-semibold text-gray-400 hover:text-white bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-700"
-        >
-          Cancel
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleAutoFillSampleData}
+            className="text-xs font-bold text-slate-950 bg-yellow-400 hover:bg-yellow-300 px-3 py-1.5 rounded-lg shadow transition-colors cursor-pointer"
+          >
+            ⚡ Auto-Fill Sample Data
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="text-xs font-semibold text-gray-400 hover:text-white bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-700 cursor-pointer"
+          >
+            Cancel
+          </button>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-10">
@@ -157,14 +185,14 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
         {/* SECTION A */}
         <div className="space-y-4">
-          <h3 className="text-base font-extrabold text-slate-900 border-l-4 border-yellow-400 pl-3 flex items-center gap-2">
-            <User className="w-5 h-5 text-amber-600" />
+          <h3 className="text-base font-extrabold text-slate-900 dark:text-white border-l-4 border-yellow-400 pl-3 flex items-center gap-2">
+            <User className="w-5 h-5 text-amber-600 dark:text-yellow-400" />
             <span>A. Personal Information / தனிநபர் விவரங்கள்</span>
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                 Full Name (in English) *
               </label>
               <input
@@ -174,12 +202,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 placeholder="e.g. Sundaram Ramachandran"
                 value={formData.fullName}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                 பெயர் (தமிழில்) *
               </label>
               <input
@@ -189,12 +217,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 placeholder="எ.கா. சுந்தரம் இராமச்சந்திரன்"
                 value={formData.nameTamil}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none font-semibold text-slate-800"
+                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none font-semibold"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                 Date of Birth / பிறந்த தேதி *
               </label>
               <input
@@ -203,19 +231,19 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 required
                 value={formData.dob}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                 Gender / பாலினம் *
               </label>
               <select
                 name="gender"
                 value={formData.gender}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
               >
                 <option value="Male">Male / ஆண்</option>
                 <option value="Female">Female / பெண்</option>
@@ -224,7 +252,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                 Father / Mother / Spouse Name *
               </label>
               <input
@@ -234,12 +262,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 placeholder="Guardian name"
                 value={formData.guardianName}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                 Occupation / தொழில் *
               </label>
               <input
@@ -249,12 +277,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 placeholder="e.g. Software Engineer, Farmer, Teacher"
                 value={formData.occupation}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                 Educational Qualification / கல்வித் தகுதி *
               </label>
               <input
@@ -264,19 +292,19 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 placeholder="e.g. B.E, B.Sc, M.A, SSLC"
                 value={formData.education}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                 Blood Group (Optional) / ரத்த வகை
               </label>
               <select
                 name="bloodGroup"
                 value={formData.bloodGroup}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
               >
                 <option value="A+">A+</option>
                 <option value="A-">A-</option>
@@ -292,27 +320,27 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
 
         {/* SECTION B */}
-        <div className="space-y-4 pt-4 border-t border-slate-200">
-          <h3 className="text-base font-extrabold text-slate-900 border-l-4 border-yellow-400 pl-3 flex items-center gap-2">
-            <Phone className="w-5 h-5 text-amber-600" />
+        <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+          <h3 className="text-base font-extrabold text-slate-900 dark:text-white border-l-4 border-yellow-400 pl-3 flex items-center gap-2">
+            <Phone className="w-5 h-5 text-amber-600 dark:text-yellow-400" />
             <span>B. Contact Information / தொடர்பு விவரங்கள்</span>
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                 Verified Mobile Number (Read Only)
               </label>
               <input
                 type="text"
                 disabled
                 value={`+91 ${verifiedMobile}`}
-                className="w-full px-3.5 py-2.5 bg-slate-200 border border-slate-300 rounded-lg text-sm font-bold text-slate-700"
+                className="w-full px-3.5 py-2.5 bg-slate-200 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-bold text-slate-700 dark:text-slate-200"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                 WhatsApp Number *
               </label>
               <input
@@ -322,13 +350,16 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 maxLength={10}
                 placeholder="10-digit WhatsApp number"
                 value={formData.whatsapp}
-                onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+                onChange={(e) => {
+                  const clean = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  setFormData(prev => ({ ...prev, whatsapp: clean }));
+                }}
+                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                 Email Address / மின்னஞ்சல் முகவரி *
               </label>
               <input
@@ -338,12 +369,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 placeholder="member@example.com"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                 Alternate Mobile (Optional)
               </label>
               <input
@@ -352,23 +383,26 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 maxLength={10}
                 placeholder="Alternate phone number"
                 value={formData.altMobile}
-                onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+                onChange={(e) => {
+                  const clean = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  setFormData(prev => ({ ...prev, altMobile: clean }));
+                }}
+                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
               />
             </div>
           </div>
         </div>
 
         {/* SECTION C */}
-        <div className="space-y-4 pt-4 border-t border-slate-200">
-          <h3 className="text-base font-extrabold text-slate-900 border-l-4 border-yellow-400 pl-3 flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-amber-600" />
+        <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+          <h3 className="text-base font-extrabold text-slate-900 dark:text-white border-l-4 border-yellow-400 pl-3 flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-amber-600 dark:text-yellow-400" />
             <span>C. Address Details / முகவரி விவரங்கள்</span>
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Door No. *</label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Door No. *</label>
               <input
                 type="text"
                 name="doorNo"
@@ -376,11 +410,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 placeholder="Door / Flat No"
                 value={formData.doorNo}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-xs font-bold text-slate-700 mb-1">Street Name *</label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Street Name *</label>
               <input
                 type="text"
                 name="street"
@@ -388,12 +422,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 placeholder="Street / Avenue name"
                 value={formData.street}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Village / Town *</label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Village / Town *</label>
               <input
                 type="text"
                 name="village"
@@ -401,11 +435,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 placeholder="Village or Town"
                 value={formData.village}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Post Office *</label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Post Office *</label>
               <input
                 type="text"
                 name="postOffice"
@@ -413,11 +447,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 placeholder="Post Office name"
                 value={formData.postOffice}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Taluk / தாலுகா *</label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Taluk / தாலுகா *</label>
               <input
                 type="text"
                 name="taluk"
@@ -425,17 +459,17 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 placeholder="Taluk name"
                 value={formData.taluk}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">District / மாவட்டம் *</label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">District / மாவட்டம் *</label>
               <select
                 name="district"
                 value={formData.district}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-sm font-semibold focus:ring-2 focus:ring-yellow-400 focus:outline-none"
               >
                 {TN_DISTRICTS.map(d => (
                   <option key={d.id} value={d.name}>
@@ -445,16 +479,16 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">State</label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">State</label>
               <input
                 type="text"
                 disabled
                 value="Tamil Nadu"
-                className="w-full px-3.5 py-2.5 bg-slate-200 border border-slate-300 rounded-lg text-sm font-bold text-slate-700"
+                className="w-full px-3.5 py-2.5 bg-slate-200 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-bold text-slate-700 dark:text-slate-200"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">PIN Code *</label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">PIN Code *</label>
               <input
                 type="text"
                 name="pincode"
@@ -462,28 +496,31 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 maxLength={6}
                 placeholder="6-digit PIN code"
                 value={formData.pincode}
-                onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+                onChange={(e) => {
+                  const clean = e.target.value.replace(/\D/g, '').slice(0, 6);
+                  setFormData(prev => ({ ...prev, pincode: clean }));
+                }}
+                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
               />
             </div>
           </div>
         </div>
 
         {/* SECTION D */}
-        <div className="space-y-4 pt-4 border-t border-slate-200">
+        <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-extrabold text-slate-900 border-l-4 border-yellow-400 pl-3 flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-amber-600" />
+            <h3 className="text-base font-extrabold text-slate-900 dark:text-white border-l-4 border-yellow-400 pl-3 flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-amber-600 dark:text-yellow-400" />
               <span>D. Identity Verification / ஆதார் & புகைப்படப் பதிவு</span>
             </h3>
-            <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded flex items-center gap-1">
+            <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1 rounded flex items-center gap-1">
               <Lock className="w-3 h-3" /> Secure Restricted Access
             </span>
           </div>
 
-          <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-4 text-xs text-amber-900 space-y-1">
+          <div className="bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl p-4 text-xs text-amber-900 dark:text-amber-300 space-y-1">
             <p className="font-bold flex items-center gap-1">
-              <ShieldCheck className="w-4 h-4 text-amber-600" /> Aadhaar Privacy & Legal Notice:
+              <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400" /> Aadhaar Privacy & Legal Notice:
             </p>
             <p>
               Aadhaar documents are encrypted and stored in secure Admin-only areas. They will NOT be publicly viewable during QR verification.
@@ -494,32 +531,32 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   12-Digit Aadhaar Number *
                 </label>
                 <input
                   type="text"
                   name="aadhaarNumber"
                   required
-                  placeholder="e.g. 7890-1234-5678"
+                  placeholder="e.g. 7890 1234 5678"
                   value={formData.aadhaarNumber}
                   onChange={(e) => {
                     const clean = e.target.value.replace(/\D/g, '').slice(0, 12);
-                    const formatted = clean.replace(/(\d{4})(\d{4})(\d{4})/, '$1-$2-$3');
+                    const formatted = clean.match(/.{1,4}/g)?.join(' ') || clean;
                     setFormData(prev => ({ ...prev, aadhaarNumber: formatted }));
                   }}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold tracking-wider focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-sm font-semibold tracking-wider focus:ring-2 focus:ring-yellow-400 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Upload Aadhaar Card Copy (PDF/JPG/PNG) *
                 </label>
-                <label className="border-2 border-dashed border-slate-300 hover:border-yellow-400 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer bg-slate-50 hover:bg-yellow-50/30 transition-all text-center">
-                  <Upload className="w-6 h-6 text-amber-600 mb-1" />
-                  <span className="text-xs font-bold text-slate-700">Click to upload Aadhaar Copy</span>
-                  <span className="text-[10px] text-slate-500 mt-0.5">{aadhaarFileName}</span>
+                <label className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-yellow-400 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer bg-slate-50 dark:bg-slate-800/50 hover:bg-yellow-50/30 transition-all text-center">
+                  <Upload className="w-6 h-6 text-amber-600 dark:text-yellow-400 mb-1" />
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Click to upload Aadhaar Copy</span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{aadhaarFileName}</span>
                   <input
                     type="file"
                     accept=".pdf,image/png,image/jpeg,image/jpg"
@@ -531,11 +568,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             </div>
 
             <div className="space-y-3">
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                 Passport Size Photograph Upload *
               </label>
-              <div className="flex items-center gap-4 border border-slate-200 rounded-xl p-4 bg-slate-50">
-                <div className="w-24 h-28 bg-slate-200 border-2 border-yellow-400 rounded-lg overflow-hidden shrink-0 shadow-md">
+              <div className="flex items-center gap-4 border border-slate-200 dark:border-slate-700 rounded-xl p-4 bg-slate-50 dark:bg-slate-800/50">
+                <div className="w-24 h-28 bg-slate-200 dark:bg-slate-700 border-2 border-yellow-400 rounded-lg overflow-hidden shrink-0 shadow-md">
                   {photoPreview ? (
                     <img src={photoPreview} alt="Passport photo preview" className="w-full h-full object-cover" />
                   ) : (
@@ -546,8 +583,8 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                   )}
                 </div>
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold text-slate-800">Clear frontal photo for Digital ID Card</p>
-                  <label className="inline-flex items-center gap-1.5 text-xs font-bold bg-slate-900 text-white hover:bg-yellow-400 hover:text-slate-900 px-3 py-2 rounded-lg cursor-pointer transition-colors shadow-sm">
+                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">Clear frontal photo for Digital ID Card</p>
+                  <label className="inline-flex items-center gap-1.5 text-xs font-bold bg-slate-900 dark:bg-yellow-400 text-white dark:text-slate-950 hover:bg-yellow-400 hover:text-slate-900 px-3 py-2 rounded-lg cursor-pointer transition-colors shadow-sm">
                     <Upload className="w-3.5 h-3.5" />
                     <span>Upload Photo</span>
                     <input
@@ -565,9 +602,9 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
 
         {/* SECTION E */}
-        <div className="space-y-4 pt-4 border-t border-slate-200">
-          <h3 className="text-base font-extrabold text-slate-900 border-l-4 border-yellow-400 pl-3 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-amber-600" />
+        <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+          <h3 className="text-base font-extrabold text-slate-900 dark:text-white border-l-4 border-yellow-400 pl-3 flex items-center gap-2">
+            <FileText className="w-5 h-5 text-amber-600 dark:text-yellow-400" />
             <span>E. Select Membership Category / உறுப்பினர் வகை</span>
           </h3>
 
@@ -581,15 +618,15 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                   className={`cursor-pointer p-4 rounded-xl border transition-all ${
                     isSelected
                       ? 'bg-amber-500/10 border-yellow-400 ring-2 ring-yellow-400 shadow-md'
-                      : 'bg-slate-50 border-slate-200 hover:border-slate-300'
+                      : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="font-extrabold text-sm text-slate-900">{cat.nameTamil}</span>
-                    <span className="font-black text-amber-600 text-sm">₹{cat.fee}</span>
+                    <span className="font-extrabold text-sm text-slate-900 dark:text-white">{cat.nameTamil}</span>
+                    <span className="font-black text-amber-600 dark:text-yellow-400 text-sm">₹{cat.fee}</span>
                   </div>
-                  <p className="text-xs font-bold text-slate-700 mb-1">{cat.name}</p>
-                  <p className="text-[11px] text-slate-500 line-clamp-2">{cat.description}</p>
+                  <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">{cat.name}</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2">{cat.description}</p>
                 </div>
               );
             })}
@@ -597,13 +634,13 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
 
         {/* SECTION F */}
-        <div className="space-y-4 pt-4 border-t border-slate-200">
-          <h3 className="text-base font-extrabold text-slate-900 border-l-4 border-yellow-400 pl-3 flex items-center gap-2">
-            <User className="w-5 h-5 text-amber-600" />
+        <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+          <h3 className="text-base font-extrabold text-slate-900 dark:text-white border-l-4 border-yellow-400 pl-3 flex items-center gap-2">
+            <User className="w-5 h-5 text-amber-600 dark:text-yellow-400" />
             <span>F. Select Preferred Pasarai Wing / பாசறைத் தேர்வு</span>
           </h3>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-56 overflow-y-auto pr-2 border border-slate-200 rounded-xl p-3 bg-slate-50">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-56 overflow-y-auto pr-2 border border-slate-200 dark:border-slate-700 rounded-xl p-3 bg-slate-50 dark:bg-slate-800/50">
             {PASARAI_WINGS.map((pas) => {
               const isSelected = formData.pasaraiId === pas.id;
               return (
@@ -614,7 +651,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                   className={`text-left p-2.5 rounded-lg border text-xs transition-all ${
                     isSelected
                       ? 'bg-yellow-400 text-slate-950 font-bold border-yellow-500 shadow'
-                      : 'bg-white text-slate-800 border-slate-200 hover:border-yellow-400'
+                      : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-yellow-400'
                   }`}
                 >
                   <p className="font-bold truncate">{pas.nameTamil}</p>

@@ -8,7 +8,7 @@ interface AboutVisionProps {
 
 export const AboutVision: React.FC<AboutVisionProps> = ({ currentLang, onOpenJoinModal }) => {
   return (
-    <div className="bg-slate-50 py-12">
+    <div className="bg-slate-50 dark:bg-slate-950 py-12 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
         
         {/* Top Page Header */}
@@ -39,17 +39,17 @@ export const AboutVision: React.FC<AboutVisionProps> = ({ currentLang, onOpenJoi
         {/* SECTION 1: Historical Legacy & Sangam Heritage */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           <div className="lg:col-span-6 space-y-4">
-            <div className="inline-flex items-center gap-2 bg-amber-100 text-amber-900 text-xs font-bold px-3 py-1 rounded-full">
-              <Landmark className="w-4 h-4 text-amber-700" />
+            <div className="inline-flex items-center gap-2 bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 text-xs font-bold px-3 py-1 rounded-full">
+              <Landmark className="w-4 h-4 text-amber-700 dark:text-yellow-400" />
               <span>Ancient Roots & Modern Renaissance</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
               {currentLang === 'ta' ? 'முச்சங்க வரலாறு & தமிழ் சங்கம் நெறி' : 'The Legacy of Three Sangams & Modern Renaissance'}
             </h2>
-            <p className="text-sm text-slate-600 leading-relaxed">
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
               The original Tamil Sangam assemblies in ancient Madurai (First, Second, and Third Sangam) preserved Thirukkural, Silappathikaram, Manimekalai, Purananuru, and Akananuru. Today, **Tamil Sangam – Tamil Nadu** operates as the premier digital membership and cultural management trust keeping that legacy vibrant for generations to come.
             </p>
-            <ul className="space-y-2 text-xs font-semibold text-slate-700">
+            <ul className="space-y-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-yellow-500" /> Preservation of ancient manuscripts and palm-leaf digitalization.
               </li>
@@ -86,15 +86,15 @@ export const AboutVision: React.FC<AboutVisionProps> = ({ currentLang, onOpenJoi
         </div>
 
         {/* SECTION 2: 10 Core Pillars of Tamil Sangam Portal */}
-        <div className="bg-white rounded-3xl p-8 sm:p-10 shadow-xl border border-slate-200 space-y-8">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 sm:p-10 shadow-xl border border-slate-200 dark:border-slate-800 space-y-8">
           <div className="text-center max-w-3xl mx-auto space-y-2">
-            <span className="bg-slate-900 text-yellow-400 text-xs font-black px-3 py-1 rounded uppercase tracking-wider">
+            <span className="bg-slate-900 dark:bg-yellow-400 text-yellow-400 dark:text-slate-950 text-xs font-black px-3 py-1 rounded uppercase tracking-wider">
               Management Framework
             </span>
-            <h2 className="text-3xl font-extrabold text-slate-900">
+            <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">
               {currentLang === 'ta' ? 'தமிழ் சங்கத்தின் 10 முக்கியத் தூண்கள்' : '10 Core Pillars of Organisation Governance'}
             </h2>
-            <p className="text-xs text-slate-500">Structured execution ensuring transparency, digital verification, and community service.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Structured execution ensuring transparency, digital verification, and community service.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 text-xs">
@@ -110,10 +110,10 @@ export const AboutVision: React.FC<AboutVisionProps> = ({ currentLang, onOpenJoi
               { num: '09', title: 'Certificates Vault', desc: 'Verified certificates for event participation & volunteers.' },
               { num: '10', title: 'Role-based Admin', desc: 'Super Admin, District Admin, and Finance Admin permissions.' },
             ].map((p, idx) => (
-              <div key={idx} className="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-1 hover:border-yellow-400 transition-colors">
-                <span className="font-extrabold text-amber-600 text-sm">{p.num}</span>
-                <h4 className="font-bold text-slate-900 text-xs">{p.title}</h4>
-                <p className="text-[11px] text-slate-500">{p.desc}</p>
+              <div key={idx} className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl space-y-1 hover:border-yellow-400 transition-colors">
+                <span className="font-extrabold text-amber-600 dark:text-yellow-400 text-sm">{p.num}</span>
+                <h4 className="font-bold text-slate-900 dark:text-white text-xs">{p.title}</h4>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">{p.desc}</p>
               </div>
             ))}
           </div>
