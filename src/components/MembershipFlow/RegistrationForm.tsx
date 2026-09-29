@@ -83,9 +83,13 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      const url = URL.createObjectURL(file);
-      setPhotoPreview(url);
-      setFormData(prev => ({ ...prev, photoUrl: url }));
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setPhotoPreview(result);
+        setFormData(prev => ({ ...prev, photoUrl: result }));
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -93,8 +97,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setAadhaarFileName(file.name);
-      const url = URL.createObjectURL(file);
-      setFormData(prev => ({ ...prev, aadhaarDocUrl: url }));
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setFormData(prev => ({ ...prev, aadhaarDocUrl: result }));
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -553,17 +561,27 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Upload Aadhaar Card Copy (PDF/JPG/PNG) *
                 </label>
-                <label className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-yellow-400 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer bg-slate-50 dark:bg-slate-800/50 hover:bg-yellow-50/30 transition-all text-center">
-                  <Upload className="w-6 h-6 text-amber-600 dark:text-yellow-400 mb-1" />
-                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Click to upload Aadhaar Copy</span>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{aadhaarFileName}</span>
-                  <input
-                    type="file"
-                    accept=".pdf,image/png,image/jpeg,image/jpg"
-                    onChange={handleAadhaarUpload}
-                    className="hidden"
-                  />
-                </label>
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                  <label className="flex-1 w-full border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-yellow-400 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer bg-slate-50 dark:bg-slate-800/50 hover:bg-yellow-50/30 transition-all text-center">
+                    <Upload className="w-6 h-6 text-amber-600 dark:text-yellow-400 mb-1" />
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Click to upload Aadhaar Image</span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{aadhaarFileName}</span>
+                    <input
+                      type="file"
+                      accept=".pdf,image/png,image/jpeg,image/jpg"
+                      onChange={handleAadhaarUpload}
+                      className="hidden"
+                    />
+                  </label>
+                  {formData.aadhaarDocUrl && (
+                    <div className="w-24 h-20 bg-slate-200 dark:bg-slate-700 border-2 border-amber-500 rounded-lg overflow-hidden shrink-0 shadow-md relative group">
+                      <img src={formData.aadhaarDocUrl} alt="Aadhaar Document Preview" className="w-full h-full object-cover" />
+                      <span className="absolute bottom-0 inset-x-0 bg-emerald-700/90 text-white text-[9px] font-bold text-center py-0.5">
+                        Uploaded ✓
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 

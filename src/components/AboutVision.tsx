@@ -4,9 +4,16 @@ import { Landmark, CheckCircle2 } from 'lucide-react';
 interface AboutVisionProps {
   currentLang: 'en' | 'ta';
   onOpenJoinModal: () => void;
+  isLoggedIn?: boolean;
+  onGoToDashboard?: () => void;
 }
 
-export const AboutVision: React.FC<AboutVisionProps> = ({ currentLang, onOpenJoinModal }) => {
+export const AboutVision: React.FC<AboutVisionProps> = ({
+  currentLang,
+  onOpenJoinModal,
+  isLoggedIn,
+  onGoToDashboard
+}) => {
   return (
     <div className="bg-slate-50 dark:bg-slate-950 py-12 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
@@ -148,12 +155,21 @@ export const AboutVision: React.FC<AboutVisionProps> = ({ currentLang, onOpenJoi
           </div>
 
           <div className="pt-4 text-center">
-            <button
-              onClick={onOpenJoinModal}
-              className="bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-extrabold px-8 py-3.5 rounded-xl shadow-xl uppercase text-xs tracking-wider"
-            >
-              BECOME A MEMBER TODAY
-            </button>
+            {isLoggedIn ? (
+              <button
+                onClick={onGoToDashboard}
+                className="bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-extrabold px-8 py-3.5 rounded-xl shadow-xl uppercase text-xs tracking-wider cursor-pointer"
+              >
+                {currentLang === 'ta' ? 'உறுப்பினர் பலகை (GO TO DASHBOARD)' : 'GO TO MY MEMBER DASHBOARD'}
+              </button>
+            ) : (
+              <button
+                onClick={onOpenJoinModal}
+                className="bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-extrabold px-8 py-3.5 rounded-xl shadow-xl uppercase text-xs tracking-wider cursor-pointer"
+              >
+                BECOME A MEMBER TODAY
+              </button>
+            )}
           </div>
         </div>
 

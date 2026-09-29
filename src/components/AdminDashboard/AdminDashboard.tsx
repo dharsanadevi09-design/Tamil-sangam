@@ -1,33 +1,37 @@
 import React, { useState } from 'react';
-import type { MemberApplication, AdminRole, EventItem, NewsItem, CertificateItem } from '../../types';
+import type { MemberApplication, AdminRole, EventItem, NewsItem, CertificateItem, AdminAccount } from '../../types';
 import { 
   getMembers, approveMemberApplication, rejectMemberApplication, deleteMember,
   getDonations, deleteDonation,
   getEvents, addEvent, deleteEvent,
   getNews, addNews, deleteNews,
-  getCertificates, addCertificate, deleteCertificate
+  getCertificates, addCertificate, deleteCertificate,
+  getAdminAccounts, addAdminAccount, deleteAdminAccount
 } from '../../services/storageService';
 import { TN_DISTRICTS, PASARAI_WINGS } from '../../data/mockData';
-import { Shield, Users, Heart, CheckCircle2, XCircle, Search, Download, Plus, Trash2, Calendar, Newspaper, Award } from 'lucide-react';
+import { Shield, Users, Heart, CheckCircle2, XCircle, Search, Download, Plus, Trash2, Calendar, Newspaper, Award, UserPlus, Lock, Eye, MapPin } from 'lucide-react';
 
 interface AdminDashboardProps {
   onCloseAdmin: () => void;
   onVerifyQrCode: (membershipNumber: string) => void;
   currentLang: 'en' | 'ta';
+  currentAdmin?: AdminAccount | null;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onCloseAdmin,
+  currentAdmin
 }) => {
-  const [activeAdminTab, setActiveAdminTab] = useState<'MEMBERS' | 'PENDING' | 'EVENTS' | 'NEWS' | 'CERTIFICATES' | 'DONATIONS' | 'REPORTS'>('MEMBERS');
+  const [activeAdminTab, setActiveAdminTab] = useState<'MEMBERS' | 'PENDING' | 'EVENTS' | 'NEWS' | 'CERTIFICATES' | 'DONATIONS' | 'REPORTS' | 'ADMINS'>('MEMBERS');
   const [membersList, setMembersList] = useState<MemberApplication[]>(getMembers());
   const [eventsList, setEventsList] = useState<EventItem[]>(getEvents());
   const [newsList, setNewsList] = useState<NewsItem[]>(getNews());
   const [certList, setCertList] = useState<CertificateItem[]>(getCertificates());
   const [donationsList, setDonationsList] = useState(getDonations());
+  const [adminAccountsList, setAdminAccountsList] = useState<AdminAccount[]>(getAdminAccounts());
 
-  const [selectedRole, setSelectedRole] = useState<AdminRole>('SUPER_ADMIN');
   const [inspectMember, setInspectMember] = useState<MemberApplication | null>(null);
+  const [zoomedAadhaarUrl, setZoomedAadhaarUrl] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   
   // Search & Filters
@@ -36,15 +40,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [selectedPasaraiFilter, setSelectedPasaraiFilter] = useState('ALL');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('ALL');
 
-  // Form Modal States for Admin Create
+  // District Admin Scoping Logic
+  const adminRole: AdminRole = currentAdmin?.role || 'SUPER_ADMIN';
+  const adminDistrict = currentAdmin?.district || 'ALL';
+  const isSuperAdmin = adminRole === 'SUPER_ADMIN' || adminRole === 'STATE_ADMIN';
+  const isDistrictAdmin = adminRole === 'DISTRICT_ADMIN';
+
+  const effectiveDistrictFilter = isDistrictAdmin ? adminDistrict : selectedDistrictFilter;
+
+  // Form Modal States for District Admin Creation
+  const [isAddAdminOpen, setIsAddAdminOpen] = useState(false);
+  const [newAdmin, setNewAdmin] = useState({
+    name: '',
+    username: '',
+    password: '',
+    role: 'DISTRICT_ADMIN' as AdminRole,
+    district: TN_DISTRICTS[0].name
+  });
+
+  // Form Modal States for Events, News, Certificates
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
   const [newEvent, setNewEvent] = useState<Omit<EventItem, 'id' | 'registeredCount'>>({
     title: '',
     titleTamil: '',
     date: new Date().toISOString().split('T')[0],
     time: '10:00 AM',
-    venue: 'Sangam Auditorium, Chennai',
-    district: 'Chennai',
+    venue: 'Sangam Auditorium',
+    district: isDistrictAdmin ? adminDistrict : 'Chennai',
     description: '',
     registrationFee: 0,
     maxParticipants: 500,
@@ -68,7 +90,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     title: 'Official Membership Appreciation Certificate',
     type: 'APPRECIATION',
     issueDate: new Date().toISOString().split('T')[0],
-    issuedBy: 'Tamil Sangam State HQ',
+    issuedBy: isDistrictAdmin ? `${adminDistrict} District HQ` : 'Tamil Sangam State HQ',
     description: 'In recognition of outstanding contribution to Tamil Sangam digital portal.'
   });
 
@@ -78,9 +100,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setNewsList(getNews());
     setCertList(getCertificates());
     setDonationsList(getDonations());
+    setAdminAccountsList(getAdminAccounts());
   };
 
   const handleApprove = (appId: string) => {
+    const targetMember = membersList.find(m => m.id === appId);
+    if (isSuperAdmin) {
+      alert(`🔒 Super Admin Notice:\nSuper Admin cannot accept/approve member applications directly.\n\nOnly the assigned District Admin of ${targetMember?.district || 'that'} district can accept applications and generate Membership IDs.`);
+      return;
+    }
     const updated = approveMemberApplication(appId);
     if (updated) {
       refreshAllData();
@@ -106,6 +134,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
+  // Add District Admin (Super Admin Feature)
+  const handleCreateAdmin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAdmin.name || !newAdmin.username || !newAdmin.password) return;
+    addAdminAccount({
+      name: newAdmin.name,
+      username: newAdmin.username.toLowerCase().trim(),
+      password: newAdmin.password,
+      role: newAdmin.role,
+      district: newAdmin.district
+    });
+    refreshAllData();
+    setIsAddAdminOpen(false);
+    setNewAdmin({
+      name: '',
+      username: '',
+      password: '',
+      role: 'DISTRICT_ADMIN',
+      district: TN_DISTRICTS[0].name
+    });
+  };
+
+  const handleDeleteAdminAccount = (id: string) => {
+    if (window.confirm('Delete this District Admin account?')) {
+      deleteAdminAccount(id);
+      refreshAllData();
+    }
+  };
+
   // Add Event
   const handleCreateEvent = (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,18 +170,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     addEvent(newEvent);
     refreshAllData();
     setIsAddEventOpen(false);
-    setNewEvent({
-      title: '',
-      titleTamil: '',
-      date: new Date().toISOString().split('T')[0],
-      time: '10:00 AM',
-      venue: 'Sangam Auditorium, Chennai',
-      district: 'Chennai',
-      description: '',
-      registrationFee: 0,
-      maxParticipants: 500,
-      bannerUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=600&q=80'
-    });
   };
 
   const handleDeleteEvent = (id: string) => {
@@ -141,14 +186,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     addNews(newNews);
     refreshAllData();
     setIsAddNewsOpen(false);
-    setNewNews({
-      title: '',
-      titleTamil: '',
-      category: 'Press Release',
-      summary: '',
-      content: '',
-      imageUrl: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=600&q=80'
-    });
   };
 
   const handleDeleteNewsItem = (id: string) => {
@@ -165,15 +202,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     addCertificate(newCert);
     refreshAllData();
     setIsAddCertOpen(false);
-    setNewCert({
-      memberName: '',
-      memberId: 'TS-TN-2026-000101',
-      title: 'Official Membership Appreciation Certificate',
-      type: 'APPRECIATION',
-      issueDate: new Date().toISOString().split('T')[0],
-      issuedBy: 'Tamil Sangam State HQ',
-      description: 'In recognition of outstanding contribution to Tamil Sangam digital portal.'
-    });
   };
 
   const handleDeleteCertItem = (id: string) => {
@@ -190,7 +218,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
-  const filteredMembers = membersList.filter(m => {
+  // SCOPED MEMBERS & METRICS FILTERING
+  const scopedMembersList = isDistrictAdmin
+    ? membersList.filter(m => m.district === adminDistrict)
+    : membersList;
+
+  const filteredMembers = scopedMembersList.filter(m => {
     const matchesSearch = 
       (m.membershipNumber && m.membershipNumber.toLowerCase().includes(searchQuery.toLowerCase())) ||
       m.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -198,15 +231,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       m.mobile.includes(searchQuery) ||
       m.id.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesDistrict = selectedDistrictFilter === 'ALL' || m.district === selectedDistrictFilter;
+    const matchesDistrict = effectiveDistrictFilter === 'ALL' || m.district === effectiveDistrictFilter;
     const matchesPasarai = selectedPasaraiFilter === 'ALL' || m.pasaraiId === selectedPasaraiFilter || m.pasaraiName === selectedPasaraiFilter;
     const matchesStatus = selectedStatusFilter === 'ALL' || m.status === selectedStatusFilter;
 
     return matchesSearch && matchesDistrict && matchesPasarai && matchesStatus;
   });
 
-  const pendingMembers = membersList.filter(m => m.status === 'PENDING');
-  const approvedMembers = membersList.filter(m => m.status === 'APPROVED');
+  const pendingMembers = scopedMembersList.filter(m => m.status === 'PENDING');
+  const approvedMembers = scopedMembersList.filter(m => m.status === 'APPROVED');
   const totalDonationSum = donationsList.reduce((acc, d) => acc + d.amount, 0);
 
   const handleExportCSV = () => {
@@ -243,46 +276,60 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <span className="bg-yellow-400 text-slate-950 text-xs font-black px-2.5 py-0.5 rounded uppercase">
               ADMIN WORKBENCH
             </span>
-            <span className="text-xs text-amber-300 font-bold">
-              Tamil Sangam Digital Portal
+            <span className="text-xs text-amber-300 font-bold flex items-center gap-1">
+              <Shield className="w-3.5 h-3.5 text-yellow-400" />
+              {isSuperAdmin ? '👑 Super Admin Access (State HQ)' : `🏛️ District Admin Portal (${adminDistrict})`}
             </span>
           </div>
-          <h2 className="text-2xl font-extrabold text-white mt-1">State & District Admin Management Portal</h2>
+          <h2 className="text-2xl font-extrabold text-white mt-1">
+            {isDistrictAdmin ? `${adminDistrict} District Admin Dashboard` : 'State & District Admin Management Portal'}
+          </h2>
+          {currentAdmin && (
+            <p className="text-xs text-gray-300 mt-0.5">
+              Logged in as: <strong className="text-yellow-400">{currentAdmin.name}</strong> (@{currentAdmin.username})
+            </p>
+          )}
         </div>
 
-        {/* Role Switcher */}
         <div className="flex items-center gap-3">
-          <div className="text-right text-xs">
-            <span className="text-gray-400 block text-[10px]">Active Role</span>
-            <select
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value as AdminRole)}
-              className="bg-gray-800 border border-amber-500/40 text-yellow-400 font-bold text-xs px-2.5 py-1.5 rounded-lg"
-            >
-              <option value="SUPER_ADMIN">Super Admin (State HQ)</option>
-              <option value="DISTRICT_ADMIN">District Admin</option>
-              <option value="FINANCE_ADMIN">Finance & Donation Admin</option>
-              <option value="MEMBERSHIP_ADMIN">Membership Desk Admin</option>
-            </select>
-          </div>
-
           <button
             onClick={onCloseAdmin}
-            className="bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white px-3.5 py-2 rounded-lg text-xs font-bold border border-gray-700 cursor-pointer"
+            className="bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white px-4 py-2 rounded-xl text-xs font-bold border border-gray-700 cursor-pointer flex items-center gap-1.5"
           >
-            Exit Admin
+            <Lock className="w-3.5 h-3.5 text-amber-400" />
+            <span>Logout Admin</span>
           </button>
         </div>
       </div>
+
+      {/* District Admin Role Scope Alert Banner */}
+      {isDistrictAdmin && (
+        <div className="bg-amber-50 border-2 border-yellow-400 text-amber-900 rounded-xl p-4 mb-6 text-xs flex items-center justify-between gap-3 shadow-md">
+          <div className="flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-amber-600 shrink-0" />
+            <div>
+              <span className="font-extrabold text-sm block">
+                🔒 District Restricted Access: {adminDistrict} District
+              </span>
+              <p className="text-amber-800">
+                You are assigned to manage members and approvals exclusively for <strong>{adminDistrict}</strong> district. All lists and metrics below are filtered to your assigned district.
+              </p>
+            </div>
+          </div>
+          <span className="bg-amber-200 text-amber-900 font-bold px-3 py-1 rounded-lg shrink-0">
+            {scopedMembersList.length} Members in {adminDistrict}
+          </span>
+        </div>
+      )}
 
       {/* KPI Metric Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-md">
           <div className="flex items-center justify-between text-slate-500 text-xs">
-            <span>Total Members</span>
+            <span>{isDistrictAdmin ? `${adminDistrict} Members` : 'Total Members'}</span>
             <Users className="w-4 h-4 text-blue-600" />
           </div>
-          <p className="text-2xl font-extrabold text-slate-900 mt-1">{membersList.length}</p>
+          <p className="text-2xl font-extrabold text-slate-900 mt-1">{scopedMembersList.length}</p>
         </div>
 
         <div className="bg-amber-50/80 p-4 rounded-xl border border-yellow-400 shadow-md">
@@ -311,17 +358,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-md">
           <div className="flex items-center justify-between text-slate-500 text-xs">
-            <span>Active TN Districts</span>
+            <span>{isDistrictAdmin ? 'Assigned District' : 'Active TN Districts'}</span>
             <Users className="w-4 h-4 text-yellow-600" />
           </div>
-          <p className="text-2xl font-extrabold text-slate-900 mt-1">38</p>
+          <p className="text-xl font-extrabold text-slate-900 mt-1">
+            {isDistrictAdmin ? adminDistrict : '38 TN Districts'}
+          </p>
         </div>
       </div>
 
       {/* Admin Tabs Bar */}
       <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3 mb-6 text-xs font-bold">
         {[
-          { id: 'MEMBERS', label: 'Members Directory', badge: membersList.length },
+          { id: 'MEMBERS', label: 'Members Directory', badge: scopedMembersList.length },
           { id: 'PENDING', label: 'Pending Queue', badge: pendingMembers.length, highlight: true },
           { id: 'EVENTS', label: 'Events Manager', badge: eventsList.length },
           { id: 'NEWS', label: 'News & Media', badge: newsList.length },
@@ -348,6 +397,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             )}
           </button>
         ))}
+
+        {/* Super Admin Special Tab: District Admins Management */}
+        {isSuperAdmin && (
+          <button
+            onClick={() => setActiveAdminTab('ADMINS')}
+            className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer ml-auto ${
+              activeAdminTab === 'ADMINS'
+                ? 'bg-yellow-400 text-slate-950 shadow ring-2 ring-yellow-400'
+                : 'bg-[#181B20] text-amber-300 hover:bg-gray-800'
+            }`}
+          >
+            <UserPlus className="w-4 h-4 text-yellow-400" />
+            <span>District Admins Manager ({adminAccountsList.length})</span>
+          </button>
+        )}
       </div>
 
       {/* TAB 1: MEMBERS DIRECTORY */}
@@ -369,14 +433,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             <div>
               <select
-                value={selectedDistrictFilter}
+                disabled={isDistrictAdmin}
+                value={effectiveDistrictFilter}
                 onChange={(e) => setSelectedDistrictFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg font-semibold text-slate-950"
+                className={`w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg font-semibold text-slate-950 ${
+                  isDistrictAdmin ? 'opacity-80 cursor-not-allowed border-amber-400 bg-amber-50' : ''
+                }`}
               >
-                <option value="ALL">All Districts (38)</option>
-                {TN_DISTRICTS.map(d => (
-                  <option key={d.id} value={d.name}>{d.nameTamil} ({d.name})</option>
-                ))}
+                {isDistrictAdmin ? (
+                  <option value={adminDistrict}>District Locked: {adminDistrict}</option>
+                ) : (
+                  <>
+                    <option value="ALL">All Districts (38)</option>
+                    {TN_DISTRICTS.map(d => (
+                      <option key={d.id} value={d.name}>{d.nameTamil} ({d.name})</option>
+                    ))}
+                  </>
+                )}
               </select>
             </div>
 
@@ -399,16 +472,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 onChange={(e) => setSelectedStatusFilter(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg font-semibold text-slate-950"
               >
-                <option value="ALL">All Statuses</option>
-                <option value="PENDING">Pending</option>
-                <option value="APPROVED">Approved</option>
-                <option value="REJECTED">Rejected</option>
+                <option value="ALL">All Status</option>
+                <option value="APPROVED">Approved Only</option>
+                <option value="PENDING">Pending Only</option>
+                <option value="REJECTED">Rejected Only</option>
               </select>
 
               <button
                 onClick={handleExportCSV}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold p-2 rounded-lg text-xs shrink-0 cursor-pointer"
-                title="Export Filtered CSV"
+                className="bg-emerald-700 hover:bg-emerald-600 text-white font-bold p-2.5 rounded-lg flex items-center justify-center shrink-0 cursor-pointer shadow"
+                title="Export Members to CSV"
               >
                 <Download className="w-4 h-4" />
               </button>
@@ -418,55 +491,58 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {/* Members Table */}
           <div className="overflow-x-auto border border-slate-200 rounded-xl">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#181B20] text-white uppercase text-[10px] tracking-wider">
+              <thead className="bg-[#181B20] text-gray-300 uppercase text-[10px] tracking-wider font-extrabold">
                 <tr>
-                  <th className="p-3">Member / Photo</th>
-                  <th className="p-3">Membership Number</th>
-                  <th className="p-3">District / Pasarai</th>
-                  <th className="p-3">Category</th>
+                  <th className="p-3">Member / App ID</th>
+                  <th className="p-3">Name & Details</th>
+                  <th className="p-3">District</th>
+                  <th className="p-3">Wing (Pasarai)</th>
+                  <th className="p-3">Aadhaar Doc</th>
                   <th className="p-3">Status</th>
                   <th className="p-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 text-slate-900">
+              <tbody className="divide-y divide-slate-200 text-slate-800 font-semibold">
                 {filteredMembers.map((m) => (
-                  <tr key={m.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="p-3 flex items-center gap-3">
-                      <img src={m.photoUrl} alt="" className="w-9 h-11 rounded object-cover border" />
-                      <div>
-                        <p className="font-bold text-slate-900">{m.fullName}</p>
-                        <p className="text-[10px] text-amber-700 font-semibold">{m.nameTamil}</p>
-                        <p className="text-[10px] text-slate-500">+91 {m.mobile}</p>
+                  <tr key={m.id} className="hover:bg-amber-50/50 transition-colors">
+                    <td className="p-3 font-mono font-extrabold text-amber-700">
+                      {m.membershipNumber || m.id}
+                    </td>
+                    <td className="p-3">
+                      <div className="flex items-center gap-3">
+                        <img src={m.photoUrl} alt="" className="w-9 h-11 rounded object-cover border border-amber-400 shrink-0" />
+                        <div>
+                          <p className="font-extrabold text-slate-900">{m.fullName}</p>
+                          <p className="text-[11px] text-slate-500">{m.nameTamil} • +91 {m.mobile}</p>
+                        </div>
                       </div>
                     </td>
-                    <td className="p-3 font-mono font-extrabold text-slate-900">
-                      {m.membershipNumber || <span className="text-amber-600">Pending</span>}
+                    <td className="p-3 font-bold">{m.district}</td>
+                    <td className="p-3 text-slate-600">{m.pasaraiName}</td>
+                    <td className="p-3 font-mono text-[11px]">
+                      {m.aadhaarDocUrl ? (
+                        <span className="text-emerald-700 font-bold bg-emerald-50 border border-emerald-300 px-2 py-0.5 rounded flex items-center gap-1 w-fit">
+                          <CheckCircle2 className="w-3 h-3" /> Uploaded
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 italic">No file</span>
+                      )}
                     </td>
                     <td className="p-3">
-                      <p className="font-bold text-slate-900">{m.district}</p>
-                      <p className="text-[10px] text-slate-500 truncate max-w-[140px]">{m.pasaraiName}</p>
-                    </td>
-                    <td className="p-3 font-semibold text-slate-700">{m.categoryName}</td>
-                    <td className="p-3">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${
-                        m.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-800' : m.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                      <span className={`px-2.5 py-1 rounded text-[10px] font-black ${
+                        m.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-800' :
+                        m.status === 'PENDING' ? 'bg-amber-100 text-amber-900 border border-yellow-400' :
+                        'bg-red-100 text-red-800'
                       }`}>
                         {m.status}
                       </span>
                     </td>
-                    <td className="p-3 text-right space-x-1">
+                    <td className="p-3 text-right">
                       <button
                         onClick={() => setInspectMember(m)}
-                        className="bg-slate-900 hover:bg-yellow-400 text-white hover:text-slate-950 font-bold px-2.5 py-1.5 rounded text-[11px] transition-colors cursor-pointer"
+                        className="bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-extrabold px-3 py-1.5 rounded-lg text-xs cursor-pointer shadow-sm"
                       >
-                        Inspect
-                      </button>
-                      <button
-                        onClick={() => handleDeleteMember(m.id)}
-                        className="bg-red-100 hover:bg-red-600 text-red-700 hover:text-white font-bold p-1.5 rounded text-[11px] transition-colors cursor-pointer"
-                        title="Delete Record"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 inline" />
+                        Inspect / Verify
                       </button>
                     </td>
                   </tr>
@@ -474,112 +550,177 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </tbody>
             </table>
           </div>
-
         </div>
       )}
 
-      {/* TAB 2: PENDING APPROVALS QUEUE */}
+      {/* TAB 2: PENDING APPROVAL QUEUE */}
       {activeAdminTab === 'PENDING' && (
         <div className="bg-white rounded-2xl p-6 shadow-xl border border-slate-200 space-y-6">
-          <div className="border-b border-slate-200 pb-4">
-            <h3 className="text-lg font-extrabold text-slate-900">Pending Membership Applications Queue</h3>
-            <p className="text-xs text-slate-500">Inspect candidate identity, Aadhaar card copy, and grant official membership ID.</p>
+          <div className="flex items-center justify-between border-b pb-4">
+            <div>
+              <h3 className="text-lg font-extrabold text-slate-900">
+                Pending Applications Queue ({pendingMembers.length})
+              </h3>
+              <p className="text-xs text-slate-500">Review uploaded Aadhaar documents and issue digital membership numbers.</p>
+            </div>
           </div>
 
-          {pendingMembers.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {pendingMembers.map((m) => (
-                <div key={m.id} className="bg-slate-50 border border-slate-300 rounded-xl p-5 space-y-4 shadow-sm">
-                  
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <img src={m.photoUrl} alt="" className="w-14 h-16 rounded-lg object-cover border-2 border-yellow-400" />
-                      <div>
-                        <h4 className="font-extrabold text-base text-slate-900">{m.fullName}</h4>
-                        <p className="text-xs font-semibold text-amber-700">{m.nameTamil}</p>
-                        <span className="bg-yellow-400 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded">
-                          {m.categoryName}
-                        </span>
-                      </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {pendingMembers.map((app) => (
+              <div key={app.id} className="border border-slate-200 rounded-xl p-5 bg-slate-50 hover:border-yellow-400 transition-all space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <img src={app.photoUrl} alt="" className="w-14 h-16 rounded-lg object-cover border-2 border-yellow-400 shadow-sm" />
+                    <div>
+                      <h4 className="font-extrabold text-base text-slate-900">{app.fullName}</h4>
+                      <p className="text-xs text-amber-700 font-bold">{app.nameTamil}</p>
+                      <p className="text-xs text-slate-600">Mobile: +91 {app.mobile}</p>
                     </div>
                   </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 bg-white p-3 rounded-lg border border-slate-200">
-                    <p><strong className="text-slate-900">Mobile:</strong> +91 {m.mobile}</p>
-                    <p><strong className="text-slate-900">District:</strong> {m.district}</p>
-                    <p><strong className="text-slate-900">Pasarai:</strong> {m.pasaraiName}</p>
-                    <p><strong className="text-slate-900">Aadhaar:</strong> {m.aadhaarNumber}</p>
-                    <p><strong className="text-slate-900">Fee Paid:</strong> ₹{m.paymentAmount}</p>
-                    <p><strong className="text-slate-900">Txn:</strong> {m.paymentTransactionId}</p>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-3 pt-2">
-                    <button
-                      onClick={() => setInspectMember(m)}
-                      className="bg-slate-800 text-white font-bold px-3 py-2 rounded-lg text-xs hover:bg-slate-700 cursor-pointer"
-                    >
-                      View File
-                    </button>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleApprove(m.id)}
-                        className="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-4 py-2 rounded-lg text-xs shadow cursor-pointer"
-                      >
-                        APPROVE & ISSUE ID
-                      </button>
-                    </div>
-                  </div>
-
+                  <span className="bg-amber-400 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded">
+                    PENDING
+                  </span>
                 </div>
-              ))}
+
+                <div className="bg-white p-3 rounded-lg border border-slate-200 text-xs space-y-1">
+                  <p><strong className="text-slate-900">District:</strong> {app.district}</p>
+                  <p><strong className="text-slate-900">Pasarai Wing:</strong> {app.pasaraiName}</p>
+                  <p><strong className="text-slate-900">Aadhaar Number:</strong> {app.aadhaarNumber}</p>
+                  <p><strong className="text-slate-900">Category:</strong> {app.categoryName} (₹{app.paymentAmount})</p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setInspectMember(app)}
+                    className="flex-1 bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-extrabold py-2.5 rounded-lg text-xs uppercase tracking-wide cursor-pointer text-center"
+                  >
+                    Inspect Aadhaar & Verify
+                  </button>
+                  {isDistrictAdmin ? (
+                    <button
+                      onClick={() => handleApprove(app.id)}
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-4 py-2.5 rounded-lg text-xs cursor-pointer"
+                    >
+                      Approve & Generate ID
+                    </button>
+                  ) : (
+                    <span className="bg-slate-200 text-slate-700 text-[10px] font-extrabold px-3 py-2 rounded-lg border border-slate-300" title={`Only ${app.district} District Admin can approve`}>
+                      🔒 {app.district} Admin Approval Required
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 8: SUPER ADMIN DISTRICT ADMINS MANAGER */}
+      {activeAdminTab === 'ADMINS' && isSuperAdmin && (
+        <div className="bg-white rounded-2xl p-6 shadow-xl border border-slate-200 space-y-6">
+          <div className="flex items-center justify-between border-b pb-4">
+            <div>
+              <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded uppercase">
+                SUPER ADMIN CONTROLE
+              </span>
+              <h3 className="text-xl font-extrabold text-slate-900 mt-1">
+                District Admins Management / மாவட்ட நிர்வாகிகள்
+              </h3>
+              <p className="text-xs text-slate-500">Create and assign district-specific admin accounts with scoped access controls.</p>
             </div>
-          ) : (
-            <p className="text-xs text-slate-500">No pending membership applications at present.</p>
-          )}
+
+            <button
+              onClick={() => setIsAddAdminOpen(true)}
+              className="bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-extrabold px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow cursor-pointer uppercase tracking-wider"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>+ Create District Admin</span>
+            </button>
+          </div>
+
+          <div className="overflow-x-auto border border-slate-200 rounded-xl">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#181B20] text-gray-300 uppercase text-[10px] tracking-wider font-extrabold">
+                <tr>
+                  <th className="p-3">Admin ID</th>
+                  <th className="p-3">Admin Name</th>
+                  <th className="p-3">Username</th>
+                  <th className="p-3">Assigned Role</th>
+                  <th className="p-3">Assigned District</th>
+                  <th className="p-3">Created Date</th>
+                  <th className="p-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 text-slate-800 font-semibold">
+                {adminAccountsList.map((acc) => (
+                  <tr key={acc.id} className="hover:bg-amber-50/50">
+                    <td className="p-3 font-mono text-amber-700 font-extrabold">{acc.id}</td>
+                    <td className="p-3 font-extrabold text-slate-900">{acc.name}</td>
+                    <td className="p-3 font-mono font-bold text-slate-600">@{acc.username}</td>
+                    <td className="p-3">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-black ${
+                        acc.role === 'SUPER_ADMIN' ? 'bg-amber-100 text-amber-900 border border-yellow-400' : 'bg-blue-100 text-blue-900'
+                      }`}>
+                        {acc.role}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <span className="font-extrabold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-300">
+                        {acc.district}
+                      </span>
+                    </td>
+                    <td className="p-3 text-slate-500">{acc.createdAt}</td>
+                    <td className="p-3 text-right">
+                      {acc.role !== 'SUPER_ADMIN' && (
+                        <button
+                          onClick={() => handleDeleteAdminAccount(acc.id)}
+                          className="text-red-600 hover:text-red-800 font-bold p-1.5 hover:bg-red-50 rounded"
+                          title="Delete Admin Account"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {/* TAB 3: EVENTS MANAGER */}
       {activeAdminTab === 'EVENTS' && (
         <div className="bg-white rounded-2xl p-6 shadow-xl border border-slate-200 space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+          <div className="flex items-center justify-between border-b pb-4">
             <div>
-              <h3 className="text-lg font-extrabold text-slate-900">State & District Events Manager</h3>
-              <p className="text-xs text-slate-500">Create, edit, or remove state conventions, symposiums, and tournaments.</p>
+              <h3 className="text-lg font-extrabold text-slate-900">Events Management</h3>
+              <p className="text-xs text-slate-500">Publish conventions and youth meets.</p>
             </div>
             <button
               onClick={() => setIsAddEventOpen(true)}
-              className="bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-extrabold text-xs px-4 py-2 rounded-lg shadow flex items-center gap-1.5 cursor-pointer"
+              className="bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-extrabold px-4 py-2 rounded-xl text-xs flex items-center gap-2 cursor-pointer shadow"
             >
-              <Plus className="w-4 h-4" />
-              <span>Create New Event</span>
+              <Plus className="w-4 h-4" /> Add Event Listing
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {eventsList.map((evt) => (
-              <div key={evt.id} className="bg-slate-50 rounded-xl border border-slate-300 p-4 flex flex-col justify-between space-y-3">
-                <div className="flex gap-3">
-                  <img src={evt.bannerUrl} alt="" className="w-24 h-24 object-cover rounded-lg shrink-0 border" />
-                  <div>
-                    <span className="bg-slate-900 text-yellow-400 font-bold text-[10px] px-2 py-0.5 rounded uppercase">
-                      {evt.district} District
-                    </span>
-                    <h4 className="font-extrabold text-base text-slate-900 mt-1">{evt.titleTamil}</h4>
-                    <p className="text-xs text-slate-600 font-semibold">{evt.title}</p>
-                    <p className="text-xs text-amber-700 font-bold mt-1">📅 Date: {evt.date} ({evt.time})</p>
-                    <p className="text-xs text-slate-500">📍 Venue: {evt.venue}</p>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-slate-200 flex justify-end">
+              <div key={evt.id} className="border border-slate-200 rounded-xl p-4 flex gap-4 bg-slate-50">
+                <img src={evt.bannerUrl} alt="" className="w-24 h-24 rounded-lg object-cover shrink-0" />
+                <div className="flex-1 space-y-1 text-xs">
+                  <span className="bg-slate-900 text-yellow-400 font-bold px-2 py-0.5 rounded text-[10px]">
+                    {evt.district} District
+                  </span>
+                  <h4 className="font-extrabold text-slate-900 text-sm mt-1">{evt.titleTamil}</h4>
+                  <p className="text-slate-600">{evt.title}</p>
+                  <p className="text-amber-700 font-semibold">Date: {evt.date} • Venue: {evt.venue}</p>
                   <button
                     onClick={() => handleDeleteEvent(evt.id)}
-                    className="bg-red-100 hover:bg-red-600 text-red-700 hover:text-white font-bold px-3 py-1 rounded text-xs transition-colors flex items-center gap-1 cursor-pointer"
+                    className="text-red-600 hover:text-red-800 font-bold text-[11px] pt-1 block cursor-pointer"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Delete Event</span>
+                    Delete Event
                   </button>
                 </div>
               </div>
@@ -588,45 +729,37 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       )}
 
-      {/* TAB 4: NEWS & MEDIA MANAGER */}
+      {/* TAB 4: NEWS & MEDIA */}
       {activeAdminTab === 'NEWS' && (
         <div className="bg-white rounded-2xl p-6 shadow-xl border border-slate-200 space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+          <div className="flex items-center justify-between border-b pb-4">
             <div>
-              <h3 className="text-lg font-extrabold text-slate-900">News & Press Release Publishing Desk</h3>
-              <p className="text-xs text-slate-500">Publish official statements, district announcements, and media releases.</p>
+              <h3 className="text-lg font-extrabold text-slate-900">News & Press Releases</h3>
+              <p className="text-xs text-slate-500">Publish official announcements and circulars.</p>
             </div>
             <button
               onClick={() => setIsAddNewsOpen(true)}
-              className="bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-extrabold text-xs px-4 py-2 rounded-lg shadow flex items-center gap-1.5 cursor-pointer"
+              className="bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-extrabold px-4 py-2 rounded-xl text-xs flex items-center gap-2 cursor-pointer shadow"
             >
-              <Plus className="w-4 h-4" />
-              <span>Publish News Item</span>
+              <Plus className="w-4 h-4" /> Publish Press Release
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {newsList.map((n) => (
-              <div key={n.id} className="bg-slate-50 rounded-xl border border-slate-300 p-4 flex flex-col justify-between space-y-3">
-                <div className="flex gap-3">
-                  <img src={n.imageUrl} alt="" className="w-24 h-24 object-cover rounded-lg shrink-0 border" />
-                  <div>
-                    <span className="bg-amber-600 text-white font-bold text-[10px] px-2 py-0.5 rounded uppercase">
-                      {n.category} • {n.date}
-                    </span>
-                    <h4 className="font-extrabold text-base text-slate-900 mt-1">{n.titleTamil}</h4>
-                    <p className="text-xs text-slate-600 font-semibold">{n.title}</p>
-                    <p className="text-xs text-slate-500 mt-1 line-clamp-2">{n.summary}</p>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-slate-200 flex justify-end">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {newsList.map((news) => (
+              <div key={news.id} className="border border-slate-200 rounded-xl p-4 flex gap-4 bg-slate-50">
+                <img src={news.imageUrl} alt="" className="w-24 h-24 rounded-lg object-cover shrink-0" />
+                <div className="flex-1 space-y-1 text-xs">
+                  <span className="bg-yellow-400 text-slate-950 font-bold px-2 py-0.5 rounded text-[10px]">
+                    {news.category}
+                  </span>
+                  <h4 className="font-extrabold text-slate-900 text-sm mt-1">{news.titleTamil}</h4>
+                  <p className="text-slate-600 line-clamp-2">{news.summary}</p>
                   <button
-                    onClick={() => handleDeleteNewsItem(n.id)}
-                    className="bg-red-100 hover:bg-red-600 text-red-700 hover:text-white font-bold px-3 py-1 rounded text-xs transition-colors flex items-center gap-1 cursor-pointer"
+                    onClick={() => handleDeleteNewsItem(news.id)}
+                    className="text-red-600 hover:text-red-800 font-bold text-[11px] pt-1 block cursor-pointer"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Delete News</span>
+                    Delete Announcement
                   </button>
                 </div>
               </div>
@@ -638,139 +771,87 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* TAB 5: CERTIFICATES MANAGER */}
       {activeAdminTab === 'CERTIFICATES' && (
         <div className="bg-white rounded-2xl p-6 shadow-xl border border-slate-200 space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+          <div className="flex items-center justify-between border-b pb-4">
             <div>
-              <h3 className="text-lg font-extrabold text-slate-900">Certificate Generation & Issuance</h3>
-              <p className="text-xs text-slate-500">Issue official membership certificates, volunteer awards, and appreciation cards.</p>
+              <h3 className="text-lg font-extrabold text-slate-900">Certificates & Awards</h3>
+              <p className="text-xs text-slate-500">Issue official certificates with QR code verification.</p>
             </div>
             <button
               onClick={() => setIsAddCertOpen(true)}
-              className="bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-extrabold text-xs px-4 py-2 rounded-lg shadow flex items-center gap-1.5 cursor-pointer"
+              className="bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-extrabold px-4 py-2 rounded-xl text-xs flex items-center gap-2 cursor-pointer shadow"
             >
-              <Plus className="w-4 h-4" />
-              <span>Issue New Certificate</span>
+              <Plus className="w-4 h-4" /> Issue Certificate
             </button>
           </div>
 
-          <div className="overflow-x-auto border border-slate-200 rounded-xl">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-[#181B20] text-white uppercase text-[10px]">
-                <tr>
-                  <th className="p-3">Certificate No</th>
-                  <th className="p-3">Member Name</th>
-                  <th className="p-3">Type</th>
-                  <th className="p-3">Issue Date</th>
-                  <th className="p-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {certList.map((c) => (
-                  <tr key={c.id} className="hover:bg-slate-50">
-                    <td className="p-3 font-mono font-bold text-amber-700">{c.certificateNumber}</td>
-                    <td className="p-3 font-bold text-slate-900">{c.memberName}</td>
-                    <td className="p-3 font-semibold text-slate-700">{c.type}</td>
-                    <td className="p-3">{c.issueDate}</td>
-                    <td className="p-3 text-right">
-                      <button
-                        onClick={() => handleDeleteCertItem(c.id)}
-                        className="bg-red-100 hover:bg-red-600 text-red-700 hover:text-white font-bold p-1.5 rounded transition-colors cursor-pointer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            {certList.map((cert) => (
+              <div key={cert.id} className="border border-slate-200 rounded-xl p-4 bg-slate-50 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono font-extrabold text-amber-700">{cert.certificateNumber}</span>
+                  <span className="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[10px]">
+                    {cert.type}
+                  </span>
+                </div>
+                <h4 className="font-extrabold text-slate-900 text-sm">{cert.memberName}</h4>
+                <p className="text-slate-600">{cert.title}</p>
+                <p className="text-slate-500 text-[11px]">Issued by: {cert.issuedBy} • Date: {cert.issueDate}</p>
+                <button
+                  onClick={() => handleDeleteCertItem(cert.id)}
+                  className="text-red-600 hover:text-red-800 font-bold text-[11px] pt-1 block cursor-pointer"
+                >
+                  Delete Certificate
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* TAB 6: DONATIONS LEDGER */}
+      {/* TAB 6: DONATION LEDGER */}
       {activeAdminTab === 'DONATIONS' && (
         <div className="bg-white rounded-2xl p-6 shadow-xl border border-slate-200 space-y-6">
-          <div className="border-b border-slate-200 pb-4">
-            <h3 className="text-lg font-extrabold text-slate-900">State Donation Ledger & Receipts</h3>
+          <div className="flex items-center justify-between border-b pb-4">
+            <div>
+              <h3 className="text-lg font-extrabold text-slate-900">Donation & Receipt Ledger</h3>
+              <p className="text-xs text-slate-500">Track all public donations and issued receipts.</p>
+            </div>
           </div>
 
           <div className="overflow-x-auto border border-slate-200 rounded-xl">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#181B20] text-white uppercase text-[10px]">
+              <thead className="bg-[#181B20] text-gray-300 uppercase text-[10px] font-extrabold">
                 <tr>
-                  <th className="p-3">Receipt No</th>
+                  <th className="p-3">Receipt #</th>
                   <th className="p-3">Donor Name</th>
-                  <th className="p-3">Contact</th>
+                  <th className="p-3">Mobile</th>
                   <th className="p-3">Amount</th>
                   <th className="p-3">Purpose</th>
                   <th className="p-3">Date</th>
-                  <th className="p-3 text-right">Actions</th>
+                  <th className="p-3 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-slate-200 text-slate-800 font-semibold">
                 {donationsList.map((d) => (
-                  <tr key={d.id} className="hover:bg-slate-50">
-                    <td className="p-3 font-mono font-bold text-amber-700">{d.receiptNumber}</td>
-                    <td className="p-3 font-bold text-slate-900">{d.donorName}</td>
-                    <td className="p-3">+91 {d.mobile} • {d.email}</td>
-                    <td className="p-3 font-black text-rose-600">₹{d.amount.toLocaleString()}</td>
+                  <tr key={d.id} className="hover:bg-amber-50/50">
+                    <td className="p-3 font-mono font-extrabold text-amber-700">{d.receiptNumber}</td>
+                    <td className="p-3 font-extrabold text-slate-900">{d.donorName}</td>
+                    <td className="p-3">+91 {d.mobile}</td>
+                    <td className="p-3 font-extrabold text-emerald-700">₹{d.amount}</td>
                     <td className="p-3 text-slate-600">{d.purpose}</td>
-                    <td className="p-3">{d.date}</td>
+                    <td className="p-3 text-slate-500">{d.date}</td>
                     <td className="p-3 text-right">
                       <button
                         onClick={() => handleDeleteDonationItem(d.id)}
-                        className="bg-red-100 hover:bg-red-600 text-red-700 hover:text-white font-bold p-1.5 rounded transition-colors cursor-pointer"
+                        className="text-red-600 hover:text-red-800 font-bold p-1 hover:bg-red-50 rounded"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 7: REPORTS */}
-      {activeAdminTab === 'REPORTS' && (
-        <div className="bg-white rounded-2xl p-6 shadow-xl border border-slate-200 space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-200 pb-4">
-            <div>
-              <h3 className="text-lg font-extrabold text-slate-900">District & Pasarai Analytics Reports</h3>
-              <p className="text-xs text-slate-500">Summary reports breakdown across 38 TN Districts and 23 Wings.</p>
-            </div>
-            <button
-              onClick={handleExportCSV}
-              className="bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1.5 cursor-pointer"
-            >
-              <Download className="w-4 h-4" /> Export Complete CSV Report
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
-            <div className="border rounded-xl p-4 bg-slate-50">
-              <h4 className="font-extrabold text-slate-900 mb-3">District-wise Membership Share</h4>
-              <div className="space-y-2">
-                {TN_DISTRICTS.slice(0, 8).map(d => (
-                  <div key={d.id} className="flex items-center justify-between">
-                    <span className="font-semibold text-slate-800">{d.nameTamil} ({d.name})</span>
-                    <span className="font-bold text-slate-900">{d.totalMembers} members</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="border rounded-xl p-4 bg-slate-50">
-              <h4 className="font-extrabold text-slate-900 mb-3">Pasarai Wings Membership Distribution</h4>
-              <div className="space-y-2">
-                {PASARAI_WINGS.slice(0, 8).map(p => (
-                  <div key={p.id} className="flex items-center justify-between">
-                    <span className="font-semibold text-slate-800">{p.nameTamil}</span>
-                    <span className="font-bold text-amber-700">{p.memberCount} members</span>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
       )}
@@ -782,7 +863,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <button onClick={() => setIsAddEventOpen(false)} className="absolute right-4 top-4 text-slate-400 hover:text-slate-700">✕</button>
             <h3 className="text-lg font-extrabold mb-4 border-b pb-2 flex items-center gap-2">
               <Calendar className="w-5 h-5 text-amber-600" />
-              <span>Create New Sangam Event</span>
+              <span>Add Event Listing</span>
             </h3>
 
             <form onSubmit={handleCreateEvent} className="space-y-4 text-xs">
@@ -793,7 +874,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   required
                   value={newEvent.title}
                   onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                  placeholder="e.g. TN Youth Tamil Literature Meet 2026"
+                  placeholder="e.g. State Level Youth Tamil Meet 2026"
                   className="w-full p-2.5 bg-slate-50 border rounded-lg font-semibold"
                 />
               </div>
@@ -805,7 +886,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   required
                   value={newEvent.titleTamil}
                   onChange={(e) => setNewEvent({ ...newEvent, titleTamil: e.target.value })}
-                  placeholder="எ.கா. மாநில இளைஞர் இலக்கிய சங்கமம் 2026"
+                  placeholder="எ.கா. மாநில இளைஞர் தமிழ் மாநாடு 2026"
                   className="w-full p-2.5 bg-slate-50 border rounded-lg font-semibold"
                 />
               </div>
@@ -825,6 +906,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div>
                   <label className="block font-bold mb-1">District *</label>
                   <select
+                    disabled={isDistrictAdmin}
                     value={newEvent.district}
                     onChange={(e) => setNewEvent({ ...newEvent, district: e.target.value })}
                     className="w-full p-2.5 bg-slate-50 border rounded-lg font-semibold"
@@ -854,7 +936,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   required
                   value={newEvent.description}
                   onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                  placeholder="State symposium details and registration instructions..."
+                  placeholder="Event details..."
                   className="w-full p-2.5 bg-slate-50 border rounded-lg font-semibold"
                 />
               </div>
@@ -888,7 +970,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   required
                   value={newNews.title}
                   onChange={(e) => setNewNews({ ...newNews, title: e.target.value })}
-                  placeholder="e.g. State Level Tamil Sangam Convention Announced"
+                  placeholder="e.g. State Level Tamil Sangam Convention"
                   className="w-full p-2.5 bg-slate-50 border rounded-lg font-semibold"
                 />
               </div>
@@ -900,19 +982,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   required
                   value={newNews.titleTamil}
                   onChange={(e) => setNewNews({ ...newNews, titleTamil: e.target.value })}
-                  placeholder="எ.கா. மாநில அளவிலான தமிழ் சங்க மாநாடு அறிவிப்பு"
+                  placeholder="எ.கா. மாநில அளவிலான தமிழ் சங்க மாநாடு"
                   className="w-full p-2.5 bg-slate-50 border rounded-lg font-semibold"
                 />
               </div>
 
               <div>
-                <label className="block font-bold mb-1">Summary (Tamil) *</label>
+                <label className="block font-bold mb-1">Summary *</label>
                 <textarea
                   rows={2}
                   required
                   value={newNews.summary}
                   onChange={(e) => setNewNews({ ...newNews, summary: e.target.value })}
-                  placeholder="சுருக்கம்..."
+                  placeholder="Summary..."
                   className="w-full p-2.5 bg-slate-50 border rounded-lg font-semibold"
                 />
               </div>
@@ -924,7 +1006,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   required
                   value={newNews.content}
                   onChange={(e) => setNewNews({ ...newNews, content: e.target.value })}
-                  placeholder="Full text..."
+                  placeholder="Full details..."
                   className="w-full p-2.5 bg-slate-50 border rounded-lg font-semibold"
                 />
               </div>
@@ -989,7 +1071,78 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       )}
 
-      {/* INSPECT MODAL (Secure Aadhaar View & Approve/Reject/Delete Workflows) */}
+      {/* CREATE DISTRICT ADMIN MODAL (SUPER ADMIN ONLY) */}
+      {isAddAdminOpen && isSuperAdmin && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 relative my-8 text-slate-900">
+            <button onClick={() => setIsAddAdminOpen(false)} className="absolute right-4 top-4 text-slate-400 hover:text-slate-700">✕</button>
+            <h3 className="text-xl font-extrabold mb-4 border-b pb-2 flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-amber-600" />
+              <span>Create New District Admin / மாவட்ட நிர்வாகி உருவாக்கல்</span>
+            </h3>
+
+            <form onSubmit={handleCreateAdmin} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold mb-1">Admin Full Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={newAdmin.name}
+                  onChange={(e) => setNewAdmin({ ...newAdmin, name: e.target.value })}
+                  placeholder="e.g. Madurai District Admin Lead"
+                  className="w-full p-2.5 bg-slate-50 border rounded-lg font-semibold"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold mb-1">Login Username *</label>
+                <input
+                  type="text"
+                  required
+                  value={newAdmin.username}
+                  onChange={(e) => setNewAdmin({ ...newAdmin, username: e.target.value })}
+                  placeholder="e.g. maduraiadmin"
+                  className="w-full p-2.5 bg-slate-50 border rounded-lg font-semibold font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold mb-1">Password *</label>
+                <input
+                  type="password"
+                  required
+                  value={newAdmin.password}
+                  onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })}
+                  placeholder="Password..."
+                  className="w-full p-2.5 bg-slate-50 border rounded-lg font-semibold"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold mb-1">Assign District / மாவட்டம் *</label>
+                <select
+                  value={newAdmin.district}
+                  onChange={(e) => setNewAdmin({ ...newAdmin, district: e.target.value })}
+                  className="w-full p-2.5 bg-slate-50 border rounded-lg font-semibold"
+                >
+                  {TN_DISTRICTS.map(d => (
+                    <option key={d.id} value={d.name}>{d.nameTamil} ({d.name})</option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-extrabold py-3 rounded-xl uppercase tracking-wider text-xs shadow cursor-pointer mt-4"
+              >
+                CREATE DISTRICT ADMIN ACCOUNT
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* INSPECT MODAL (Secure Aadhaar Image View & Approval Workflow) */}
       {inspectMember && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm overflow-y-auto">
           <div className="bg-white rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 my-8 relative text-slate-900">
@@ -1004,33 +1157,65 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="space-y-4 text-xs">
               
               <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <img src={inspectMember.photoUrl} alt="" className="w-20 h-24 rounded-lg object-cover border-2 border-yellow-400" />
+                <img src={inspectMember.photoUrl} alt="" className="w-20 h-24 rounded-lg object-cover border-2 border-yellow-400 shrink-0" />
                 <div>
                   <h4 className="font-extrabold text-lg text-slate-900">{inspectMember.fullName}</h4>
                   <p className="font-semibold text-amber-700">{inspectMember.nameTamil}</p>
                   <p className="text-slate-600 mt-1">District: {inspectMember.district} • Wing: {inspectMember.pasaraiName}</p>
-                  <p className="text-slate-600">Mobile: +91 {inspectMember.mobile} • WhatsApp: +91 {inspectMember.whatsapp}</p>
+                  <p className="text-slate-600">Mobile: +91 {inspectMember.mobile} • Email: {inspectMember.email}</p>
                 </div>
               </div>
 
-              {/* Secure Aadhaar Section */}
-              <div className="bg-amber-50 border border-amber-300 p-4 rounded-xl space-y-2">
-                <span className="font-extrabold text-amber-900 text-xs flex items-center gap-1.5">
-                  <Shield className="w-4 h-4 text-amber-600" /> Secure Admin Aadhaar Document Verification:
-                </span>
-                <p className="font-mono font-bold text-sm text-slate-900">Aadhaar No: {inspectMember.aadhaarNumber}</p>
+              {/* Secure Aadhaar Card Document Preview Section */}
+              <div className="bg-amber-50/90 border-2 border-yellow-400 p-4 rounded-xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold text-amber-900 text-xs flex items-center gap-1.5">
+                    <Shield className="w-4 h-4 text-amber-600" /> Secure Admin Aadhaar Document Verification:
+                  </span>
+                  <span className="font-mono font-bold text-xs bg-amber-200 text-slate-900 px-2.5 py-0.5 rounded">
+                    {inspectMember.aadhaarNumber}
+                  </span>
+                </div>
+
+                {inspectMember.aadhaarDocUrl ? (
+                  <div className="space-y-2">
+                    <div className="w-full max-h-60 bg-slate-900 rounded-lg overflow-hidden border border-amber-400 p-2 flex items-center justify-center shadow-md">
+                      <img
+                        src={inspectMember.aadhaarDocUrl}
+                        alt="Uploaded Aadhaar Document"
+                        className="max-h-56 object-contain rounded cursor-pointer hover:scale-105 transition-transform"
+                        onClick={() => setZoomedAadhaarUrl(inspectMember.aadhaarDocUrl)}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setZoomedAadhaarUrl(inspectMember.aadhaarDocUrl)}
+                      className="text-xs font-bold text-amber-900 hover:text-amber-950 flex items-center gap-1 mx-auto underline cursor-pointer"
+                    >
+                      <Eye className="w-4 h-4" /> Click to View Full-Scale Aadhaar Image
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500 italic">No Aadhaar document uploaded.</p>
+                )}
               </div>
 
               {/* Approval & Delete Actions */}
               <div className="pt-4 border-t border-slate-200 space-y-3">
                 {inspectMember.status === 'PENDING' && (
-                  <div className="flex items-center justify-between gap-4">
-                    <button
-                      onClick={() => handleApprove(inspectMember.id)}
-                      className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl uppercase tracking-wider cursor-pointer"
-                    >
-                      APPROVE APPLICATION & ASSIGN MEMBERSHIP ID
-                    </button>
+                  <div className="flex flex-col gap-2">
+                    {isDistrictAdmin ? (
+                      <button
+                        onClick={() => handleApprove(inspectMember.id)}
+                        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl uppercase tracking-wider cursor-pointer shadow-md"
+                      >
+                        APPROVE APPLICATION & ASSIGN MEMBERSHIP ID
+                      </button>
+                    ) : (
+                      <div className="bg-amber-100/80 border border-yellow-400 p-3 rounded-xl text-amber-900 text-xs font-bold text-center">
+                        🔒 Super Admin View: Only the assigned District Admin of {inspectMember.district} District can approve this application and generate Membership ID.
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1052,6 +1237,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
 
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FULL SCALE AADHAAR ZOOM MODAL */}
+      {zoomedAadhaarUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md">
+          <div className="relative max-w-4xl w-full bg-slate-900 p-4 rounded-2xl border border-yellow-400">
+            <button
+              onClick={() => setZoomedAadhaarUrl(null)}
+              className="absolute right-4 top-4 text-white bg-slate-800 hover:bg-slate-700 p-2 rounded-lg cursor-pointer"
+            >
+              <XCircle className="w-6 h-6 text-yellow-400" />
+            </button>
+            <h4 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+              <Shield className="w-4 h-4 text-yellow-400" />
+              <span>Full Scale Member Aadhaar Document Image</span>
+            </h4>
+            <div className="max-h-[80vh] overflow-auto flex items-center justify-center bg-slate-950 p-2 rounded-xl">
+              <img src={zoomedAadhaarUrl} alt="Aadhaar Full Document" className="max-w-full h-auto object-contain rounded" />
             </div>
           </div>
         </div>

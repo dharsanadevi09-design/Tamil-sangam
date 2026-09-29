@@ -1,4 +1,4 @@
-import type { MemberApplication, DonationRecord, EventItem, CertificateItem, NewsItem, SystemNotification, MembershipCategory } from '../types';
+import type { MemberApplication, DonationRecord, EventItem, CertificateItem, NewsItem, SystemNotification, MembershipCategory, AdminAccount } from '../types';
 import { INITIAL_MEMBERS, INITIAL_DONATIONS, INITIAL_EVENTS, INITIAL_NEWS, INITIAL_CERTIFICATES, MEMBERSHIP_CATEGORIES } from '../data/mockData';
 
 const KEYS = {
@@ -10,7 +10,58 @@ const KEYS = {
   CATEGORIES: 'ts_categories_v1',
   ID_FORMAT: 'ts_id_format_v1',
   NOTIFICATIONS: 'ts_notifications_v1',
+  ADMINS: 'ts_admins_v1',
+  CURRENT_MEMBER_SESSION: 'ts_logged_in_member_v1',
+  CURRENT_ADMIN_SESSION: 'ts_logged_in_admin_v1',
 };
+
+export const INITIAL_ADMINS: AdminAccount[] = [
+  {
+    id: 'ADMIN-01',
+    name: 'State HQ Super Admin',
+    username: 'superadmin',
+    password: 'p@$$word',
+    role: 'SUPER_ADMIN',
+    district: 'ALL',
+    createdAt: '2026-01-01'
+  },
+  {
+    id: 'ADMIN-02',
+    name: 'Madurai District Admin',
+    username: 'maduraiadmin',
+    password: 'p@$$word',
+    role: 'DISTRICT_ADMIN',
+    district: 'Madurai',
+    createdAt: '2026-01-05'
+  },
+  {
+    id: 'ADMIN-03',
+    name: 'Chennai District Admin',
+    username: 'chennaiadmin',
+    password: 'p@$$word',
+    role: 'DISTRICT_ADMIN',
+    district: 'Chennai',
+    createdAt: '2026-01-05'
+  },
+  {
+    id: 'ADMIN-04',
+    name: 'Coimbatore District Admin',
+    username: 'coimbatoreadmin',
+    password: 'p@$$word',
+    role: 'DISTRICT_ADMIN',
+    district: 'Coimbatore',
+    createdAt: '2026-01-05'
+  },
+  {
+    id: 'ADMIN-05',
+    name: 'Tiruchirappalli District Admin',
+    username: 'trichyadmin',
+    password: 'p@$$word',
+    role: 'DISTRICT_ADMIN',
+    district: 'Tiruchirappalli',
+    createdAt: '2026-01-05'
+  }
+];
 
 // Initialize LocalStorage with mock data if missing
 export const initStorage = () => {
@@ -35,6 +86,73 @@ export const initStorage = () => {
   if (!localStorage.getItem(KEYS.ID_FORMAT)) {
     localStorage.setItem(KEYS.ID_FORMAT, 'TS-TN-2026-{SEQ}');
   }
+  if (!localStorage.getItem(KEYS.ADMINS)) {
+    localStorage.setItem(KEYS.ADMINS, JSON.stringify(INITIAL_ADMINS));
+  }
+};
+
+// --- USER MEMBER SESSION PERSISTENCE ---
+export const getSavedLoggedInMember = (): MemberApplication | null => {
+  try {
+    const data = localStorage.getItem(KEYS.CURRENT_MEMBER_SESSION);
+    return data ? JSON.parse(data) : null;
+  } catch (err) {
+    return null;
+  }
+};
+
+export const saveLoggedInMember = (member: MemberApplication | null) => {
+  if (member) {
+    localStorage.setItem(KEYS.CURRENT_MEMBER_SESSION, JSON.stringify(member));
+  } else {
+    localStorage.removeItem(KEYS.CURRENT_MEMBER_SESSION);
+  }
+};
+
+// --- ADMIN SESSION PERSISTENCE ---
+export const getSavedLoggedInAdmin = (): AdminAccount | null => {
+  try {
+    const data = localStorage.getItem(KEYS.CURRENT_ADMIN_SESSION);
+    return data ? JSON.parse(data) : null;
+  } catch (err) {
+    return null;
+  }
+};
+
+export const saveLoggedInAdmin = (admin: AdminAccount | null) => {
+  if (admin) {
+    localStorage.setItem(KEYS.CURRENT_ADMIN_SESSION, JSON.stringify(admin));
+  } else {
+    localStorage.removeItem(KEYS.CURRENT_ADMIN_SESSION);
+  }
+};
+
+// --- ADMIN ACCOUNTS MANAGEMENT ---
+export const getAdminAccounts = (): AdminAccount[] => {
+  initStorage();
+  const data = localStorage.getItem(KEYS.ADMINS);
+  return data ? JSON.parse(data) : INITIAL_ADMINS;
+};
+
+export const saveAdminAccounts = (admins: AdminAccount[]) => {
+  localStorage.setItem(KEYS.ADMINS, JSON.stringify(admins));
+};
+
+export const addAdminAccount = (accountData: Omit<AdminAccount, 'id' | 'createdAt'>): AdminAccount => {
+  const admins = getAdminAccounts();
+  const newAdmin: AdminAccount = {
+    ...accountData,
+    id: `ADMIN-${Date.now().toString().slice(-4)}`,
+    createdAt: new Date().toISOString().split('T')[0]
+  };
+  admins.push(newAdmin);
+  saveAdminAccounts(admins);
+  return newAdmin;
+};
+
+export const deleteAdminAccount = (id: string): void => {
+  const admins = getAdminAccounts().filter(a => a.id !== id);
+  saveAdminAccounts(admins);
 };
 
 export const getMembers = (): MemberApplication[] => {
@@ -158,7 +276,7 @@ export const approveMemberApplication = (appId: string): MemberApplication | nul
   expDate.setMonth(expDate.getMonth() + valMonths);
   const validityStr = expDate.toISOString().split('T')[0];
 
-  members[index] = {
+  const approvedMember: MemberApplication = {
     ...members[index],
     status: 'APPROVED',
     membershipNumber: memNum,
@@ -167,16 +285,23 @@ export const approveMemberApplication = (appId: string): MemberApplication | nul
     qrCodeData: `VERIFIED|${memNum}|${members[index].fullName}|${members[index].district}|${members[index].categoryName}`
   };
 
+  members[index] = approvedMember;
   saveMembers(members);
+
+  // Sync active user session if approved member is currently logged in
+  const currentSessionMember = getSavedLoggedInMember();
+  if (currentSessionMember && (currentSessionMember.id === approvedMember.id || currentSessionMember.mobile === approvedMember.mobile)) {
+    saveLoggedInMember(approvedMember);
+  }
 
   addNotification({
     title: 'Membership Approved!',
-    message: `Congratulations ${members[index].fullName}! Your Membership ID is ${memNum}. Your Digital ID card is ready.`,
+    message: `Congratulations ${approvedMember.fullName}! Your Membership ID is ${memNum}. Your Digital ID card is ready.`,
     type: 'MEMBERSHIP',
-    recipientMobile: members[index].mobile
+    recipientMobile: approvedMember.mobile
   });
 
-  return members[index];
+  return approvedMember;
 };
 
 export const rejectMemberApplication = (appId: string, reason: string): MemberApplication | null => {

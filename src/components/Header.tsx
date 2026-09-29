@@ -136,14 +136,24 @@ export const Header: React.FC<HeaderProps> = ({
               <span>{currentLang === 'ta' ? 'நன்கொடை' : 'Donate'}</span>
             </button>
 
-            {/* Join Sangam Main CTA */}
-            <button
-              onClick={onOpenJoinModal}
-              className="flex items-center gap-1.5 text-xs font-extrabold text-[#181B20] bg-yellow-400 hover:bg-yellow-300 px-4 py-2 rounded-lg shadow-lg hover:shadow-yellow-400/20 transition-all transform hover:-translate-y-0.5 active:scale-95 uppercase tracking-wide cursor-pointer"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>{currentLang === 'ta' ? 'உறுப்பினராக இணை' : 'JOIN TAMIL SANGAM'}</span>
-            </button>
+            {/* Join Sangam Main CTA or Logged In My ID Card Button */}
+            {loggedInMemberName ? (
+              <button
+                onClick={() => setActiveTab('member-dashboard')}
+                className="flex items-center gap-1.5 text-xs font-extrabold text-[#181B20] bg-yellow-400 hover:bg-yellow-300 px-4 py-2 rounded-lg shadow-lg hover:shadow-yellow-400/20 transition-all transform hover:-translate-y-0.5 active:scale-95 uppercase tracking-wide cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>{currentLang === 'ta' ? 'எனது அடையாள அட்டை' : 'MY ID CARD'}</span>
+              </button>
+            ) : (
+              <button
+                onClick={onOpenJoinModal}
+                className="flex items-center gap-1.5 text-xs font-extrabold text-[#181B20] bg-yellow-400 hover:bg-yellow-300 px-4 py-2 rounded-lg shadow-lg hover:shadow-yellow-400/20 transition-all transform hover:-translate-y-0.5 active:scale-95 uppercase tracking-wide cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>{currentLang === 'ta' ? 'உறுப்பினராக இணை' : 'JOIN TAMIL SANGAM'}</span>
+              </button>
+            )}
 
             {/* Light / Dark Theme Toggle Button */}
             <button

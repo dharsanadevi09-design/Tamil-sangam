@@ -7,12 +7,16 @@ interface PasaraiGridProps {
   onSelectPasaraiToJoin: (pasaraiId: string) => void;
   currentLang: 'en' | 'ta';
   selectedPasaraiId?: string;
+  isLoggedIn?: boolean;
+  onGoToDashboard?: () => void;
 }
 
 export const PasaraiGrid: React.FC<PasaraiGridProps> = ({
   onSelectPasaraiToJoin,
   currentLang,
-  selectedPasaraiId
+  selectedPasaraiId,
+  isLoggedIn,
+  onGoToDashboard
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedWing, setSelectedWing] = useState<Pasarai | null>(
@@ -98,13 +102,23 @@ export const PasaraiGrid: React.FC<PasaraiGridProps> = ({
                   <p className="text-2xl font-extrabold text-yellow-400">{selectedWing.memberCount.toLocaleString()}</p>
                 </div>
                 <div>
-                  <button
-                    onClick={() => onSelectPasaraiToJoin(selectedWing.id)}
-                    className="w-full lg:w-auto inline-flex items-center justify-center gap-2 bg-yellow-400 hover:bg-yellow-300 text-[#181B20] font-extrabold px-6 py-3 rounded-xl shadow-lg transition-all"
-                  >
-                    <span>{currentLang === 'ta' ? 'இந்த பாசறையில் இணைய' : 'JOIN THIS PASARAI'}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
+                  {isLoggedIn ? (
+                    <button
+                      onClick={onGoToDashboard}
+                      className="w-full lg:w-auto inline-flex items-center justify-center gap-2 bg-yellow-400 hover:bg-yellow-300 text-[#181B20] font-extrabold px-6 py-3 rounded-xl shadow-lg transition-all"
+                    >
+                      <span>{currentLang === 'ta' ? 'எனது பாசறை பலகை' : 'MY WING & DASHBOARD'}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => onSelectPasaraiToJoin(selectedWing.id)}
+                      className="w-full lg:w-auto inline-flex items-center justify-center gap-2 bg-yellow-400 hover:bg-yellow-300 text-[#181B20] font-extrabold px-6 py-3 rounded-xl shadow-lg transition-all"
+                    >
+                      <span>{currentLang === 'ta' ? 'இந்த பாசறையில் இணைய' : 'JOIN THIS PASARAI'}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -158,11 +172,18 @@ export const PasaraiGrid: React.FC<PasaraiGridProps> = ({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    onSelectPasaraiToJoin(wing.id);
+                    if (isLoggedIn && onGoToDashboard) {
+                      onGoToDashboard();
+                    } else {
+                      onSelectPasaraiToJoin(wing.id);
+                    }
                   }}
                   className="w-full bg-slate-900 hover:bg-yellow-400 text-white hover:text-slate-900 text-xs font-bold py-2.5 transition-colors text-center"
                 >
-                  {currentLang === 'ta' ? 'இணைந்திடுக' : 'SELECT & JOIN'}
+                  {isLoggedIn
+                    ? (currentLang === 'ta' ? 'எனது பலகை' : 'MY DASHBOARD')
+                    : (currentLang === 'ta' ? 'இணைந்திடுக' : 'SELECT & JOIN')
+                  }
                 </button>
               </div>
             );

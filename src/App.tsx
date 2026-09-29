@@ -18,8 +18,15 @@ import { MemberDashboard } from './components/MemberDashboard/MemberDashboard';
 import { AdminDashboard } from './components/AdminDashboard/AdminDashboard';
 import { AdminLoginModal } from './components/AdminLoginModal';
 
-import { addMemberApplication, getEvents } from './services/storageService';
-import type { MemberApplication, DonationRecord } from './types';
+import { 
+  addMemberApplication, 
+  getEvents, 
+  getSavedLoggedInMember, 
+  saveLoggedInMember, 
+  getSavedLoggedInAdmin, 
+  saveLoggedInAdmin 
+} from './services/storageService';
+import type { MemberApplication, DonationRecord, AdminAccount } from './types';
 
 export function App() {
   const [currentLang, setCurrentLang] = useState<'en' | 'ta'>('en');
@@ -27,7 +34,18 @@ export function App() {
     const saved = localStorage.getItem('theme');
     return (saved === 'light' || saved === 'dark') ? saved : 'dark';
   });
-  const [activeTab, setActiveTab] = useState('home');
+
+  // User Session Persistence (once logged in or registered, stay logged in!)
+  const [loggedInMember, setLoggedInMember] = useState<MemberApplication | null>(() => getSavedLoggedInMember());
+
+  // Admin Session Persistence
+  const [currentAdmin, setCurrentAdmin] = useState<AdminAccount | null>(() => getSavedLoggedInAdmin());
+  const [isAdminPortalActive, setIsAdminPortalActive] = useState<boolean>(() => !!getSavedLoggedInAdmin());
+
+  const [activeTab, setActiveTab] = useState(() => {
+    if (getSavedLoggedInMember()) return 'member-dashboard';
+    return 'home';
+  });
 
   // Modals & Workflows
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
@@ -41,14 +59,8 @@ export function App() {
   const [isDonateModalOpen, setIsDonateModalOpen] = useState(false);
   const [currentDonationReceipt, setCurrentDonationReceipt] = useState<DonationRecord | null>(null);
 
-  // User Sessions & Member Login
-  const [loggedInMember, setLoggedInMember] = useState<MemberApplication | null>(null);
   const [isMemberLoginModalOpen, setIsMemberLoginModalOpen] = useState(false);
-
-  // Admin Access & Password Security (p@$$word)
-  const [isAdminPortalActive, setIsAdminPortalActive] = useState(false);
   const [isAdminPasswordModalOpen, setIsAdminPasswordModalOpen] = useState(false);
-
   const [selectedPasaraiId, setSelectedPasaraiId] = useState<string | undefined>(undefined);
 
   // Sync theme with HTML root document & body
@@ -65,13 +77,17 @@ export function App() {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  // Check URL path/hash for /admin & open site login prompt
+  // Check URL path/hash for /admin & open site login prompt if not logged in
   useEffect(() => {
     const checkAdminRoute = () => {
       const path = window.location.pathname.toLowerCase();
       const hash = window.location.hash.toLowerCase();
       if (path.includes('/admin') || hash.includes('admin')) {
-        setIsAdminPasswordModalOpen(true);
+        if (getSavedLoggedInAdmin()) {
+          setIsAdminPortalActive(true);
+        } else {
+          setIsAdminPasswordModalOpen(true);
+        }
       }
     };
 
@@ -101,7 +117,7 @@ export function App() {
     setIsPaymentModalOpen(true);
   };
 
-  // STEP 3: Payment Confirmed -> Save Application & Open Dashboard
+  // STEP 3: Payment Confirmed -> Save Application, Auto-Login & Persist Session
   const handleConfirmAndPay = (paymentDetails: { paymentMethod: string; transactionId: string }) => {
     if (!pendingFormData) return;
 
@@ -118,6 +134,8 @@ export function App() {
     setVerifiedMobileForRegistration(null);
     setPendingFormData(null);
 
+    // Save persistent user session
+    saveLoggedInMember(created);
     setLoggedInMember(created);
     setActiveTab('member-dashboard');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -128,9 +146,33 @@ export function App() {
     setIsVerifyModalOpen(true);
   };
 
-  const handleAdminAuthSuccess = () => {
+  const handleAdminAuthSuccess = (admin: AdminAccount) => {
+    saveLoggedInAdmin(admin);
+    setCurrentAdmin(admin);
     setIsAdminPasswordModalOpen(false);
     setIsAdminPortalActive(true);
+  };
+
+  const handleAdminLogout = () => {
+    saveLoggedInAdmin(null);
+    setCurrentAdmin(null);
+    setIsAdminPortalActive(false);
+  };
+
+  const handleLogoutMember = () => {
+    saveLoggedInMember(null);
+    setLoggedInMember(null);
+    setActiveTab('home');
+  };
+
+  const handleOpenJoinModal = (pasaraiId?: string) => {
+    if (loggedInMember) {
+      setActiveTab('member-dashboard');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      if (pasaraiId) setSelectedPasaraiId(pasaraiId);
+      setIsOtpModalOpen(true);
+    }
   };
 
   return (
@@ -140,7 +182,7 @@ export function App() {
       
       {/* Main Header */}
       <Header
-        onOpenJoinModal={() => setIsOtpModalOpen(true)}
+        onOpenJoinModal={() => handleOpenJoinModal()}
         onOpenDonateModal={() => setIsDonateModalOpen(true)}
         onOpenVerifyModal={() => { setVerifySearchId(undefined); setIsVerifyModalOpen(true); }}
         onOpenMemberLogin={() => setIsMemberLoginModalOpen(true)}
@@ -154,7 +196,7 @@ export function App() {
           setActiveTab(tab);
         }}
         loggedInMemberName={loggedInMember?.fullName}
-        onLogoutMember={() => setLoggedInMember(null)}
+        onLogoutMember={handleLogoutMember}
       />
 
       {/* Main Body Content Switcher */}
@@ -162,9 +204,10 @@ export function App() {
         
         {isAdminPortalActive ? (
           <AdminDashboard
-            onCloseAdmin={() => setIsAdminPortalActive(false)}
+            onCloseAdmin={handleAdminLogout}
             onVerifyQrCode={handleOpenVerifyWithId}
             currentLang={currentLang}
+            currentAdmin={currentAdmin}
           />
         ) : verifiedMobileForRegistration ? (
           /* Step 2: Unlocked Membership Registration Form after Mobile OTP */
@@ -179,7 +222,7 @@ export function App() {
           /* Logged In Member Dashboard */
           <MemberDashboard
             member={loggedInMember}
-            onLogout={() => setLoggedInMember(null)}
+            onLogout={handleLogoutMember}
             onVerifyQrCode={handleOpenVerifyWithId}
             currentLang={currentLang}
           />
@@ -191,19 +234,20 @@ export function App() {
             {activeTab === 'home' && (
               <>
                 <Hero
-                  onOpenJoinModal={() => setIsOtpModalOpen(true)}
+                  onOpenJoinModal={() => handleOpenJoinModal()}
                   onOpenDonateModal={() => setIsDonateModalOpen(true)}
                   onOpenVerifyModal={() => { setVerifySearchId(undefined); setIsVerifyModalOpen(true); }}
                   currentLang={currentLang}
+                  isLoggedIn={!!loggedInMember}
+                  onGoToDashboard={() => { setActiveTab('member-dashboard'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                 />
 
                 <PasaraiGrid
-                  onSelectPasaraiToJoin={(pasaraiId) => {
-                    setSelectedPasaraiId(pasaraiId);
-                    setIsOtpModalOpen(true);
-                  }}
+                  onSelectPasaraiToJoin={(pasaraiId) => handleOpenJoinModal(pasaraiId)}
                   currentLang={currentLang}
                   selectedPasaraiId={selectedPasaraiId}
+                  isLoggedIn={!!loggedInMember}
+                  onGoToDashboard={() => { setActiveTab('member-dashboard'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                 />
               </>
             )}
@@ -212,19 +256,20 @@ export function App() {
             {activeTab === 'about' && (
               <AboutVision
                 currentLang={currentLang}
-                onOpenJoinModal={() => setIsOtpModalOpen(true)}
+                onOpenJoinModal={() => handleOpenJoinModal()}
+                isLoggedIn={!!loggedInMember}
+                onGoToDashboard={() => { setActiveTab('member-dashboard'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
               />
             )}
 
             {/* 3. DEDICATED 23 WINGS (PASARAI) PAGE */}
             {activeTab === 'pasarai' && (
               <PasaraiGrid
-                onSelectPasaraiToJoin={(pasaraiId) => {
-                  setSelectedPasaraiId(pasaraiId);
-                  setIsOtpModalOpen(true);
-                }}
+                onSelectPasaraiToJoin={(pasaraiId) => handleOpenJoinModal(pasaraiId)}
                 currentLang={currentLang}
                 selectedPasaraiId={selectedPasaraiId}
+                isLoggedIn={!!loggedInMember}
+                onGoToDashboard={() => { setActiveTab('member-dashboard'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
               />
             )}
 
@@ -348,11 +393,12 @@ export function App() {
         </div>
       )}
 
-      {/* DEDICATED MEMBER LOGIN MODAL (Any Mobile Number -> Random OTP -> Verify -> Login) */}
+      {/* DEDICATED MEMBER LOGIN MODAL */}
       <MemberLoginModal
         isOpen={isMemberLoginModalOpen}
         onClose={() => setIsMemberLoginModalOpen(false)}
         onLoginSuccess={(member) => {
+          saveLoggedInMember(member);
           setLoggedInMember(member);
           setActiveTab('member-dashboard');
           window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -360,7 +406,7 @@ export function App() {
         currentLang={currentLang}
       />
 
-      {/* ADMIN PASSWORD VERIFICATION MODAL (Triggered by /admin) */}
+      {/* ADMIN PASSWORD VERIFICATION MODAL (Triggered by /admin or header link) */}
       <AdminLoginModal
         isOpen={isAdminPasswordModalOpen}
         onClose={() => setIsAdminPasswordModalOpen(false)}

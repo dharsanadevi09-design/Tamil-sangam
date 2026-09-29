@@ -83,6 +83,15 @@ export const ReviewAndPaymentModal: React.FC<ReviewAndPaymentModalProps> = ({
               <p><strong className="text-slate-900 dark:text-white">Aadhaar:</strong> {applicationData.aadhaarNumber}</p>
               <p><strong className="text-slate-900 dark:text-white">Email:</strong> {applicationData.email}</p>
             </div>
+
+            {applicationData.aadhaarDocUrl && (
+              <div className="mt-3 pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center gap-3">
+                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">Aadhaar Card Uploaded:</span>
+                <div className="w-16 h-12 rounded border border-amber-400 overflow-hidden shadow-sm">
+                  <img src={applicationData.aadhaarDocUrl} alt="Aadhaar" className="w-full h-full object-cover" />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Membership Fee Box */}

@@ -10,6 +10,16 @@ export type AdminRole =
   | 'EVENT_ADMIN' 
   | 'CONTENT_ADMIN';
 
+export interface AdminAccount {
+  id: string;
+  name: string;
+  username: string;
+  password: string;
+  role: AdminRole;
+  district: string; // 'ALL' for Super Admin or specific district name like 'Madurai'
+  createdAt: string;
+}
+
 export interface MembershipCategory {
   id: string;
   name: string;

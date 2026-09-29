@@ -155,6 +155,36 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({
                   <p><strong className="text-slate-700">Address:</strong> {member.doorNo}, {member.street}, {member.village}, {member.postOffice}, {member.taluk} - {member.pincode}</p>
                 </div>
               </div>
+
+              {/* Identity Verification & Aadhaar Card Image */}
+              <div className="bg-amber-50/80 border border-yellow-400 p-4 rounded-xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold text-amber-900 text-xs flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-amber-600" /> Identity Verification & Aadhaar Card:
+                  </span>
+                  <span className="font-mono font-bold text-xs bg-amber-200 text-slate-950 px-2.5 py-0.5 rounded">
+                    {member.aadhaarNumber}
+                  </span>
+                </div>
+
+                {member.aadhaarDocUrl ? (
+                  <div className="flex flex-col sm:flex-row items-center gap-4 pt-1">
+                    <div className="w-full sm:w-56 h-36 bg-slate-900 rounded-lg overflow-hidden border-2 border-yellow-400 shadow-md">
+                      <img src={member.aadhaarDocUrl} alt="Uploaded Aadhaar Card" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="text-xs text-slate-600 space-y-1">
+                      <p className="font-bold text-emerald-700 flex items-center gap-1">
+                        ✓ Uploaded Aadhaar Card Copy
+                      </p>
+                      <p className="text-[11px] text-slate-500">
+                        This document is encrypted and accessible only to authorized state/district administrators.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500 italic">No Aadhaar document uploaded.</p>
+                )}
+              </div>
             </div>
           )}
 

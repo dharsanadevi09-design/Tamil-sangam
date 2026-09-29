@@ -6,13 +6,17 @@ interface HeroProps {
   onOpenDonateModal: () => void;
   onOpenVerifyModal: () => void;
   currentLang: 'en' | 'ta';
+  isLoggedIn?: boolean;
+  onGoToDashboard?: () => void;
 }
 
 export const Hero: React.FC<HeroProps> = ({
   onOpenJoinModal,
   onOpenDonateModal,
   onOpenVerifyModal,
-  currentLang
+  currentLang,
+  isLoggedIn,
+  onGoToDashboard
 }) => {
   return (
     <div className="relative bg-slate-100 dark:bg-[#181B20] text-slate-900 dark:text-white overflow-hidden border-b border-slate-200 dark:border-gray-800 transition-colors duration-300">
@@ -60,14 +64,25 @@ export const Hero: React.FC<HeroProps> = ({
 
             {/* CTA Buttons */}
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
-              <button
-                onClick={onOpenJoinModal}
-                className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-300 text-[#181B20] text-sm font-extrabold px-6 py-3.5 rounded-xl shadow-xl hover:shadow-yellow-400/25 transition-all transform hover:-translate-y-0.5 active:scale-95 uppercase tracking-wide cursor-pointer"
-              >
-                <Sparkles className="w-5 h-5" />
-                <span>{currentLang === 'ta' ? 'உறுப்பினராக இணை' : 'JOIN TAMIL SANGAM'}</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+              {isLoggedIn ? (
+                <button
+                  onClick={onGoToDashboard}
+                  className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-300 text-[#181B20] text-sm font-extrabold px-6 py-3.5 rounded-xl shadow-xl hover:shadow-yellow-400/25 transition-all transform hover:-translate-y-0.5 active:scale-95 uppercase tracking-wide cursor-pointer"
+                >
+                  <Sparkles className="w-5 h-5" />
+                  <span>{currentLang === 'ta' ? 'எனது டிஜிட்டல் அடையாள அட்டை' : 'MY ID CARD & DASHBOARD'}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              ) : (
+                <button
+                  onClick={onOpenJoinModal}
+                  className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-300 text-[#181B20] text-sm font-extrabold px-6 py-3.5 rounded-xl shadow-xl hover:shadow-yellow-400/25 transition-all transform hover:-translate-y-0.5 active:scale-95 uppercase tracking-wide cursor-pointer"
+                >
+                  <Sparkles className="w-5 h-5" />
+                  <span>{currentLang === 'ta' ? 'உறுப்பினராக இணை' : 'JOIN TAMIL SANGAM'}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
 
               <button
                 onClick={onOpenDonateModal}
