@@ -6,6 +6,7 @@ import { PasaraiGrid } from './components/PasaraiGrid';
 import { AboutVision } from './components/AboutVision';
 import { NewsPage } from './components/NewsPage';
 import { ContactPage } from './components/ContactPage';
+import { SearchModal } from './components/SearchModal';
 
 import { OtpModal } from './components/MembershipFlow/OtpModal';
 import { MemberLoginModal } from './components/MembershipFlow/MemberLoginModal';
@@ -32,7 +33,7 @@ export function App() {
   const [currentLang, setCurrentLang] = useState<'en' | 'ta'>('en');
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem('theme');
-    return (saved === 'light' || saved === 'dark') ? saved : 'dark';
+    return (saved === 'light' || saved === 'dark') ? saved : 'light';
   });
 
   // User Session Persistence (once logged in or registered, stay logged in!)
@@ -52,6 +53,7 @@ export function App() {
   const [verifiedMobileForRegistration, setVerifiedMobileForRegistration] = useState<string | null>(null);
   const [pendingFormData, setPendingFormData] = useState<Partial<MemberApplication> | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
 
   // Verification & Donation Modals
   const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
@@ -177,7 +179,7 @@ export function App() {
 
   return (
     <div className={`min-h-screen flex flex-col font-sans transition-colors duration-300 ${
-      theme === 'dark' ? 'dark bg-slate-900 text-white' : 'bg-slate-50 text-slate-900'
+      theme === 'dark' ? 'dark bg-slate-900 text-white' : 'bg-[#FAF8F5] text-slate-900'
     }`}>
       
       {/* Main Header */}
@@ -186,6 +188,7 @@ export function App() {
         onOpenDonateModal={() => setIsDonateModalOpen(true)}
         onOpenVerifyModal={() => { setVerifySearchId(undefined); setIsVerifyModalOpen(true); }}
         onOpenMemberLogin={() => setIsMemberLoginModalOpen(true)}
+        onOpenSearchModal={() => setIsSearchModalOpen(true)}
         currentLang={currentLang}
         onToggleLang={handleToggleLang}
         theme={theme}
@@ -232,24 +235,15 @@ export function App() {
             
             {/* 1. HOME VIEW */}
             {activeTab === 'home' && (
-              <>
-                <Hero
-                  onOpenJoinModal={() => handleOpenJoinModal()}
-                  onOpenDonateModal={() => setIsDonateModalOpen(true)}
-                  onOpenVerifyModal={() => { setVerifySearchId(undefined); setIsVerifyModalOpen(true); }}
-                  currentLang={currentLang}
-                  isLoggedIn={!!loggedInMember}
-                  onGoToDashboard={() => { setActiveTab('member-dashboard'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                />
-
-                <PasaraiGrid
-                  onSelectPasaraiToJoin={(pasaraiId) => handleOpenJoinModal(pasaraiId)}
-                  currentLang={currentLang}
-                  selectedPasaraiId={selectedPasaraiId}
-                  isLoggedIn={!!loggedInMember}
-                  onGoToDashboard={() => { setActiveTab('member-dashboard'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                />
-              </>
+              <Hero
+                onOpenJoinModal={(pasaraiId) => handleOpenJoinModal(pasaraiId)}
+                onOpenDonateModal={() => setIsDonateModalOpen(true)}
+                onOpenVerifyModal={() => { setVerifySearchId(undefined); setIsVerifyModalOpen(true); }}
+                currentLang={currentLang}
+                isLoggedIn={!!loggedInMember}
+                onGoToDashboard={() => { setActiveTab('member-dashboard'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                setActiveTab={setActiveTab}
+              />
             )}
 
             {/* 2. DEDICATED ABOUT & VISION PAGE */}
@@ -279,12 +273,12 @@ export function App() {
                 theme === 'dark' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-900'
               }`}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-                  <div className="bg-[#181B20] text-white rounded-3xl p-8 shadow-2xl gold-header-strip">
-                    <span className="bg-yellow-400 text-slate-950 font-black text-xs px-3 py-1 rounded uppercase">
+                  <div className="bg-[#8B1E26] text-white rounded-3xl p-8 shadow-2xl">
+                    <span className="bg-white/20 text-white font-black text-xs px-3 py-1 rounded uppercase tracking-wider">
                       CONVENTIONS & MEETS
                     </span>
-                    <h1 className="text-3xl font-extrabold text-white mt-2">Sangam Events 2026</h1>
-                    <p className="text-xs text-gray-300">Register for state level symposiums and youth tournaments.</p>
+                    <h1 className="text-3xl font-extrabold text-white mt-2 font-heading">Sangam Events 2026</h1>
+                    <p className="text-xs text-gray-200">Register for state level symposiums and youth tournaments.</p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -295,7 +289,7 @@ export function App() {
                         <img src={evt.bannerUrl} alt="" className="w-full sm:w-48 h-48 object-cover shrink-0" />
                         <div className="p-5 flex flex-col justify-between space-y-3">
                           <div>
-                            <span className="bg-slate-900 text-yellow-400 text-[10px] font-bold px-2 py-0.5 rounded">
+                            <span className="bg-[#8B1E26] text-white text-[10px] font-bold px-2 py-0.5 rounded">
                               {evt.district} District
                             </span>
                             <h3 className={`font-extrabold text-base mt-1 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{evt.titleTamil}</h3>
@@ -306,10 +300,10 @@ export function App() {
                           <div className={`pt-2 border-t flex items-center justify-between text-xs ${
                             theme === 'dark' ? 'border-slate-700' : 'border-slate-100'
                           }`}>
-                            <span className="font-bold text-amber-500">Date: {evt.date}</span>
+                            <span className="font-bold text-[#8B1E26] dark:text-red-400">Date: {evt.date}</span>
                             <button
                               onClick={() => setIsOtpModalOpen(true)}
-                              className="bg-yellow-400 text-slate-950 font-extrabold px-3 py-1.5 rounded-lg text-xs hover:bg-yellow-300 transition-colors"
+                              className="bg-[#8B1E26] text-white font-extrabold px-3 py-1.5 rounded-lg text-xs hover:bg-[#72151C] transition-colors"
                             >
                               Register Event
                             </button>
@@ -327,7 +321,38 @@ export function App() {
               <NewsPage currentLang={currentLang} />
             )}
 
-            {/* 6. DEDICATED CONTACT PAGE */}
+            {/* 6. DEDICATED GALLERY VIEW */}
+            {activeTab === 'gallery' && (
+              <section className="py-16 min-h-[60vh] bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+                  <div>
+                    <h1 className="text-3xl font-extrabold font-heading text-[#8B1E26] dark:text-red-400">Tamil Sangam Photo Gallery</h1>
+                    <p className="text-xs text-slate-500 dark:text-gray-400">Explore events, cultural celebrations, Pasarai meets, and heritage initiatives.</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {[
+                      { title: 'Madurai Temple Chariot Festival', img: 'https://images.unsplash.com/photo-1609137144813-7d9921338f24?q=80&w=800&auto=format&fit=crop' },
+                      { title: 'Classical Bharatanatyam Recital', img: 'https://images.unsplash.com/photo-1601972599720-36938d4ecd31?q=80&w=800&auto=format&fit=crop' },
+                      { title: 'Tree Sapling Plantation Drive', img: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=800&auto=format&fit=crop' },
+                      { title: 'State Level Youth Assembly', img: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=800&auto=format&fit=crop' },
+                      { title: 'Thiruvalluvar Statue Heritage Tour', img: 'https://images.unsplash.com/photo-1600100397608-f09074052329?q=80&w=800&auto=format&fit=crop' },
+                      { title: 'Free Medical & Siddha Camp', img: 'https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?q=80&w=800&auto=format&fit=crop' },
+                      { title: 'Sangam Literature Book Fair', img: 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=800&auto=format&fit=crop' },
+                      { title: 'Traditional Silambam Tournament', img: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?q=80&w=800&auto=format&fit=crop' },
+                    ].map((g, idx) => (
+                      <div key={idx} className="overflow-hidden rounded-xl bg-slate-100 dark:bg-gray-800 shadow-md group relative aspect-[4/3]">
+                        <img src={g.img} alt={g.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex items-end">
+                          <p className="text-xs font-bold text-white">{g.title}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* 7. DEDICATED CONTACT PAGE */}
             {activeTab === 'contact' && (
               <ContactPage currentLang={currentLang} />
             )}
@@ -336,6 +361,17 @@ export function App() {
         )}
 
       </main>
+
+      {/* SEARCH MODAL */}
+      <SearchModal
+        isOpen={isSearchModalOpen}
+        onClose={() => setIsSearchModalOpen(false)}
+        onSelectWing={(wingId) => {
+          setSelectedPasaraiId(wingId);
+          setActiveTab('pasarai');
+        }}
+        onSelectTab={(tab) => setActiveTab(tab)}
+      />
 
       {/* STEP 1: REGISTRATION MOBILE OTP MODAL */}
       <OtpModal
@@ -416,7 +452,7 @@ export function App() {
 
       {/* Main Footer */}
       <Footer
-        onOpenJoinModal={() => setIsOtpModalOpen(true)}
+        onOpenJoinModal={() => handleOpenJoinModal()}
         onOpenDonateModal={() => setIsDonateModalOpen(true)}
         onOpenVerifyModal={() => { setVerifySearchId(undefined); setIsVerifyModalOpen(true); }}
         onSelectPasarai={(pasaraiId) => {
@@ -424,6 +460,7 @@ export function App() {
           setActiveTab('pasarai');
         }}
         currentLang={currentLang}
+        setActiveTab={setActiveTab}
       />
 
     </div>
@@ -431,3 +468,4 @@ export function App() {
 }
 
 export default App;
+
