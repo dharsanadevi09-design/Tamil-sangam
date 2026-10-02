@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { 
   Users, MapPin, Calendar, Eye, Target, Sprout, ArrowRight, 
-  CheckSquare, ChevronLeft, ChevronRight, MapPin as LocationIcon, Heart
+  CheckSquare, ChevronLeft, ChevronRight, MapPin as LocationIcon, Heart,
+  BookOpen, HelpCircle, ChevronDown, Sparkles
 } from 'lucide-react';
 import { INITIAL_NEWS } from '../data/mockData';
 import type { NewsItem } from '../types';
@@ -27,6 +28,7 @@ export const Hero: React.FC<HeroProps> = ({
 }) => {
   const [activeGalleryFilter, setActiveGalleryFilter] = useState('All');
   const [wingSlideIndex, setWingSlideIndex] = useState(0);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
   // Gallery items matching reference image
   const galleryItems = [
@@ -51,6 +53,25 @@ export const Hero: React.FC<HeroProps> = ({
     { id: 'env', name: 'Environment', icon: '🌱', img: 'https://images.unsplash.com/photo-1464226184884-fa280b87c399?q=80&w=600&auto=format&fit=crop' },
   ];
 
+  const faqs = [
+    {
+      q: 'தமிழ் சங்கத்தில் உறுப்பினராகச் சேர்வது எப்படி? (How to join Tamil Sangam?)',
+      a: 'எங்கள் இணையதளத்தில் உள்ள "Join Tamil Sangam" பொத்தானை கிளிக் செய்து உங்கள் விவரங்களை உள்ளிட்டு உடனடியாக டிஜிட்டல் உறுப்பினர் அட்டையைப் (Digital Membership ID Card) பெறலாம்.'
+    },
+    {
+      q: 'பாசறைகளில் (Wings) எவ்வாறு இணைவது? (How to join Pasarai wings?)',
+      a: 'கல்வி, இளைஞர், மகளிர், கலை கலாச்சாரம் என 23 பாசறைகள் இயங்கி வருகின்றன. உறுப்பினர் படிவத்தில் உங்களுக்கு விருப்பமான பாசறையைத் தேர்வு செய்து இணையலாம்.'
+    },
+    {
+      q: 'உறுப்பினர் சான்றிதழ் மற்றும் அடையாள அட்டை உடனடியாகக் கிடைக்குமா?',
+      a: 'ஆம், பதிவு செய்தவுடன் உங்கள் உறுப்பினர் எண் (Membership ID) உருவாக்கப்படும். பொதுச் சரிபார்ப்பு (Public Verification) பக்கத்தில் உங்கள் எண்ணை உள்ளிட்டு சான்றிதழைப் பதிவிறக்கம் செய்யலாம்.'
+    },
+    {
+      q: 'தமிழ் சங்கத்தின் முக்கியச் செயல்பாடுகள் என்னென்ன?',
+      a: 'தமிழ் மொழி வளர்ச்சி, பண்பாட்டு நிகழ்வுகள், இலவசக் கல்வி உதவிகள், இரத்த தான முகாம்கள், சுற்றுச்சூழல் மற்றும் சமூக நலப் பணிகள் 38 மாவட்டங்களிலும் தொடர்ந்து நடைபெறுகின்றன.'
+    }
+  ];
+
   const handlePrevWings = () => {
     setWingSlideIndex(prev => (prev === 0 ? Math.max(0, wingCards.length - 4) : prev - 1));
   };
@@ -65,18 +86,18 @@ export const Hero: React.FC<HeroProps> = ({
       {/* ========================================================================= */}
       {/* 1. HERO MAIN SECTION */}
       {/* ========================================================================= */}
-      <section className="relative min-h-[580px] lg:min-h-[620px] flex items-center overflow-hidden bg-[#FAF8F5] dark:bg-slate-950 transition-colors duration-300">
+      <section className="relative min-h-[580px] lg:min-h-[640px] flex items-center overflow-hidden bg-[#FAF8F5] dark:bg-slate-950 transition-colors duration-300">
         
-        {/* Full Right Side Background Temple Image with Smooth Left Fade */}
-        <div className="absolute right-0 top-0 bottom-0 w-full lg:w-1/2 h-full overflow-hidden pointer-events-none z-0">
+        {/* Full Right Side Background Temple Image - 100% Crisp & Visible */}
+        <div className="absolute right-0 top-0 bottom-0 w-full lg:w-[50%] h-full overflow-hidden pointer-events-none z-0">
           <img 
             src="/hero-temple.jpg" 
             alt="Madurai Temple Heritage" 
-            className="w-full h-full object-cover object-center" 
+            className="w-full h-full object-cover object-center transform hover:scale-105 transition-transform duration-700" 
           />
-          {/* Smooth gradient fade to left content area */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#FAF8F5] via-[#FAF8F5]/85 to-transparent dark:from-slate-950 dark:via-slate-950/85" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#FAF8F5]/60 via-transparent to-transparent dark:from-slate-950/60" />
+          {/* Subtle edge-only left fade for contrast against text */}
+          <div className="absolute inset-y-0 left-0 w-32 sm:w-48 bg-gradient-to-r from-[#FAF8F5] to-transparent dark:from-slate-950 pointer-events-none" />
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#FAF8F5] to-transparent dark:from-slate-950 pointer-events-none" />
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10 py-12 lg:py-16">
@@ -687,9 +708,180 @@ export const Hero: React.FC<HeroProps> = ({
       </section>
 
       {/* ========================================================================= */}
-      {/* 9. SUPPORT OUR INITIATIVES (DONATION BANNER) */}
+      {/* 9. THIRUKKURAL OF THE DAY / TAMIL WISDOM SECTION */}
+      {/* ========================================================================= */}
+      <section className="py-14 bg-[#FDF2F2] dark:bg-[#1E191A] border-t border-slate-200/80 dark:border-red-950/40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white dark:bg-[#251D1F] p-8 sm:p-10 rounded-3xl border border-[#8B1E26]/20 shadow-md relative overflow-hidden">
+            
+            <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+              <BookOpen className="w-48 h-48 text-[#8B1E26]" />
+            </div>
+
+            <div className="max-w-3xl space-y-4 relative z-10">
+              <div className="inline-flex items-center gap-2 bg-[#8B1E26]/10 text-[#8B1E26] dark:text-red-400 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>தினமொரு திருக்குறள் (Thirukkural of the Day)</span>
+              </div>
+
+              <blockquote className="text-xl sm:text-2xl font-serif font-bold text-slate-900 dark:text-gray-100 leading-snug">
+                "கற்க கசடறக் கற்பவை கற்றபின் <br className="hidden sm:inline" />
+                நிற்க அதற்குத் தக."
+              </blockquote>
+
+              <div className="space-y-1.5 text-xs sm:text-sm text-slate-600 dark:text-gray-300">
+                <p><strong className="text-slate-900 dark:text-white">பொருள்:</strong> கற்கத் தகுந்த நூல்களைக் குற்றமறக் கற்க வேண்டும்; அவ்வாறு கற்ற பிறகு, அக்கற்ற கல்விக்குத் தக்கவாறு நெறியில் நிற்க வேண்டும்.</p>
+                <p><strong className="text-slate-900 dark:text-white">Meaning:</strong> Learn thoroughly whatever you learn; after learning, let your conduct strictly reflect what you have learned.</p>
+              </div>
+
+              <div className="pt-2 flex items-center gap-4 text-xs font-semibold text-[#8B1E26] dark:text-red-400">
+                <span>— அதிகாரம்: கல்வி (Kural 391)</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 10. LEADERSHIP & OFFICE BEARERS SECTION */}
+      {/* ========================================================================= */}
+      <section className="py-16 bg-white dark:bg-[#181B20] border-t border-slate-200/80 dark:border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <div className="text-center max-w-2xl mx-auto mb-12 space-y-3">
+            <span className="text-xs font-extrabold text-[#8B1E26] dark:text-red-400 uppercase tracking-wider">
+              STATE LEADERSHIP
+            </span>
+            <h2 className="text-3xl font-extrabold font-heading text-slate-900 dark:text-white">
+              தலைமை நிர்வாகிகள் (Office Bearers)
+            </h2>
+            <div className="w-16 h-1 bg-[#8B1E26] mx-auto rounded-full" />
+            <p className="text-xs text-slate-600 dark:text-gray-400">
+              தமிழ் சங்கத்தின் வளர்ச்சிக்கும் சமூக முன்னேற்றத்திற்கும் வழிகாட்டும் மாநில நிர்வாகிகள்
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            
+            {/* Leader 1 */}
+            <div className="bg-[#FAF8F5] dark:bg-[#22262E] p-5 rounded-2xl border border-slate-200/80 dark:border-gray-800 shadow-sm text-center space-y-3 hover:border-[#8B1E26] transition-all group">
+              <div className="w-24 h-24 rounded-full overflow-hidden mx-auto ring-4 ring-white dark:ring-gray-700 shadow-md">
+                <img 
+                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=300&auto=format&fit=crop" 
+                  alt="State President" 
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-slate-900 dark:text-white">முனைவர். கே. பாரதிதாசன்</h4>
+                <p className="text-xs text-[#8B1E26] dark:text-red-400 font-semibold">மாநிலத் தலைவர் (State President)</p>
+                <p className="text-[11px] text-slate-500 dark:text-gray-400 mt-1">தமிழ் கலை & தமிழ் செம்மொழி ஆய்வாளர்</p>
+              </div>
+            </div>
+
+            {/* Leader 2 */}
+            <div className="bg-[#FAF8F5] dark:bg-[#22262E] p-5 rounded-2xl border border-slate-200/80 dark:border-gray-800 shadow-sm text-center space-y-3 hover:border-[#8B1E26] transition-all group">
+              <div className="w-24 h-24 rounded-full overflow-hidden mx-auto ring-4 ring-white dark:ring-gray-700 shadow-md">
+                <img 
+                  src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=300&auto=format&fit=crop" 
+                  alt="General Secretary" 
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-slate-900 dark:text-white">திருமதி. இரா. கயல்விழி</h4>
+                <p className="text-xs text-[#8B1E26] dark:text-red-400 font-semibold">பொதுச் செயலாளர் (General Secretary)</p>
+                <p className="text-[11px] text-slate-500 dark:text-gray-400 mt-1">மகளிர் பாசறை ஆலோசகர்</p>
+              </div>
+            </div>
+
+            {/* Leader 3 */}
+            <div className="bg-[#FAF8F5] dark:bg-[#22262E] p-5 rounded-2xl border border-slate-200/80 dark:border-gray-800 shadow-sm text-center space-y-3 hover:border-[#8B1E26] transition-all group">
+              <div className="w-24 h-24 rounded-full overflow-hidden mx-auto ring-4 ring-white dark:ring-gray-700 shadow-md">
+                <img 
+                  src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=300&auto=format&fit=crop" 
+                  alt="Treasurer" 
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-slate-900 dark:text-white">திரு. செ. இளங்கோவன்</h4>
+                <p className="text-xs text-[#8B1E26] dark:text-red-400 font-semibold">பொருளாளர் (Treasurer)</p>
+                <p className="text-[11px] text-slate-500 dark:text-gray-400 mt-1">சமூக நலப் பணிகள் ஒருங்கிணைப்பாளர்</p>
+              </div>
+            </div>
+
+            {/* Leader 4 */}
+            <div className="bg-[#FAF8F5] dark:bg-[#22262E] p-5 rounded-2xl border border-slate-200/80 dark:border-gray-800 shadow-sm text-center space-y-3 hover:border-[#8B1E26] transition-all group">
+              <div className="w-24 h-24 rounded-full overflow-hidden mx-auto ring-4 ring-white dark:ring-gray-700 shadow-md">
+                <img 
+                  src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=300&auto=format&fit=crop" 
+                  alt="Youth Coordinator" 
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-slate-900 dark:text-white">டாக்டர். மு. தமிழ்ச்செல்வி</h4>
+                <p className="text-xs text-[#8B1E26] dark:text-red-400 font-semibold">இளைஞர் பாசறைத் தலைவர்</p>
+                <p className="text-[11px] text-slate-500 dark:text-gray-400 mt-1">கல்வி மற்றும் ஊடகப் பொறுப்பாளர்</p>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 11. FREQUENTLY ASKED QUESTIONS (FAQ) SECTION */}
       {/* ========================================================================= */}
       <section className="py-16 bg-[#FAF8F5] dark:bg-slate-950 border-t border-slate-200/80 dark:border-gray-800">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
+            <span className="text-xs font-extrabold text-[#8B1E26] dark:text-red-400 uppercase tracking-wider flex items-center justify-center gap-1.5">
+              <HelpCircle className="w-4 h-4 text-[#8B1E26]" />
+              <span>FREQUENTLY ASKED QUESTIONS</span>
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold font-heading text-slate-900 dark:text-white">
+              அடிக்கடி கேட்கப்படும் கேள்விகள்
+            </h2>
+            <div className="w-16 h-1 bg-[#8B1E26] mx-auto rounded-full" />
+          </div>
+
+          <div className="space-y-4">
+            {faqs.map((faq, idx) => {
+              const isOpen = openFaqIndex === idx;
+              return (
+                <div 
+                  key={idx}
+                  className="bg-white dark:bg-[#1E232B] rounded-2xl border border-slate-200/80 dark:border-gray-800 overflow-hidden shadow-sm transition-all"
+                >
+                  <button
+                    onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
+                    className="w-full p-5 text-left flex items-center justify-between gap-4 font-bold text-sm text-slate-900 dark:text-white hover:text-[#8B1E26] cursor-pointer"
+                  >
+                    <span>{faq.q}</span>
+                    <ChevronDown className={`w-5 h-5 text-[#8B1E26] transition-transform duration-300 shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {isOpen && (
+                    <div className="px-5 pb-5 pt-1 text-xs text-slate-600 dark:text-gray-300 leading-relaxed border-t border-slate-100 dark:border-gray-800/60 bg-[#FAF8F5]/50 dark:bg-slate-900/30">
+                      {faq.a}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 12. SUPPORT OUR INITIATIVES (DONATION BANNER) */}
+      {/* ========================================================================= */}
+      <section className="py-16 bg-white dark:bg-[#181B20] border-t border-slate-200/80 dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-[#1E232B] text-white p-8 sm:p-12">
             
