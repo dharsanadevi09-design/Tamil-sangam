@@ -65,19 +65,25 @@ export const Hero: React.FC<HeroProps> = ({
       {/* ========================================================================= */}
       {/* 1. HERO MAIN SECTION */}
       {/* ========================================================================= */}
-      <section className="relative pt-8 pb-16 lg:pt-12 lg:pb-20 overflow-hidden">
-        {/* Right side background temple image overlay */}
-        <div className="absolute right-0 top-0 bottom-0 w-full lg:w-7/12 opacity-20 dark:opacity-30 pointer-events-none overflow-hidden">
-          <img src="/hero-temple.jpg" alt="Background Temple Sunset" className="w-full h-full object-cover object-right" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#FAF8F5] via-[#FAF8F5]/80 to-transparent dark:from-slate-950 dark:via-slate-950/80" />
+      <section className="relative min-h-[580px] lg:min-h-[620px] flex items-center overflow-hidden bg-[#FAF8F5] dark:bg-slate-950 transition-colors duration-300">
+        
+        {/* Full Right Side Background Temple Image with Smooth Left Fade */}
+        <div className="absolute right-0 top-0 bottom-0 w-full lg:w-1/2 h-full overflow-hidden pointer-events-none z-0">
+          <img 
+            src="/hero-temple.jpg" 
+            alt="Madurai Temple Heritage" 
+            className="w-full h-full object-cover object-center" 
+          />
+          {/* Smooth gradient fade to left content area */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#FAF8F5] via-[#FAF8F5]/85 to-transparent dark:from-slate-950 dark:via-slate-950/85" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#FAF8F5]/60 via-transparent to-transparent dark:from-slate-950/60" />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10 py-12 lg:py-16">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             
             {/* Left Content Column */}
-            <div className="lg:col-span-6 space-y-6">
+            <div className="lg:col-span-7 space-y-6 max-w-xl">
               
               <p className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest">
                 CONNECTING TAMIL PEOPLE
@@ -89,7 +95,7 @@ export const Hero: React.FC<HeroProps> = ({
                 <span className="text-[#8B1E26] dark:text-red-400">Building a <br />Stronger Community.</span>
               </h1>
 
-              <p className="text-sm sm:text-base text-slate-600 dark:text-gray-300 max-w-xl leading-relaxed">
+              <p className="text-sm sm:text-base text-slate-600 dark:text-gray-300 leading-relaxed">
                 Tamil Sangam - Tamil Nadu is a people's organization working for the development of tamil language, culture and society.
               </p>
 
@@ -98,7 +104,7 @@ export const Hero: React.FC<HeroProps> = ({
                 {isLoggedIn ? (
                   <button
                     onClick={onGoToDashboard}
-                    className="flex items-center gap-2 bg-[#8B1E26] hover:bg-[#72151C] text-white text-sm font-bold px-6 py-3.5 rounded-full shadow-lg transition-all transform hover:-translate-y-0.5 active:scale-95 cursor-pointer"
+                    className="flex items-center gap-2 bg-[#8B1E26] hover:bg-[#72151C] text-white text-sm font-bold px-7 py-3.5 rounded-full shadow-lg transition-all transform hover:-translate-y-0.5 active:scale-95 cursor-pointer"
                   >
                     <span>MY MEMBER DASHBOARD</span>
                     <ArrowRight className="w-4 h-4" />
@@ -106,7 +112,7 @@ export const Hero: React.FC<HeroProps> = ({
                 ) : (
                   <button
                     onClick={() => onOpenJoinModal()}
-                    className="flex items-center gap-2 bg-[#8B1E26] hover:bg-[#72151C] text-white text-sm font-bold px-6 py-3.5 rounded-full shadow-lg transition-all transform hover:-translate-y-0.5 active:scale-95 cursor-pointer"
+                    className="flex items-center gap-2 bg-[#8B1E26] hover:bg-[#72151C] text-white text-sm font-bold px-7 py-3.5 rounded-full shadow-lg transition-all transform hover:-translate-y-0.5 active:scale-95 cursor-pointer"
                   >
                     <span>Join Tamil Sangam</span>
                     <ArrowRight className="w-4 h-4" />
@@ -119,13 +125,13 @@ export const Hero: React.FC<HeroProps> = ({
                     if (elem) elem.scrollIntoView({ behavior: 'smooth' });
                     else if (setActiveTab) setActiveTab('about');
                   }}
-                  className="flex items-center gap-2 bg-transparent border border-slate-300 dark:border-gray-700 hover:bg-slate-200/60 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 text-sm font-semibold px-6 py-3.5 rounded-full transition-all cursor-pointer"
+                  className="flex items-center gap-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-300 dark:border-gray-700 hover:bg-white text-slate-800 dark:text-gray-200 text-sm font-bold px-7 py-3.5 rounded-full shadow-sm transition-all cursor-pointer"
                 >
                   <span>Explore Our Work</span>
                 </button>
               </div>
 
-              {/* Social Proof Counter & Overlapping Avatars */}
+              {/* Social Proof Counter */}
               <div className="flex items-center gap-4 pt-4 border-t border-slate-200/80 dark:border-gray-800">
                 <div className="flex -space-x-3 overflow-hidden">
                   <img className="inline-block h-10 w-10 rounded-full ring-2 ring-white dark:ring-gray-900 object-cover" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" alt="Member" />
@@ -140,44 +146,24 @@ export const Hero: React.FC<HeroProps> = ({
 
             </div>
 
-            {/* Right Column: Hero Image & Overlaid Tamil Quote Card */}
-            <div className="lg:col-span-6 relative">
-              <div className="relative mx-auto max-w-md lg:max-w-none">
-                
-                {/* Main Hero Image - Right Side Background Presentation */}
-                <div className="overflow-hidden rounded-3xl shadow-2xl border-4 border-white dark:border-gray-800 bg-slate-950 aspect-[4/3] sm:aspect-[14/11] relative group">
-                  <img 
-                    src="/hero-temple.jpg" 
-                    alt="Madurai Meenakshi Temple Gopuram Tamil Nadu" 
-                    className="w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-700 shadow-inner"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
-                  
-                  <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white text-[10px] font-extrabold px-3 py-1 rounded-full border border-white/20 shadow">
-                    Madurai Temple & Golden Pond
+            {/* Right Column: Floating Quote Card on bottom right */}
+            <div className="lg:col-span-5 relative flex justify-end items-end h-full pt-12 lg:pt-0">
+              <div className="bg-white/95 dark:bg-[#1E232B]/95 backdrop-blur-md p-6 rounded-2xl shadow-2xl border border-slate-200/80 dark:border-gray-800 max-w-[280px] sm:max-w-[300px]">
+                <div className="flex items-start gap-3">
+                  <span className="text-3xl leading-none text-[#8B1E26] dark:text-red-400 font-serif">❝</span>
+                  <div>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white font-serif leading-relaxed">
+                      தமிழ் வெல்லும் <br />
+                      தமிழர் பண்பு <br />
+                      தமிழர் முன்னேற்றம்
+                    </p>
+                    <div className="w-12 h-1 bg-[#8B1E26] mt-3 rounded-full" />
                   </div>
                 </div>
-
-                {/* Overlaid Quote Card (Bottom Right overlay) */}
-                <div className="absolute -bottom-6 right-2 sm:right-6 bg-white dark:bg-[#1E232B] p-5 rounded-2xl shadow-xl border-l-4 border-[#8B1E26] max-w-[260px] sm:max-w-[280px]">
-                  <div className="flex items-start gap-2">
-                    <span className="text-2xl leading-none text-[#8B1E26] dark:text-red-400 font-serif">❝</span>
-                    <div>
-                      <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white font-serif leading-relaxed">
-                        தமிழ் வெல்லும் <br />
-                        தமிழர் பண்பு <br />
-                        தமிழர் முன்னேற்றம்
-                      </p>
-                      <div className="w-12 h-0.5 bg-[#8B1E26] mt-2" />
-                    </div>
-                  </div>
-                </div>
-
               </div>
             </div>
 
           </div>
-
         </div>
       </section>
 

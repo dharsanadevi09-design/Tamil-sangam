@@ -48,10 +48,10 @@ export const PublicVerification: React.FC<PublicVerificationProps> = ({
 
         {/* Verification Header */}
         <div className="text-center space-y-2 mb-6">
-          <div className="w-14 h-14 bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-yellow-400 rounded-full flex items-center justify-center mx-auto shadow-inner border border-amber-300 dark:border-yellow-400/40">
+          <div className="w-14 h-14 bg-[#8B1E26]/10 text-[#8B1E26] dark:text-red-400 rounded-full flex items-center justify-center mx-auto shadow-inner border border-[#8B1E26]/30">
             <ShieldCheck className="w-8 h-8" />
           </div>
-          <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
+          <h3 className="text-xl font-extrabold text-slate-900 dark:text-white font-heading">
             {currentLang === 'ta' ? 'தமிழ் சங்கம் - உறுப்பினர் சரிபார்ப்பு' : 'Official Membership Verification Portal'}
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -67,11 +67,11 @@ export const PublicVerification: React.FC<PublicVerificationProps> = ({
               placeholder="e.g. TS-TN-2026-000001 or APP-1001"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-4 pr-12 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+              className="w-full pl-4 pr-12 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-[#8B1E26] focus:outline-none"
             />
             <button
               type="submit"
-              className="absolute right-2 top-2 bg-slate-900 dark:bg-yellow-400 hover:bg-yellow-400 dark:hover:bg-yellow-300 text-white dark:text-slate-950 hover:text-slate-900 p-2 rounded-lg transition-colors cursor-pointer"
+              className="absolute right-2 top-2 bg-[#8B1E26] hover:bg-[#72151C] text-white p-2 rounded-lg transition-colors cursor-pointer shadow"
             >
               <Search className="w-4 h-4" />
             </button>
