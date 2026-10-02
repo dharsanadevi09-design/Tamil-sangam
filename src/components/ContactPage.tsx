@@ -33,19 +33,19 @@ export const ContactPage: React.FC<ContactPageProps> = ({ currentLang }) => {
   };
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 py-12 text-slate-900 dark:text-white">
+    <div className="bg-[#FAF8F5] dark:bg-slate-950 text-slate-800 dark:text-gray-100 py-12 transition-colors duration-300 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         
         {/* Banner */}
-        <div className="bg-[#181B20] text-white rounded-3xl p-8 sm:p-12 shadow-2xl gold-header-strip flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="bg-[#8B1E26] text-white rounded-3xl p-8 sm:p-12 shadow-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="space-y-2 max-w-2xl">
-            <span className="bg-yellow-400 text-slate-950 font-black text-xs px-3 py-1 rounded uppercase tracking-wider">
+            <span className="bg-white/20 text-white font-black text-xs px-3 py-1 rounded-full uppercase tracking-wider border border-white/20">
               HELP & SUPPORT DESK
             </span>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-white">
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-white font-heading">
               {currentLang === 'ta' ? 'தொடர்புகொள்ள & உதவி மையம்' : 'Contact Headquarters & District Offices'}
             </h1>
-            <p className="text-xs text-gray-300">
+            <p className="text-xs text-gray-100">
               State HQ Chennai, 38 District Secretariat offices, and WhatsApp helpline support.
             </p>
           </div>

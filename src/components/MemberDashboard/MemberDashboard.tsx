@@ -26,27 +26,28 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({
   const notifications = getNotifications().filter(n => !n.recipientMobile || n.recipientMobile === member.mobile);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div className="bg-[#FAF8F5] dark:bg-slate-950 text-slate-800 dark:text-gray-100 min-h-screen py-10 transition-colors duration-300">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       
       {/* Top Welcome Banner */}
-      <div className="bg-[#181B20] text-white rounded-2xl p-6 sm:p-8 shadow-2xl gold-header-strip mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+      <div className="bg-[#8B1E26] text-white rounded-2xl p-6 sm:p-8 shadow-2xl mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="flex items-center gap-4">
           <img
             src={member.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'}
             alt={member.fullName}
-            className="w-16 h-20 rounded-xl object-cover border-2 border-yellow-400 shadow-md shrink-0"
+            className="w-16 h-20 rounded-xl object-cover border-2 border-white shadow-md shrink-0"
           />
           <div>
             <div className="flex items-center gap-2">
-              <span className="bg-yellow-400 text-[#181B20] text-[10px] font-black px-2 py-0.5 rounded">
+              <span className="bg-white text-[#8B1E26] text-[10px] font-black px-2 py-0.5 rounded shadow">
                 {member.categoryName}
               </span>
-              <span className="text-xs text-amber-300 font-mono font-extrabold">
+              <span className="text-xs text-amber-200 font-mono font-extrabold">
                 {member.membershipNumber || 'TS-TN-PENDING'}
               </span>
             </div>
-            <h2 className="text-2xl font-extrabold text-white mt-1">{member.fullName}</h2>
-            <p className="text-xs text-gray-300">{member.nameTamil} • {member.district} District</p>
+            <h2 className="text-2xl font-extrabold text-white mt-1 font-heading">{member.fullName}</h2>
+            <p className="text-xs text-gray-100">{member.nameTamil} • {member.district} District</p>
           </div>
         </div>
 
@@ -334,5 +335,6 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({
       </div>
 
     </div>
+  </div>
   );
 };

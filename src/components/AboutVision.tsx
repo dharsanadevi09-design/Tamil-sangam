@@ -15,79 +15,99 @@ export const AboutVision: React.FC<AboutVisionProps> = ({
   onGoToDashboard
 }) => {
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 py-12 transition-colors duration-300">
+    <div className="bg-[#FAF8F5] dark:bg-slate-950 text-slate-800 dark:text-gray-100 py-12 transition-colors duration-300 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
         
         {/* Top Page Header */}
-        <div className="bg-[#181B20] text-white rounded-3xl p-8 sm:p-12 shadow-2xl gold-header-strip relative overflow-hidden">
-          <div className="max-w-3xl space-y-4 relative z-10">
-            <span className="bg-yellow-400 text-slate-950 font-black text-xs px-3 py-1 rounded uppercase tracking-widest">
+        <div className="bg-[#8B1E26] text-white rounded-3xl p-8 sm:p-12 shadow-2xl relative overflow-hidden min-h-[220px] flex items-center">
+          <div className="absolute right-0 top-0 bottom-0 w-full sm:w-1/2 opacity-30 sm:opacity-50 pointer-events-none overflow-hidden">
+            <img src="/hero-temple.jpg" alt="Madurai Meenakshi Temple" className="w-full h-full object-cover object-right" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#8B1E26] via-[#8B1E26]/60 to-transparent" />
+          </div>
+          
+          <div className="max-w-2xl space-y-4 relative z-10">
+            <span className="bg-white/20 backdrop-blur-md text-white font-black text-xs px-3.5 py-1.5 rounded-full uppercase tracking-widest border border-white/30">
               ORGANISATION FOUNDATION & HERITAGE
             </span>
-            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
+            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight font-heading">
               {currentLang === 'ta' ? (
                 <>
                   தமிழ் சங்கம் - தமிழ்நாடு <br />
-                  <span className="text-yellow-400">வரலாறு, தொலைநோக்கு & குறிக்கோள்</span>
+                  <span className="text-yellow-300">வரலாறு, தொலைநோக்கு & குறிக்கோள்</span>
                 </>
               ) : (
                 <>
                   TAMIL SANGAM – TAMIL NADU <br />
-                  <span className="text-yellow-400">History, Vision & Strategic Roadmap</span>
+                  <span className="text-yellow-300">History, Vision & Strategic Roadmap</span>
                 </>
               )}
             </h1>
-            <p className="text-sm sm:text-base text-gray-300 leading-relaxed">
+            <p className="text-sm sm:text-base text-gray-100 leading-relaxed max-w-xl">
               Preserving ancient Sangam literature, empowering 23 specialized Pasarai wings, protecting classical Tamil heritage, and building a 100% digitally verified network across all 38 districts of Tamil Nadu.
             </p>
           </div>
         </div>
 
-        {/* SECTION 1: Historical Legacy & Sangam Heritage */}
+        {/* SECTION 1: Historical Legacy & Sangam Heritage with Visible Temple Image on Right Side */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-          <div className="lg:col-span-6 space-y-4">
-            <div className="inline-flex items-center gap-2 bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 text-xs font-bold px-3 py-1 rounded-full">
-              <Landmark className="w-4 h-4 text-amber-700 dark:text-yellow-400" />
+          <div className="lg:col-span-6 space-y-5">
+            <div className="inline-flex items-center gap-2 bg-[#8B1E26]/10 text-[#8B1E26] dark:text-red-400 text-xs font-extrabold px-3 py-1.5 rounded-full border border-[#8B1E26]/20">
+              <Landmark className="w-4 h-4 text-[#8B1E26] dark:text-red-400" />
               <span>Ancient Roots & Modern Renaissance</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
+            <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 dark:text-white font-heading">
               {currentLang === 'ta' ? 'முச்சங்க வரலாறு & தமிழ் சங்கம் நெறி' : 'The Legacy of Three Sangams & Modern Renaissance'}
             </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
               The original Tamil Sangam assemblies in ancient Madurai (First, Second, and Third Sangam) preserved Thirukkural, Silappathikaram, Manimekalai, Purananuru, and Akananuru. Today, **Tamil Sangam – Tamil Nadu** operates as the premier digital membership and cultural management trust keeping that legacy vibrant for generations to come.
             </p>
-            <ul className="space-y-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <ul className="space-y-2.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-yellow-500" /> Preservation of ancient manuscripts and palm-leaf digitalization.
+                <CheckCircle2 className="w-4 h-4 text-[#8B1E26] dark:text-red-400 shrink-0" /> Preservation of ancient manuscripts and palm-leaf digitalization.
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-yellow-500" /> Thirukkural research symposiums in schools and universities.
+                <CheckCircle2 className="w-4 h-4 text-[#8B1E26] dark:text-red-400 shrink-0" /> Thirukkural research symposiums in schools and universities.
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-yellow-500" /> Global diaspora Tamil Sangam coordination across 25+ countries.
+                <CheckCircle2 className="w-4 h-4 text-[#8B1E26] dark:text-red-400 shrink-0" /> Global diaspora Tamil Sangam coordination across 25+ countries.
               </li>
             </ul>
           </div>
 
-          <div className="lg:col-span-6 grid grid-cols-2 gap-4">
-            <div className="bg-[#181B20] text-white p-6 rounded-2xl border border-gray-800 gold-header-strip shadow-xl space-y-2">
-              <h3 className="font-extrabold text-lg text-yellow-400">Mudhal Sangam</h3>
-              <p className="text-xs text-gray-300">Thenmadurai • Ancient Assembly under Pandyan Kings.</p>
+          {/* Right Side Visible Background Image Card */}
+          <div className="lg:col-span-6 space-y-4">
+            <div className="rounded-3xl overflow-hidden shadow-2xl border-4 border-white dark:border-gray-800 relative aspect-[4/3] group">
+              <img 
+                src="/hero-temple.jpg" 
+                alt="Madurai Meenakshi Amman Temple Heritage" 
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-6 flex flex-col justify-end">
+                <span className="bg-[#8B1E26] text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full w-fit uppercase tracking-wider mb-1">
+                  HISTORICAL LANDMARK
+                </span>
+                <h3 className="text-xl font-extrabold text-white font-heading">Madurai Meenakshi Temple & Golden Pond</h3>
+                <p className="text-xs text-gray-200 mt-1">Seat of the Ancient Tamil Sangam Assemblies</p>
+              </div>
             </div>
 
-            <div className="bg-[#181B20] text-white p-6 rounded-2xl border border-gray-800 gold-header-strip shadow-xl space-y-2">
-              <h3 className="font-extrabold text-lg text-yellow-400">Idai Sangam</h3>
-              <p className="text-xs text-gray-300">Kapatapuram • Grammar & Agastya traditions.</p>
-            </div>
-
-            <div className="bg-[#181B20] text-white p-6 rounded-2xl border border-gray-800 gold-header-strip shadow-xl space-y-2">
-              <h3 className="font-extrabold text-lg text-yellow-400">Kadaichangam</h3>
-              <p className="text-xs text-gray-300">Madurai • 49 Poets & Eighteen Greater Texts.</p>
-            </div>
-
-            <div className="bg-[#181B20] text-white p-6 rounded-2xl border border-gray-800 gold-header-strip shadow-xl space-y-2">
-              <h3 className="font-extrabold text-lg text-yellow-400">Digital Sangam</h3>
-              <p className="text-xs text-gray-300">38 Districts • QR Verification & 23 Pasarai Wings.</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-white dark:bg-[#1E232B] p-3 rounded-xl border border-slate-200 dark:border-gray-800 text-center shadow-sm">
+                <h4 className="font-extrabold text-xs text-[#8B1E26] dark:text-red-400">Mudhal Sangam</h4>
+                <p className="text-[10px] text-slate-500 dark:text-gray-400">Thenmadurai</p>
+              </div>
+              <div className="bg-white dark:bg-[#1E232B] p-3 rounded-xl border border-slate-200 dark:border-gray-800 text-center shadow-sm">
+                <h4 className="font-extrabold text-xs text-[#8B1E26] dark:text-red-400">Idai Sangam</h4>
+                <p className="text-[10px] text-slate-500 dark:text-gray-400">Kapatapuram</p>
+              </div>
+              <div className="bg-white dark:bg-[#1E232B] p-3 rounded-xl border border-slate-200 dark:border-gray-800 text-center shadow-sm">
+                <h4 className="font-extrabold text-xs text-[#8B1E26] dark:text-red-400">Kadaichangam</h4>
+                <p className="text-[10px] text-slate-500 dark:text-gray-400">Madurai</p>
+              </div>
+              <div className="bg-white dark:bg-[#1E232B] p-3 rounded-xl border border-slate-200 dark:border-gray-800 text-center shadow-sm">
+                <h4 className="font-extrabold text-xs text-[#8B1E26] dark:text-red-400">Digital Sangam</h4>
+                <p className="text-[10px] text-slate-500 dark:text-gray-400">38 Districts</p>
+              </div>
             </div>
           </div>
         </div>

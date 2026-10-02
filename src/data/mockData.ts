@@ -65,7 +65,8 @@ export const PASARAI_WINGS: Pasarai[] = [
     ],
     memberCount: 8450,
     icon: 'Users',
-    category: 'Youth & Leadership'
+    category: 'Youth & Leadership',
+    image: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=800&auto=format&fit=crop'
   },
   {
     id: 'PAS-02',
@@ -79,7 +80,8 @@ export const PASARAI_WINGS: Pasarai[] = [
     ],
     memberCount: 6820,
     icon: 'HeartHandshake',
-    category: 'Women Empowerment'
+    category: 'Women Empowerment',
+    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=800&auto=format&fit=crop'
   },
   {
     id: 'PAS-03',
@@ -92,7 +94,8 @@ export const PASARAI_WINGS: Pasarai[] = [
     ],
     memberCount: 11200,
     icon: 'GraduationCap',
-    category: 'Education'
+    category: 'Education',
+    image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=800&auto=format&fit=crop'
   },
   {
     id: 'PAS-04',
@@ -105,7 +108,8 @@ export const PASARAI_WINGS: Pasarai[] = [
     ],
     memberCount: 4500,
     icon: 'Palette',
-    category: 'Culture'
+    category: 'Culture',
+    image: 'https://images.unsplash.com/photo-1601972599720-36938d4ecd31?q=80&w=800&auto=format&fit=crop'
   },
   {
     id: 'PAS-05',
@@ -118,7 +122,8 @@ export const PASARAI_WINGS: Pasarai[] = [
     ],
     memberCount: 3900,
     icon: 'BookOpen',
-    category: 'Literature'
+    category: 'Literature',
+    image: 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?q=80&w=800&auto=format&fit=crop'
   },
   {
     id: 'PAS-06',
@@ -131,7 +136,8 @@ export const PASARAI_WINGS: Pasarai[] = [
     ],
     memberCount: 5100,
     icon: 'Cpu',
-    category: 'Technology'
+    category: 'Technology',
+    image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=800&auto=format&fit=crop'
   },
   {
     id: 'PAS-07',
@@ -144,7 +150,8 @@ export const PASARAI_WINGS: Pasarai[] = [
     ],
     memberCount: 1850,
     icon: 'Scale',
-    category: 'Legal Aid'
+    category: 'Legal Aid',
+    image: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?q=80&w=800&auto=format&fit=crop'
   },
   {
     id: 'PAS-08',
@@ -157,7 +164,8 @@ export const PASARAI_WINGS: Pasarai[] = [
     ],
     memberCount: 2300,
     icon: 'Stethoscope',
-    category: 'Healthcare'
+    category: 'Healthcare',
+    image: 'https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?q=80&w=800&auto=format&fit=crop'
   },
   {
     id: 'PAS-09',
@@ -170,7 +178,8 @@ export const PASARAI_WINGS: Pasarai[] = [
     ],
     memberCount: 3400,
     icon: 'School',
-    category: 'Education'
+    category: 'Education',
+    image: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=800&auto=format&fit=crop'
   },
   {
     id: 'PAS-10',
@@ -183,7 +192,8 @@ export const PASARAI_WINGS: Pasarai[] = [
     ],
     memberCount: 1950,
     icon: 'Radio',
-    category: 'Media'
+    category: 'Media',
+    image: 'https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?q=80&w=800&auto=format&fit=crop'
   },
   {
     id: 'PAS-11',
@@ -196,20 +206,22 @@ export const PASARAI_WINGS: Pasarai[] = [
     ],
     memberCount: 4200,
     icon: 'Building2',
-    category: 'Commerce'
+    category: 'Commerce',
+    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=800&auto=format&fit=crop'
   },
   {
     id: 'PAS-12',
     name: 'Farmers & Agriculture Wing',
     nameTamil: 'உழவர் பாசறை',
     description: 'Promoting organic farming, water conservation, traditional seed preservation, and farmer welfare.',
-    descriptionTamil: 'இயற்கை விவசாயம், நீர் பாதுகாப்பு, பாரம்பரிய விதைத் பாதுகாப்பு மற்றும் உழவர் நலன்.',
+    descriptionTamil: 'இயற்கை விவசாயம், நீர் பாதுகாப்பு,பாரம்பரிய விதைத் பாதுகாப்பு மற்றும் உழவர் நலன்.',
     officeBearers: [
       { title: 'Agronomist Coordinator', name: 'P. Nallasamy', mobile: '+91 98765 43223' }
     ],
     memberCount: 6100,
     icon: 'Wheat',
-    category: 'Agriculture'
+    category: 'Agriculture',
+    image: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?q=80&w=800&auto=format&fit=crop'
   },
   {
     id: 'PAS-13',
@@ -222,7 +234,8 @@ export const PASARAI_WINGS: Pasarai[] = [
     ],
     memberCount: 5400,
     icon: 'HardHat',
-    category: 'Welfare'
+    category: 'Welfare',
+    image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=800&auto=format&fit=crop'
   },
   {
     id: 'PAS-14',
@@ -235,7 +248,8 @@ export const PASARAI_WINGS: Pasarai[] = [
     ],
     memberCount: 3100,
     icon: 'Leaf',
-    category: 'Ecology'
+    category: 'Ecology',
+    image: 'https://images.unsplash.com/photo-1464226184884-fa280b87c399?q=80&w=800&auto=format&fit=crop'
   },
   {
     id: 'PAS-15',
@@ -248,7 +262,8 @@ export const PASARAI_WINGS: Pasarai[] = [
     ],
     memberCount: 4800,
     icon: 'Trophy',
-    category: 'Sports'
+    category: 'Sports',
+    image: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?q=80&w=800&auto=format&fit=crop'
   },
   {
     id: 'PAS-16',
@@ -261,7 +276,8 @@ export const PASARAI_WINGS: Pasarai[] = [
     ],
     memberCount: 7200,
     icon: 'Gift',
-    category: 'Social Charity'
+    category: 'Social Charity',
+    image: 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?q=80&w=800&auto=format&fit=crop'
   },
   {
     id: 'PAS-17',
@@ -274,7 +290,8 @@ export const PASARAI_WINGS: Pasarai[] = [
     ],
     memberCount: 3800,
     icon: 'Globe',
-    category: 'International'
+    category: 'International',
+    image: 'https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?q=80&w=800&auto=format&fit=crop'
   },
   {
     id: 'PAS-18',
@@ -287,7 +304,8 @@ export const PASARAI_WINGS: Pasarai[] = [
     ],
     memberCount: 1600,
     icon: 'Landmark',
-    category: 'History'
+    category: 'History',
+    image: 'https://images.unsplash.com/photo-1600100397608-f09074052329?q=80&w=800&auto=format&fit=crop'
   },
   {
     id: 'PAS-19',
@@ -300,7 +318,8 @@ export const PASARAI_WINGS: Pasarai[] = [
     ],
     memberCount: 1250,
     icon: 'FileText',
-    category: 'Research'
+    category: 'Research',
+    image: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?q=80&w=800&auto=format&fit=crop'
   },
   {
     id: 'PAS-20',
@@ -313,7 +332,8 @@ export const PASARAI_WINGS: Pasarai[] = [
     ],
     memberCount: 5900,
     icon: 'Briefcase',
-    category: 'Skill Development'
+    category: 'Skill Development',
+    image: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=800&auto=format&fit=crop'
   },
   {
     id: 'PAS-21',
@@ -326,7 +346,8 @@ export const PASARAI_WINGS: Pasarai[] = [
     ],
     memberCount: 4100,
     icon: 'Anchor',
-    category: 'Coastal'
+    category: 'Coastal',
+    image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=800&auto=format&fit=crop'
   },
   {
     id: 'PAS-22',
@@ -339,7 +360,8 @@ export const PASARAI_WINGS: Pasarai[] = [
     ],
     memberCount: 1400,
     icon: 'Trees',
-    category: 'Tribal Welfare'
+    category: 'Tribal Welfare',
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=800&auto=format&fit=crop'
   },
   {
     id: 'PAS-23',
@@ -352,7 +374,8 @@ export const PASARAI_WINGS: Pasarai[] = [
     ],
     memberCount: 9600,
     icon: 'Sparkles',
-    category: 'Volunteers'
+    category: 'Volunteers',
+    image: 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?q=80&w=800&auto=format&fit=crop'
   }
 ];
 

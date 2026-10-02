@@ -34,7 +34,7 @@ export const Hero: React.FC<HeroProps> = ({
     { id: 2, category: 'Culture', title: 'Classical Bharatanatyam', img: 'https://images.unsplash.com/photo-1601972599720-36938d4ecd31?q=80&w=800&auto=format&fit=crop' },
     { id: 3, category: 'Welfare', title: 'Tree Sapling Plantation', img: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=800&auto=format&fit=crop' },
     { id: 4, category: 'District', title: 'State Member Conference', img: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=800&auto=format&fit=crop' },
-    { id: 5, category: 'Pasarai', title: 'Heritage Temple Tour', img: 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?q=80&w=800&auto=format&fit=crop' },
+    { id: 5, category: 'Pasarai', title: 'Heritage Temple Tour', img: '/hero-temple.jpg' },
   ];
 
   const filteredGallery = activeGalleryFilter === 'All' 
@@ -66,7 +66,13 @@ export const Hero: React.FC<HeroProps> = ({
       {/* 1. HERO MAIN SECTION */}
       {/* ========================================================================= */}
       <section className="relative pt-8 pb-16 lg:pt-12 lg:pb-20 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Right side background temple image overlay */}
+        <div className="absolute right-0 top-0 bottom-0 w-full lg:w-7/12 opacity-20 dark:opacity-30 pointer-events-none overflow-hidden">
+          <img src="/hero-temple.jpg" alt="Background Temple Sunset" className="w-full h-full object-cover object-right" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#FAF8F5] via-[#FAF8F5]/80 to-transparent dark:from-slate-950 dark:via-slate-950/80" />
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             
@@ -138,14 +144,18 @@ export const Hero: React.FC<HeroProps> = ({
             <div className="lg:col-span-6 relative">
               <div className="relative mx-auto max-w-md lg:max-w-none">
                 
-                {/* Main Hero Image */}
-                <div className="overflow-hidden rounded-3xl shadow-2xl border-4 border-white dark:border-gray-800 bg-slate-200 aspect-[4/3] sm:aspect-[14/11] relative">
+                {/* Main Hero Image - Right Side Background Presentation */}
+                <div className="overflow-hidden rounded-3xl shadow-2xl border-4 border-white dark:border-gray-800 bg-slate-950 aspect-[4/3] sm:aspect-[14/11] relative group">
                   <img 
-                    src="https://images.unsplash.com/photo-1582510003544-4d00b7f74220?q=80&w=1200&auto=format&fit=crop" 
+                    src="/hero-temple.jpg" 
                     alt="Madurai Meenakshi Temple Gopuram Tamil Nadu" 
-                    className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-700"
+                    className="w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-700 shadow-inner"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
+                  
+                  <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white text-[10px] font-extrabold px-3 py-1 rounded-full border border-white/20 shadow">
+                    Madurai Temple & Golden Pond
+                  </div>
                 </div>
 
                 {/* Overlaid Quote Card (Bottom Right overlay) */}

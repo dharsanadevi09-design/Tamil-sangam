@@ -267,26 +267,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-slate-900">
+    <div className="bg-[#FAF8F5] dark:bg-slate-950 text-slate-900 dark:text-gray-100 min-h-screen py-8 transition-colors duration-300">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       
       {/* Top Admin Header Bar */}
-      <div className="bg-[#181B20] text-white rounded-2xl p-6 shadow-2xl gold-header-strip mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-[#8B1E26] text-white rounded-2xl p-6 shadow-2xl mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="bg-yellow-400 text-slate-950 text-xs font-black px-2.5 py-0.5 rounded uppercase">
+            <span className="bg-white text-[#8B1E26] text-xs font-black px-2.5 py-0.5 rounded uppercase shadow">
               ADMIN WORKBENCH
             </span>
-            <span className="text-xs text-amber-300 font-bold flex items-center gap-1">
-              <Shield className="w-3.5 h-3.5 text-yellow-400" />
+            <span className="text-xs text-amber-200 font-bold flex items-center gap-1">
+              <Shield className="w-3.5 h-3.5 text-white" />
               {isSuperAdmin ? '👑 Super Admin Access (State HQ)' : `🏛️ District Admin Portal (${adminDistrict})`}
             </span>
           </div>
-          <h2 className="text-2xl font-extrabold text-white mt-1">
+          <h2 className="text-2xl font-extrabold text-white mt-1 font-heading">
             {isDistrictAdmin ? `${adminDistrict} District Admin Dashboard` : 'State & District Admin Management Portal'}
           </h2>
           {currentAdmin && (
-            <p className="text-xs text-gray-300 mt-0.5">
-              Logged in as: <strong className="text-yellow-400">{currentAdmin.name}</strong> (@{currentAdmin.username})
+            <p className="text-xs text-gray-100 mt-0.5">
+              Logged in as: <strong className="text-white underline">{currentAdmin.name}</strong> (@{currentAdmin.username})
             </p>
           )}
         </div>
@@ -1264,5 +1265,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       )}
 
     </div>
+  </div>
   );
 };

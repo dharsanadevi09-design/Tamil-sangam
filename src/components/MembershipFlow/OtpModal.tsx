@@ -170,27 +170,27 @@ export const OtpModal: React.FC<OtpModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn">
-      <div className="bg-[#181B20] text-white rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-gray-800 gold-header-strip relative overflow-hidden">
+      <div className="bg-white dark:bg-[#1E232B] text-slate-900 dark:text-white rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-gray-800 relative overflow-hidden">
         
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800 transition-colors cursor-pointer"
+          className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Modal Title & Header */}
         <div className="text-center space-y-2 mb-6">
-          <div className="w-16 h-16 bg-yellow-400/10 border border-yellow-400/30 text-yellow-400 rounded-full flex items-center justify-center mx-auto shadow-inner">
+          <div className="w-16 h-16 bg-[#8B1E26]/10 border border-[#8B1E26]/30 text-[#8B1E26] dark:text-red-400 rounded-full flex items-center justify-center mx-auto shadow-inner">
             <Smartphone className="w-8 h-8" />
           </div>
-          <h3 className="text-2xl font-extrabold text-white">
+          <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white font-heading">
             {step === 'MOBILE'
               ? (currentLang === 'ta' ? 'அலைபேசி எண் சரிபார்ப்பு' : 'Step 1: Mobile OTP Verification')
               : (currentLang === 'ta' ? '6 இலக்க OTP உள்ளிடவும்' : 'Step 2: Enter 6-Digit OTP')}
           </h3>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-slate-500 dark:text-gray-400">
             {step === 'MOBILE'
               ? (currentLang === 'ta' ? 'எந்த கைபேசி எண்ணையும் உள்ளிட்டு OTP பெறலாம்' : 'Enter ANY 10-digit mobile number of your choice to receive OTP')
               : (currentLang === 'ta' ? `OTP +91 ${mobileNumber} எண்ணிற்கு அனுப்பப்பட்டது` : `Verification OTP sent to +91 ${mobileNumber}`)}
@@ -199,10 +199,10 @@ export const OtpModal: React.FC<OtpModalProps> = ({
 
         {/* Simulated Real-Time SMS Toast Alert Banner */}
         {step === 'OTP' && showSmsBanner && (
-          <div className="mb-6 bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 border-2 border-yellow-400 rounded-xl p-3.5 shadow-lg animate-bounce-subtle">
+          <div className="mb-6 bg-[#8B1E26]/10 border-2 border-[#8B1E26] rounded-xl p-3.5 shadow-lg animate-bounce-subtle">
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-start gap-2.5">
-                <div className="p-1.5 bg-yellow-400 text-slate-950 rounded-lg shrink-0 mt-0.5 font-bold text-xs">
+                <div className="p-1.5 bg-[#8B1E26] text-white rounded-lg shrink-0 mt-0.5 font-bold text-xs">
                   SMS
                 </div>
                 <div>

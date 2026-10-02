@@ -269,9 +269,7 @@ export function App() {
 
             {/* 4. DEDICATED EVENTS PAGE */}
             {activeTab === 'events' && (
-              <section className={`py-16 min-h-[60vh] transition-colors duration-300 ${
-                theme === 'dark' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-900'
-              }`}>
+              <section className="py-16 min-h-screen bg-[#FAF8F5] dark:bg-slate-950 text-slate-800 dark:text-gray-100 transition-colors duration-300">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
                   <div className="bg-[#8B1E26] text-white rounded-3xl p-8 shadow-2xl">
                     <span className="bg-white/20 text-white font-black text-xs px-3 py-1 rounded uppercase tracking-wider">
@@ -284,7 +282,7 @@ export function App() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {getEvents().map((evt) => (
                       <div key={evt.id} className={`rounded-2xl overflow-hidden shadow-lg border flex flex-col sm:flex-row transition-colors ${
-                        theme === 'dark' ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
+                        theme === 'dark' ? 'bg-[#1E232B] border-gray-800 text-white' : 'bg-white border-slate-200/80 text-slate-900'
                       }`}>
                         <img src={evt.bannerUrl} alt="" className="w-full sm:w-48 h-48 object-cover shrink-0" />
                         <div className="p-5 flex flex-col justify-between space-y-3">
@@ -298,12 +296,12 @@ export function App() {
                           </div>
 
                           <div className={`pt-2 border-t flex items-center justify-between text-xs ${
-                            theme === 'dark' ? 'border-slate-700' : 'border-slate-100'
+                            theme === 'dark' ? 'border-gray-800' : 'border-slate-100'
                           }`}>
                             <span className="font-bold text-[#8B1E26] dark:text-red-400">Date: {evt.date}</span>
                             <button
                               onClick={() => setIsOtpModalOpen(true)}
-                              className="bg-[#8B1E26] text-white font-extrabold px-3 py-1.5 rounded-lg text-xs hover:bg-[#72151C] transition-colors"
+                              className="bg-[#8B1E26] text-white font-extrabold px-3 py-1.5 rounded-lg text-xs hover:bg-[#72151C] transition-colors cursor-pointer"
                             >
                               Register Event
                             </button>
@@ -323,7 +321,7 @@ export function App() {
 
             {/* 6. DEDICATED GALLERY VIEW */}
             {activeTab === 'gallery' && (
-              <section className="py-16 min-h-[60vh] bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+              <section className="py-16 min-h-screen bg-[#FAF8F5] dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
                   <div>
                     <h1 className="text-3xl font-extrabold font-heading text-[#8B1E26] dark:text-red-400">Tamil Sangam Photo Gallery</h1>
@@ -331,6 +329,7 @@ export function App() {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {[
+                      { title: 'Madurai Meenakshi Temple & Golden Pond', img: '/hero-temple.jpg' },
                       { title: 'Madurai Temple Chariot Festival', img: 'https://images.unsplash.com/photo-1609137144813-7d9921338f24?q=80&w=800&auto=format&fit=crop' },
                       { title: 'Classical Bharatanatyam Recital', img: 'https://images.unsplash.com/photo-1601972599720-36938d4ecd31?q=80&w=800&auto=format&fit=crop' },
                       { title: 'Tree Sapling Plantation Drive', img: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=800&auto=format&fit=crop' },
@@ -338,9 +337,8 @@ export function App() {
                       { title: 'Thiruvalluvar Statue Heritage Tour', img: 'https://images.unsplash.com/photo-1600100397608-f09074052329?q=80&w=800&auto=format&fit=crop' },
                       { title: 'Free Medical & Siddha Camp', img: 'https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?q=80&w=800&auto=format&fit=crop' },
                       { title: 'Sangam Literature Book Fair', img: 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=800&auto=format&fit=crop' },
-                      { title: 'Traditional Silambam Tournament', img: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?q=80&w=800&auto=format&fit=crop' },
                     ].map((g, idx) => (
-                      <div key={idx} className="overflow-hidden rounded-xl bg-slate-100 dark:bg-gray-800 shadow-md group relative aspect-[4/3]">
+                      <div key={idx} className="overflow-hidden rounded-2xl bg-white dark:bg-[#1E232B] shadow-md group relative aspect-[4/3] border border-slate-200/80 dark:border-gray-800">
                         <img src={g.img} alt={g.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex items-end">
                           <p className="text-xs font-bold text-white">{g.title}</p>

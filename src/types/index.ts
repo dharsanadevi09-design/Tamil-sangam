@@ -47,6 +47,7 @@ export interface Pasarai {
   memberCount: number;
   icon: string;
   category: string;
+  image?: string;
 }
 
 export interface MemberApplication {
