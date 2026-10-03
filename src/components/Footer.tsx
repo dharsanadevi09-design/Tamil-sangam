@@ -25,9 +25,9 @@ export const Footer: React.FC<FooterProps> = ({
           {/* Column 1: Org Logo & Description */}
           <div className="lg:col-span-4 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#8B1E26] to-[#600D13] p-0.5 shadow-md">
-                <div className="w-full h-full rounded-full bg-[#FDF2F2] dark:bg-[#181B20] flex items-center justify-center border border-white/30">
-                  <span className="text-xl">🏛️</span>
+              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#8B1E26] to-[#600D13] p-0.5 shadow-md shrink-0">
+                <div className="w-full h-full rounded-full overflow-hidden border border-white/30 bg-[#FDF2F2]">
+                  <img src="/thiruvalluvar-icon.png" alt="Thiruvalluvar" className="w-full h-full object-cover object-top" />
                 </div>
               </div>
               <div>
