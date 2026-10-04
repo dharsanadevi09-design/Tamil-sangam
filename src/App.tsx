@@ -199,6 +199,7 @@ export function App() {
           setActiveTab(tab);
         }}
         loggedInMemberName={loggedInMember?.fullName}
+        loggedInMemberPhoto={loggedInMember?.photoUrl}
         onLogoutMember={handleLogoutMember}
       />
 

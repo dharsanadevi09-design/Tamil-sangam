@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Heart, QrCode, Menu, X, Search, Moon, Sun } from 'lucide-react';
+import { User, Heart, QrCode, Menu, X, Search, Moon, Sun, LogOut } from 'lucide-react';
 
 interface HeaderProps {
   onOpenJoinModal: () => void;
@@ -14,6 +14,7 @@ interface HeaderProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   loggedInMemberName?: string;
+  loggedInMemberPhoto?: string;
   onLogoutMember?: () => void;
 }
 
@@ -30,6 +31,7 @@ export const Header: React.FC<HeaderProps> = ({
   activeTab,
   setActiveTab,
   loggedInMemberName,
+  loggedInMemberPhoto,
   onLogoutMember
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -46,6 +48,7 @@ export const Header: React.FC<HeaderProps> = ({
   ];
 
   const isDark = theme === 'dark';
+  const isTa = currentLang === 'ta';
 
   return (
     <header className={`sticky top-0 z-40 transition-colors duration-300 ${
@@ -77,8 +80,10 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* Desktop Navigation Links - Perfect responsive laptop layout for Tamil & English without overlap */}
-          <nav className="hidden lg:flex items-center justify-center gap-0.5 lg:gap-0.5 xl:gap-1 2xl:gap-2.5 flex-1 min-w-0 px-1 lg:px-2">
+          {/* Desktop Navigation Links - Maxed out English layout with responsive Tamil support */}
+          <nav className={`hidden md:flex items-center gap-1 md:gap-1.5 lg:gap-2 xl:gap-2.5 flex-1 min-w-0 px-2 overflow-x-auto no-scrollbar ${
+            isTa ? 'justify-start' : 'justify-center'
+          }`}>
             {navItems.map((item) => {
               const isActive = activeTab === item.id;
               return (
@@ -95,17 +100,21 @@ export const Header: React.FC<HeaderProps> = ({
                       if (elem) elem.scrollIntoView({ behavior: 'smooth' });
                     }
                   }}
-                  className={`text-[10px] lg:text-[10.5px] xl:text-[11.5px] 2xl:text-sm font-bold transition-all duration-200 px-1 lg:px-1.5 xl:px-2 2xl:px-3 py-1 lg:py-1.5 rounded-xl whitespace-nowrap cursor-pointer shrink-0 relative ${
+                  className={`flex items-center gap-1 transition-all duration-200 py-1 lg:py-1.5 rounded-xl whitespace-nowrap cursor-pointer shrink-0 relative ${
+                    isTa 
+                      ? 'text-[9px] md:text-[10px] lg:text-[10.5px] xl:text-[11.5px] 2xl:text-[13px] px-1.5 md:px-2 lg:px-2.5 xl:px-3 font-semibold' 
+                      : 'text-[11.5px] md:text-[12.5px] lg:text-[13.5px] xl:text-[14.5px] 2xl:text-[16px] px-2 md:px-2.5 lg:px-3 xl:px-3.5 font-semibold'
+                  } ${
                     isActive
-                      ? 'text-[#8B1E26] dark:text-red-400 font-extrabold bg-[#8B1E26]/10 dark:bg-red-500/15 shadow-sm'
+                      ? 'text-[#8B1E26] dark:text-red-400 font-bold bg-[#8B1E26]/10 dark:bg-red-500/15 shadow-sm'
                       : isDark 
-                        ? 'text-gray-300 hover:text-white hover:bg-slate-800/80'
-                        : 'text-slate-600 hover:text-[#8B1E26] hover:bg-slate-100'
+                        ? 'text-gray-300 hover:text-white hover:bg-slate-800/80 font-medium'
+                        : 'text-slate-600 hover:text-[#8B1E26] hover:bg-slate-100 font-medium'
                   }`}
                 >
-                  {currentLang === 'ta' ? item.labelTa : item.labelEn}
+                  <span>{isTa ? item.labelTa : item.labelEn}</span>
                   {isActive && (
-                    <span className="absolute bottom-0 left-1 right-1 lg:left-1.5 lg:right-1.5 xl:left-2 xl:right-2 h-0.5 bg-[#8B1E26] dark:bg-red-400 rounded-full" />
+                    <span className="absolute bottom-0 left-1.5 right-1.5 lg:left-2 lg:right-2 xl:left-2.5 xl:right-2.5 h-0.5 bg-[#8B1E26] dark:bg-red-400 rounded-full" />
                   )}
                 </button>
               );
@@ -113,7 +122,7 @@ export const Header: React.FC<HeaderProps> = ({
           </nav>
 
           {/* Right Action Buttons */}
-          <div className="hidden sm:flex items-center gap-1 lg:gap-1.5 xl:gap-2 shrink-0 ml-1 lg:ml-2 xl:ml-3">
+          <div className="hidden md:flex items-center gap-1 lg:gap-1.5 xl:gap-2 shrink-0 ml-1 lg:ml-2 xl:ml-3">
             
             {/* Search Icon Button */}
             <button
@@ -135,18 +144,42 @@ export const Header: React.FC<HeaderProps> = ({
               className="flex items-center gap-1 text-[10px] xl:text-xs font-bold text-[#8B1E26] dark:text-red-300 bg-transparent hover:bg-[#FDF2F2] dark:hover:bg-red-950/40 border border-[#8B1E26]/40 dark:border-red-500/50 px-1.5 py-1 xl:px-2.5 xl:py-1.5 rounded-full transition-all cursor-pointer shadow-sm active:scale-95 whitespace-nowrap"
             >
               <Heart className="w-3 h-3 xl:w-3.5 xl:h-3.5 fill-[#8B1E26] dark:fill-red-400 text-[#8B1E26] dark:text-red-400" />
-              <span className="hidden 2xl:inline">{currentLang === 'ta' ? 'நன்கொடை' : 'Donate'}</span>
+              <span className="hidden xl:inline">{currentLang === 'ta' ? 'நன்கொடை' : 'Donate'}</span>
             </button>
 
-            {/* Join Sangam / My ID Main CTA */}
+            {/* Logged in Member Profile Avatar CTA / Join Sangam Button */}
             {loggedInMemberName ? (
-              <button
-                onClick={() => setActiveTab('member-dashboard')}
-                className="flex items-center gap-1 text-[10px] xl:text-xs font-bold text-white bg-[#8B1E26] hover:bg-[#72151C] px-2 py-1 xl:px-3 xl:py-1.5 rounded-full shadow-md transition-all transform hover:-translate-y-0.5 active:scale-95 cursor-pointer whitespace-nowrap"
-              >
-                <User className="w-3 h-3 xl:w-3.5 xl:h-3.5" />
-                <span className="max-w-[80px] xl:max-w-none truncate">{loggedInMemberName}</span>
-              </button>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={() => setActiveTab('member-dashboard')}
+                  className="w-8 h-8 xl:w-9 xl:h-9 rounded-full border-2 border-[#8B1E26] dark:border-red-400 overflow-hidden shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer bg-[#8B1E26] flex items-center justify-center shrink-0 relative group"
+                  title={`${loggedInMemberName} (${currentLang === 'ta' ? 'உறுப்பினர் தளம்' : 'Member Dashboard'})`}
+                  aria-label="Member Profile"
+                >
+                  {loggedInMemberPhoto ? (
+                    <img
+                      src={loggedInMemberPhoto}
+                      alt={loggedInMemberName}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <User className="w-4 h-4 xl:w-5 xl:h-5 text-white" />
+                  )}
+                </button>
+                {onLogoutMember && (
+                  <button
+                    onClick={onLogoutMember}
+                    className="p-1 text-slate-400 hover:text-red-500 transition-colors cursor-pointer shrink-0"
+                    title={currentLang === 'ta' ? 'வெளியேறு' : 'Logout'}
+                    aria-label="Logout"
+                  >
+                    <LogOut className="w-3.5 h-3.5 xl:w-4 xl:h-4" />
+                  </button>
+                )}
+              </div>
             ) : (
               <button
                 onClick={onOpenJoinModal}
@@ -206,37 +239,61 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             )}
 
-            {loggedInMemberName && (
-              <button
-                onClick={onLogoutMember}
-                className="text-[10px] text-red-500 hover:underline font-semibold cursor-pointer whitespace-nowrap ml-0.5"
-                title={currentLang === 'ta' ? 'வெளியேறு' : 'Logout'}
-              >
-                {currentLang === 'ta' ? 'வெளியேறு' : 'Exit'}
-              </button>
-            )}
-
           </div>
 
           {/* Mobile menu hamburger */}
-          <div className="flex sm:hidden items-center gap-2">
+          <div className="flex md:hidden items-center gap-1.5 sm:gap-2">
+            <button
+              onClick={onOpenSearchModal}
+              className={`p-1.5 rounded-full border transition-all ${
+                isDark 
+                  ? 'text-gray-300 bg-gray-800 border-gray-700'
+                  : 'text-slate-600 bg-slate-100 border-slate-200'
+              }`}
+              title={currentLang === 'ta' ? 'தேடல்' : 'Search Portal'}
+              aria-label="Search"
+            >
+              <Search className="w-3.5 h-3.5" />
+            </button>
             <button
               onClick={onOpenDonateModal}
-              className="p-1.5 text-xs text-[#8B1E26] bg-[#FDF2F2] border border-[#8B1E26]/30 rounded-full"
+              className="p-1.5 text-xs text-[#8B1E26] bg-[#FDF2F2] dark:bg-red-950/50 border border-[#8B1E26]/30 dark:border-red-500/40 rounded-full"
+              title={currentLang === 'ta' ? 'நன்கொடை' : 'Donate'}
             >
-              <Heart className="w-4 h-4 fill-[#8B1E26]" />
+              <Heart className="w-3.5 h-3.5 fill-[#8B1E26] dark:fill-red-400" />
             </button>
-            <button
-              onClick={onOpenJoinModal}
-              className="text-xs font-bold text-white bg-[#8B1E26] px-3 py-1.5 rounded-full"
-            >
-              Join
-            </button>
+
+            {loggedInMemberName ? (
+              <button
+                onClick={() => setActiveTab('member-dashboard')}
+                className="w-8 h-8 rounded-full border-2 border-[#8B1E26] dark:border-red-400 overflow-hidden shadow-sm bg-[#8B1E26] flex items-center justify-center shrink-0"
+                title={loggedInMemberName}
+              >
+                {loggedInMemberPhoto ? (
+                  <img src={loggedInMemberPhoto} alt={loggedInMemberName} className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-4 h-4 text-white" />
+                )}
+              </button>
+            ) : (
+              <button
+                onClick={onOpenJoinModal}
+                className="text-xs font-bold text-white bg-[#8B1E26] hover:bg-[#72151C] px-2.5 py-1.5 rounded-full shadow-sm"
+              >
+                {currentLang === 'ta' ? 'சேரவும்' : 'Join'}
+              </button>
+            )}
+
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className={`p-2 ${isDark ? 'text-gray-300 hover:text-white' : 'text-slate-700 hover:text-slate-900'}`}
+              className={`p-1.5 rounded-xl border transition-colors ${
+                isDark 
+                  ? 'text-gray-300 bg-gray-800 border-gray-700 hover:text-white' 
+                  : 'text-slate-700 bg-slate-100 border-slate-200 hover:text-slate-900'
+              }`}
+              aria-label="Toggle Navigation Menu"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
 
@@ -245,9 +302,44 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <div className={`sm:hidden border-t px-4 pt-3 pb-6 space-y-3 ${
+        <div className={`md:hidden border-t px-4 pt-3 pb-6 space-y-3 ${
           isDark ? 'bg-[#22262E] border-gray-800 text-white' : 'bg-white border-slate-200 text-slate-900'
         }`}>
+          {loggedInMemberName && (
+            <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#8B1E26]/10 dark:bg-red-950/40 border border-[#8B1E26]/20">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-9 h-9 rounded-full border-2 border-[#8B1E26] overflow-hidden bg-[#8B1E26] flex items-center justify-center shrink-0">
+                  {loggedInMemberPhoto ? (
+                    <img src={loggedInMemberPhoto} alt={loggedInMemberName} className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-4 h-4 text-white" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-extrabold text-[#8B1E26] dark:text-red-400 truncate">{loggedInMemberName}</p>
+                  <p className="text-[10px] text-slate-500 dark:text-gray-400">{currentLang === 'ta' ? 'உறுப்பினர் தளம்' : 'Member Dashboard'}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={() => { setActiveTab('member-dashboard'); setMobileMenuOpen(false); }}
+                  className="text-xs font-bold text-white bg-[#8B1E26] px-3 py-1.5 rounded-full"
+                >
+                  {currentLang === 'ta' ? 'பார்க்க' : 'View'}
+                </button>
+                {onLogoutMember && (
+                  <button
+                    onClick={() => { onLogoutMember(); setMobileMenuOpen(false); }}
+                    className="p-1 text-red-500"
+                    title={currentLang === 'ta' ? 'வெளியேறு' : 'Logout'}
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-2 pb-3 border-b border-gray-200 dark:border-gray-700">
             {navItems.map((item) => (
               <button
@@ -266,7 +358,7 @@ export const Header: React.FC<HeaderProps> = ({
                     : isDark ? 'text-gray-300 hover:bg-gray-800' : 'text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                {currentLang === 'ta' ? item.labelTa : item.labelEn}
+                <span>{currentLang === 'ta' ? item.labelTa : item.labelEn}</span>
               </button>
             ))}
           </div>
@@ -277,7 +369,7 @@ export const Header: React.FC<HeaderProps> = ({
               className="w-full flex items-center justify-center gap-2 bg-[#8B1E26] text-white font-bold py-2.5 rounded-full text-sm"
             >
               <Heart className="w-4 h-4 fill-white" />
-              <span>Donate to Tamil Sangam</span>
+              <span>{currentLang === 'ta' ? 'தமிழ் சங்கத்திற்கு நன்கொடை அளிக்கவும்' : 'Donate to Tamil Sangam'}</span>
             </button>
 
             <button
@@ -285,23 +377,25 @@ export const Header: React.FC<HeaderProps> = ({
               className="w-full flex items-center justify-center gap-2 font-semibold py-2.5 rounded-full text-sm border border-slate-300 dark:border-gray-700"
             >
               <QrCode className="w-4 h-4 text-[#8B1E26]" />
-              <span>Verify Membership QR Code</span>
+              <span>{currentLang === 'ta' ? 'அடையாள அட்டை QR சரிபார்ப்பு' : 'Verify Membership QR Code'}</span>
             </button>
 
-            <button
-              onClick={() => { onOpenMemberLogin(); setMobileMenuOpen(false); }}
-              className="w-full flex items-center justify-center gap-2 font-semibold py-2.5 rounded-full text-sm border border-slate-300 dark:border-gray-700"
-            >
-              <User className="w-4 h-4 text-[#8B1E26]" />
-              <span>Member Login Portal</span>
-            </button>
+            {!loggedInMemberName && (
+              <button
+                onClick={() => { onOpenMemberLogin(); setMobileMenuOpen(false); }}
+                className="w-full flex items-center justify-center gap-2 font-semibold py-2.5 rounded-full text-sm border border-slate-300 dark:border-gray-700"
+              >
+                <User className="w-4 h-4 text-[#8B1E26]" />
+                <span>{currentLang === 'ta' ? 'உறுப்பினர் உள்நுழைவு தளம்' : 'Member Login Portal'}</span>
+              </button>
+            )}
 
             <div className="flex items-center justify-between pt-2">
               <button
                 onClick={onToggleTheme}
                 className="text-xs font-bold text-slate-600 dark:text-yellow-400 py-1"
               >
-                {isDark ? '☀️ Light Mode' : '🌙 Dark Mode'}
+                {isDark ? (currentLang === 'ta' ? '☀️ வெளிச்சப் பயன்முறை' : '☀️ Light Mode') : (currentLang === 'ta' ? '🌙 இரவுப் பயன்முறை' : '🌙 Dark Mode')}
               </button>
 
               <button
@@ -317,4 +411,5 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
+
 
