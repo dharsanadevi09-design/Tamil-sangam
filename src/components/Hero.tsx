@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { 
   Users, MapPin, Calendar, Eye, Target, Sprout, ArrowRight, 
   CheckSquare, ChevronLeft, ChevronRight, MapPin as LocationIcon, Heart,
-  BookOpen, HelpCircle, ChevronDown, Sparkles
+  BookOpen, HelpCircle, ChevronDown, Sparkles, GraduationCap, Flag,
+  HeartHandshake, Theater, ShieldCheck, FileText, Globe, TreePine,
+  Landmark, IdCard
 } from 'lucide-react';
 import { INITIAL_NEWS } from '../data/mockData';
 import type { NewsItem } from '../types';
@@ -43,14 +45,14 @@ export const Hero: React.FC<HeroProps> = ({
     ? galleryItems 
     : galleryItems.filter(g => g.category === activeGalleryFilter);
 
-  // Wing cards with images matching reference screenshot
+  // Wing cards with icons matching reference screenshot
   const wingCards = [
-    { id: 'edu', nameEn: 'Education Wing', nameTa: 'கல்விப் பாசறை', icon: '🎓', img: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=600&auto=format&fit=crop' },
-    { id: 'youth', nameEn: 'Youth Wing', nameTa: 'இளைஞர் பாசறை', icon: '🚩', img: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=600&auto=format&fit=crop' },
-    { id: 'women', nameEn: 'Women Wing', nameTa: 'மகளிர் பாசறை', icon: '👩', img: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=600&auto=format&fit=crop' },
-    { id: 'culture', nameEn: 'Culture Wing', nameTa: 'கலை கலாச்சார பாசறை', icon: '🎭', img: 'https://images.unsplash.com/photo-1601972599720-36938d4ecd31?q=80&w=600&auto=format&fit=crop' },
-    { id: 'welfare', nameEn: 'Welfare Wing', nameTa: 'சமூக நலப் பாசறை', icon: '🤲', img: 'https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?q=80&w=600&auto=format&fit=crop' },
-    { id: 'env', nameEn: 'Environment Wing', nameTa: 'சுற்றுச்சூழல் பாசறை', icon: '🌱', img: 'https://images.unsplash.com/photo-1464226184884-fa280b87c399?q=80&w=600&auto=format&fit=crop' },
+    { id: 'edu', nameEn: 'Education Wing', nameTa: 'கல்விப் பாசறை', icon: GraduationCap, img: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=600&auto=format&fit=crop' },
+    { id: 'youth', nameEn: 'Youth Wing', nameTa: 'இளைஞர் பாசறை', icon: Flag, img: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=600&auto=format&fit=crop' },
+    { id: 'women', nameEn: 'Women Wing', nameTa: 'மகளிர் பாசறை', icon: HeartHandshake, img: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=600&auto=format&fit=crop' },
+    { id: 'culture', nameEn: 'Culture Wing', nameTa: 'கலை கலாச்சார பாசறை', icon: Theater, img: 'https://images.unsplash.com/photo-1601972599720-36938d4ecd31?q=80&w=600&auto=format&fit=crop' },
+    { id: 'welfare', nameEn: 'Welfare Wing', nameTa: 'சமூக நலப் பாசறை', icon: ShieldCheck, img: 'https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?q=80&w=600&auto=format&fit=crop' },
+    { id: 'env', nameEn: 'Environment Wing', nameTa: 'சுற்றுச்சூழல் பாசறை', icon: Sprout, img: 'https://images.unsplash.com/photo-1464226184884-fa280b87c399?q=80&w=600&auto=format&fit=crop' },
   ];
 
   const faqs = currentLang === 'ta' ? [
@@ -338,15 +340,15 @@ export const Hero: React.FC<HeroProps> = ({
               {/* Bullet highlights */}
               <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2 text-xs font-semibold text-slate-700 dark:text-gray-300">
                 <div className="flex items-center gap-2">
-                  <span className="text-[#8B1E26] dark:text-red-400 text-base">📜</span>
+                  <FileText className="w-4 h-4 text-[#8B1E26] dark:text-red-400 shrink-0" />
                   <span>{currentLang === 'ta' ? 'பழங்கால ஓலைச்சுவடிகள் கணினிமயமாக்கல்' : 'Digitization of Palm-leaf Manuscripts'}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[#8B1E26] dark:text-red-400 text-base">🌐</span>
+                  <Globe className="w-4 h-4 text-[#8B1E26] dark:text-red-400 shrink-0" />
                   <span>{currentLang === 'ta' ? '25+ நாடுகளில் உலகளாவிய தமிழ் பிணைப்பு' : 'Global Diaspora Network in 25+ Nations'}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[#8B1E26] dark:text-red-400 text-base">🎓</span>
+                  <GraduationCap className="w-4 h-4 text-[#8B1E26] dark:text-red-400 shrink-0" />
                   <span>{currentLang === 'ta' ? 'பல்கலைக்கழக தமிழ் இருக்கை ஆய்வுகள்' : 'International University Tamil Chairs'}</span>
                 </div>
               </div>
@@ -376,15 +378,15 @@ export const Hero: React.FC<HeroProps> = ({
               {/* Bullet highlights */}
               <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2 text-xs font-semibold text-slate-700 dark:text-gray-300">
                 <div className="flex items-center gap-2">
-                  <span className="text-[#8B1E26] dark:text-red-400 text-base">🪪</span>
+                  <IdCard className="w-4 h-4 text-[#8B1E26] dark:text-red-400 shrink-0" />
                   <span>{currentLang === 'ta' ? '100% டிஜிட்டல் உறுப்பினர் சான்றிதழ்' : '100% Digital Member Cards & Verification'}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[#8B1E26] dark:text-red-400 text-base">🚩</span>
+                  <Flag className="w-4 h-4 text-[#8B1E26] dark:text-red-400 shrink-0" />
                   <span>{currentLang === 'ta' ? '23 சிறப்பு பாசறை அமைப்புகள்' : '23 Wings for Youth, Women & Technology'}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[#8B1E26] dark:text-red-400 text-base">🤝</span>
+                  <HeartHandshake className="w-4 h-4 text-[#8B1E26] dark:text-red-400 shrink-0" />
                   <span>{currentLang === 'ta' ? 'இரத்த தானம் & உடனடி மருத்துவ உதவிகள்' : '24/7 Community Blood & Welfare Support'}</span>
                 </div>
               </div>
@@ -414,15 +416,15 @@ export const Hero: React.FC<HeroProps> = ({
               {/* Bullet highlights */}
               <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2 text-xs font-semibold text-slate-700 dark:text-gray-300">
                 <div className="flex items-center gap-2">
-                  <span className="text-[#8B1E26] dark:text-red-400 text-base">📚</span>
+                  <BookOpen className="w-4 h-4 text-[#8B1E26] dark:text-red-400 shrink-0" />
                   <span>{currentLang === 'ta' ? 'இலவச போட்டித்தேர்வு பயிற்சி & உதவித்தொகை' : 'Free TNPSC/UPSC Coaching & Scholarships'}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[#8B1E26] dark:text-red-400 text-base">🌳</span>
+                  <TreePine className="w-4 h-4 text-[#8B1E26] dark:text-red-400 shrink-0" />
                   <span>{currentLang === 'ta' ? 'மரக்கன்றுகள் நடுதல் & இயற்கை பாதுகாப்பு' : 'Environmental Tree Plantation Drives'}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[#8B1E26] dark:text-red-400 text-base">🎭</span>
+                  <Theater className="w-4 h-4 text-[#8B1E26] dark:text-red-400 shrink-0" />
                   <span>{currentLang === 'ta' ? 'தமிழ் இசை, நாட்டியம் & நாட்டுப்புறக் கலைகள்' : 'Classical Arts & Folk Literature Festivals'}</span>
                 </div>
               </div>
@@ -463,19 +465,19 @@ export const Hero: React.FC<HeroProps> = ({
               {/* Key Features Badge Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-semibold text-slate-700 dark:text-gray-300 pt-1">
                 <div className="flex items-center gap-2.5 bg-[#FAF8F5] dark:bg-slate-800/80 p-3 rounded-xl border border-slate-200/80 dark:border-slate-700 shadow-sm">
-                  <span className="text-base">🏛️</span>
-                  <span>{currentLang === 'ta' ? 'முச்சங்க பாரம்பரியம்' : 'Ancient Sangam Heritage'}</span>
+                  <Landmark className="w-4 h-4 text-[#8B1E26] dark:text-red-400 shrink-0" />
+                  <span>{currentLang === 'ta' ? 'முச்சங்கபாரம்பரியம்' : 'Ancient Sangam Heritage'}</span>
                 </div>
                 <div className="flex items-center gap-2.5 bg-[#FAF8F5] dark:bg-slate-800/80 p-3 rounded-xl border border-slate-200/80 dark:border-slate-700 shadow-sm">
-                  <span className="text-base">🚩</span>
+                  <Flag className="w-4 h-4 text-[#8B1E26] dark:text-red-400 shrink-0" />
                   <span>{currentLang === 'ta' ? '23 பாசறைகள்' : '23 Wings / Pasarai'}</span>
                 </div>
                 <div className="flex items-center gap-2.5 bg-[#FAF8F5] dark:bg-slate-800/80 p-3 rounded-xl border border-slate-200/80 dark:border-slate-700 shadow-sm">
-                  <span className="text-base">🗺️</span>
+                  <MapPin className="w-4 h-4 text-[#8B1E26] dark:text-red-400 shrink-0" />
                   <span>{currentLang === 'ta' ? '38 மாவட்ட அலகுகள்' : '38 District Units'}</span>
                 </div>
                 <div className="flex items-center gap-2.5 bg-[#FAF8F5] dark:bg-slate-800/80 p-3 rounded-xl border border-slate-200/80 dark:border-slate-700 shadow-sm">
-                  <span className="text-base">🪪</span>
+                  <ShieldCheck className="w-4 h-4 text-[#8B1E26] dark:text-red-400 shrink-0" />
                   <span>{currentLang === 'ta' ? 'டிஜிட்டல் உறுப்பினர் சான்று' : 'Digital ID & Verification'}</span>
                 </div>
               </div>
@@ -664,7 +666,7 @@ export const Hero: React.FC<HeroProps> = ({
                   </div>
                   
                   <div className="p-3 text-center flex items-center justify-center gap-1.5 bg-white dark:bg-[#1E232B]">
-                    <span className="text-sm text-[#8B1E26]">{wing.icon}</span>
+                    <wing.icon className="w-4 h-4 text-[#8B1E26] shrink-0" />
                     <span className="text-xs font-bold text-slate-900 dark:text-white">
                       {currentLang === 'ta' ? wing.nameTa : wing.nameEn}
                     </span>
@@ -1133,16 +1135,16 @@ export const Hero: React.FC<HeroProps> = ({
       {/* ========================================================================= */}
       <section className="py-16 bg-white dark:bg-[#181B20] border-t border-slate-200/80 dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-[#1E232B] text-white p-8 sm:p-12">
+          <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-br from-[#8B1E26] via-[#72151C] to-[#500F14] text-white p-8 sm:p-12 border border-red-900/30">
             
             {/* Background Image with Overlay */}
             <div className="absolute inset-0 pointer-events-none">
               <img 
                 src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=1600&auto=format&fit=crop" 
                 alt="Support Tamil Sangam Initiatives" 
-                className="w-full h-full object-cover opacity-25"
+                className="w-full h-full object-cover opacity-25 mix-blend-overlay"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#500F14]/90 via-[#72151C]/75 to-transparent" />
             </div>
 
             <div className="relative z-10 max-w-2xl space-y-4">
@@ -1150,7 +1152,7 @@ export const Hero: React.FC<HeroProps> = ({
                 {currentLang === 'ta' ? 'எங்கள் சமுதாயப் பணிகளுக்கு ஆதரவு தாருங்கள்' : 'Support Our Initiatives'}
               </h2>
 
-              <p className="text-sm sm:text-base text-gray-200 leading-relaxed">
+              <p className="text-sm sm:text-base text-red-100 leading-relaxed font-medium">
                 {currentLang === 'ta'
                   ? 'உங்கள் அன்பளிப்பு மற்றும் நன்கொடைகள் தமிழ் சமுதாயத்தின் கல்வி, பண்பாடு மற்றும் சமூக நலத் திட்டங்களை செயல்படுத்தப் பெரிதும் உதவும்.'
                   : 'Your generous contributions help us support education, cultural revival, environmental protection, and welfare initiatives across Tamil Nadu.'}
@@ -1159,9 +1161,9 @@ export const Hero: React.FC<HeroProps> = ({
               <div>
                 <button
                   onClick={onOpenDonateModal}
-                  className="inline-flex items-center gap-2 bg-[#8B1E26] hover:bg-[#72151C] text-white text-xs font-bold px-7 py-3.5 rounded-full shadow-lg transition-all active:scale-95 cursor-pointer uppercase tracking-wider"
+                  className="inline-flex items-center gap-2 bg-white hover:bg-amber-100 text-[#8B1E26] text-xs font-black px-7 py-3.5 rounded-full shadow-xl transition-all active:scale-95 cursor-pointer uppercase tracking-wider"
                 >
-                  <Heart className="w-4 h-4 fill-white" />
+                  <Heart className="w-4 h-4 fill-[#8B1E26] text-[#8B1E26]" />
                   <span>{currentLang === 'ta' ? 'நன்கொடை அளியுங்கள்' : 'Donate Now'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>

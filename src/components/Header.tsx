@@ -393,9 +393,19 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="flex items-center justify-between pt-2">
               <button
                 onClick={onToggleTheme}
-                className="text-xs font-bold text-slate-600 dark:text-yellow-400 py-1"
+                className="text-xs font-bold text-slate-600 dark:text-yellow-400 py-1 flex items-center gap-1.5"
               >
-                {isDark ? (currentLang === 'ta' ? '☀️ வெளிச்சப் பயன்முறை' : '☀️ Light Mode') : (currentLang === 'ta' ? '🌙 இரவுப் பயன்முறை' : '🌙 Dark Mode')}
+                {isDark ? (
+                  <>
+                    <Sun className="w-3.5 h-3.5 text-amber-500" />
+                    <span>{currentLang === 'ta' ? 'வெளிச்சப் பயன்முறை' : 'Light Mode'}</span>
+                  </>
+                ) : (
+                  <>
+                    <Moon className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>{currentLang === 'ta' ? 'இரவுப் பயன்முறை' : 'Dark Mode'}</span>
+                  </>
+                )}
               </button>
 
               <button

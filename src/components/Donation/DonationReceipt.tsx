@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { DonationRecord } from '../../types';
-import { Printer, Mail, Phone, CheckCircle2, X } from 'lucide-react';
+import { Printer, Mail, Phone, CheckCircle2, X, Landmark } from 'lucide-react';
 
 interface DonationReceiptProps {
   receipt: DonationRecord;
@@ -51,7 +51,7 @@ export const DonationReceipt: React.FC<DonationReceiptProps> = ({
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-6 mb-6">
           <div className="flex items-center gap-3">
             <div className="w-14 h-14 rounded-full bg-[#181B20] text-2xl flex items-center justify-center border-2 border-yellow-400 shadow-md">
-              🏛️
+              <Landmark className="w-6 h-6 text-yellow-400" />
             </div>
             <div>
               <h2 className="font-black text-xl text-slate-900 tracking-tight">TAMIL SANGAM – TAMIL NADU</h2>
