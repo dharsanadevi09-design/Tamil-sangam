@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { MemberApplication } from '../../types';
-import { Phone, Mail, CheckCircle2, Printer, Landmark } from 'lucide-react';
+import { Phone, Mail, CheckCircle2, Printer } from 'lucide-react';
 
 interface DigitalIdCardProps {
   member: MemberApplication;
@@ -72,8 +72,8 @@ export const DigitalIdCard: React.FC<DigitalIdCardProps> = ({
             {/* Header Strip */}
             <div className="flex items-center justify-between border-b border-gray-800 pb-2">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center text-base shadow">
-                  <Landmark className="w-4 h-4 text-[#181B20]" />
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#8B1E26] to-[#600D13] p-0.5 shadow border border-amber-400 shrink-0 overflow-hidden">
+                  <img src="/tamil-sangam-logo.jpg" alt="Logo" className="w-full h-full object-cover rounded-full" />
                 </div>
                 <div>
                   <h4 className="font-extrabold text-xs text-white tracking-wider">TAMIL SANGAM</h4>

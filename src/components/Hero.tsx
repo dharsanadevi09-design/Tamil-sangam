@@ -22,7 +22,7 @@ interface HeroProps {
 export const Hero: React.FC<HeroProps> = ({
   onOpenJoinModal,
   onOpenDonateModal,
-  onOpenVerifyModal: _onOpenVerifyModal,
+  onOpenVerifyModal,
   currentLang = 'en',
   isLoggedIn,
   onGoToDashboard,
@@ -31,6 +31,20 @@ export const Hero: React.FC<HeroProps> = ({
   const [activeGalleryFilter, setActiveGalleryFilter] = useState('All');
   const [wingSlideIndex, setWingSlideIndex] = useState(0);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  const [isBannerZoomed, setIsBannerZoomed] = useState(false);
+
+  // 9 Category feature pills matching the bottom bar of 2nd image banner
+  const heroFeaturePills = [
+    { id: 'edu', nameTa: 'தமிழ் மொழி வளர்ச்சி', nameEn: 'Tamil Language Dev', icon: BookOpen },
+    { id: 'unity', nameTa: 'தமிழர் ஒற்றுமை', nameEn: 'Tamilian Unity', icon: Users },
+    { id: 'culture', nameTa: 'தமிழ் பண்பாடு பாதுகாப்பு', nameEn: 'Culture Preservation', icon: Landmark },
+    { id: 'welfare', nameTa: 'சமூகநல சேவைகள்', nameEn: 'Social Welfare', icon: Sprout },
+    { id: 'literacy', nameTa: 'கல்வி முன்னேற்றம்', nameEn: 'Educational Progress', icon: GraduationCap },
+    { id: 'youth', nameTa: 'இளைஞர் விழிப்புணர்வு', nameEn: 'Youth Awareness', icon: Flag },
+    { id: 'legal', nameTa: 'சட்ட உதவி வழிகாட்டல்', nameEn: 'Legal Guidance', icon: FileText },
+    { id: 'medical', nameTa: 'மருத்துவ சேவைகள்', nameEn: 'Medical Services', icon: Heart },
+    { id: 'global', nameTa: 'உலகத் தமிழர் இணைப்பு', nameEn: 'Global Tamil Network', icon: Globe },
+  ];
 
   // Gallery items matching reference image
   const galleryItems = [
@@ -103,132 +117,172 @@ export const Hero: React.FC<HeroProps> = ({
     <div id="home" className="bg-[#FAF8F5] dark:bg-slate-950 text-slate-800 dark:text-gray-100 transition-colors duration-300">
       
       {/* ========================================================================= */}
-      {/* 1. HERO MAIN SECTION */}
+      {/* 1. HERO MAIN SECTION - 1ST VIEW FEATURING 2ND IMAGE BANNER */}
       {/* ========================================================================= */}
-      <section className="relative min-h-[580px] lg:min-h-[640px] flex items-center overflow-hidden bg-[#FAF8F5] dark:bg-slate-950 transition-colors duration-300">
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#2A080C] via-[#5C1017] to-[#8B1E26] text-white pt-4 sm:pt-6 pb-10 sm:pb-12 shadow-2xl">
         
-        {/* Full Right Side Background Temple Image - 100% Crisp & Visible */}
-        <div className="absolute right-0 top-0 bottom-0 w-full lg:w-[50%] h-full overflow-hidden pointer-events-none z-0">
-          <img 
-            src="/hero-temple.jpg" 
-            alt="Madurai Temple Heritage" 
-            className="w-full h-full object-cover object-center transform hover:scale-105 transition-transform duration-700" 
-          />
-          {/* Subtle edge-only left fade for contrast against text */}
-          <div className="absolute inset-y-0 left-0 w-32 sm:w-48 bg-gradient-to-r from-[#FAF8F5] to-transparent dark:from-slate-950 pointer-events-none" />
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#FAF8F5] to-transparent dark:from-slate-950 pointer-events-none" />
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10 py-12 lg:py-16">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        {/* Ambient Glow & Gold Grid Background */}
+        <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#FFD700_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
+        
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 relative z-10 space-y-4 sm:space-y-6">
+          
+          {/* Top Announcement Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-black/40 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-amber-500/30 text-xs text-amber-200">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+              <span className="font-extrabold tracking-wide text-amber-100">
+                {currentLang === 'ta' ? 'தமிழ்ப் சங்கம் - தமிழ்நாடு அறக்கட்டளை' : 'TAMIL SANGAM - TAMIL NADU TRUST'}
+              </span>
+              <span className="hidden sm:inline-block text-amber-400/60">|</span>
+              <span className="hidden sm:inline-block text-amber-300 font-semibold">
+                {currentLang === 'ta' ? 'இந்திய அரசு பதிவு எண்: TN-15-0042417' : 'Govt of India Reg No: TN-15-0042417'}
+              </span>
+            </div>
             
-            {/* Left Content Column */}
-            <div className="lg:col-span-7 space-y-6 max-w-xl">
-              
-              <p className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest">
-                {currentLang === 'ta' ? 'தமிழ் மக்களை ஒன்றிணைப்போம்' : 'CONNECTING TAMIL PEOPLE'}
-              </p>
+            <div className="flex items-center gap-2 ml-auto">
+              <button
+                onClick={() => setIsBannerZoomed(true)}
+                className="flex items-center gap-1.5 bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 text-[11px] font-bold px-3 py-1 rounded-lg border border-amber-400/40 transition-colors cursor-pointer"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>{currentLang === 'ta' ? 'முகப்பு படத்தைப் பெரிதாக்குக' : 'View Banner Fullscreen'}</span>
+              </button>
+            </div>
+          </div>
 
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold font-heading text-slate-900 dark:text-white leading-[1.15] tracking-tight">
-                {currentLang === 'ta' ? (
-                  <>
-                    தமிழ் பண்பாட்டைப் <br />
-                    பாதுகாப்போம். <br />
-                    <span className="text-[#8B1E26] dark:text-red-400">வலுவான <br />சமுதாயத்தைக் கட்டுவோம்.</span>
-                  </>
-                ) : (
-                  <>
-                    Preserving <br />
-                    Tamil Culture. <br />
-                    <span className="text-[#8B1E26] dark:text-red-400">Building a <br />Stronger Community.</span>
-                  </>
-                )}
-              </h1>
+          {/* MAIN 1ST VIEW IMAGE AT TOP OF HOME PAGE */}
+          <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-amber-400/40 bg-slate-950 group">
+            {/* Clean Cropped Image (Without redundant image navbar) */}
+            <img 
+              src="/tamil-sangam-banner.jpg" 
+              alt="தமிழ் சங்கம் தமிழ்நாடு" 
+              className="w-full h-auto max-h-[560px] object-cover object-center w-full transition-transform duration-700 cursor-pointer"
+              onClick={() => setIsBannerZoomed(true)}
+            />
 
-              <p className="text-sm sm:text-base text-slate-600 dark:text-gray-300 leading-relaxed">
-                {currentLang === 'ta' 
-                  ? 'தமிழ் சங்கம் - தமிழ்நாடு என்பது தமிழ் மொழி, பண்பாடு, கலாச்சாரம் மற்றும் சமுதாய வளர்ச்சிப் பணிகளுக்காக இயங்கும் மக்கள் அமைப்பாகும்.'
-                  : 'Tamil Sangam - Tamil Nadu is a dedicated people\'s organization working for the development of Tamil language, culture, heritage and society.'}
-              </p>
+            {/* Bottom Floating Quick Actions Bar */}
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/75 to-transparent p-4 sm:p-6 flex flex-wrap items-center justify-between gap-4">
+              <div className="text-white space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full overflow-hidden border border-amber-400 shrink-0">
+                    <img src="/tamil-sangam-logo.jpg" alt="Logo" className="w-full h-full object-cover" />
+                  </div>
+                  <h2 className="text-base sm:text-2xl font-black font-heading text-amber-300 drop-shadow-md">
+                    {currentLang === 'ta' ? 'தமிழ் சங்கம் - தமிழ்நாடு' : 'TAMIL SANGAM - TAMIL NADU'}
+                  </h2>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-200 font-medium max-w-xl hidden sm:block">
+                  {currentLang === 'ta' 
+                    ? 'தமிழ் மொழி, பண்பாடு, கலாச்சாரம் மற்றும் சமுதாய மறுமலர்ச்சிக்கான மாநில ஒருங்கிணைப்பு போர்ட்டல்.' 
+                    : 'Statewide Digital Portal for Tamil Language, Culture, Heritage & Social Welfare.'}
+                </p>
+              </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-4 pt-2">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 {isLoggedIn ? (
                   <button
                     onClick={onGoToDashboard}
-                    className="flex items-center gap-2 bg-[#8B1E26] hover:bg-[#72151C] text-white text-sm font-bold px-7 py-3.5 rounded-full shadow-lg transition-all transform hover:-translate-y-0.5 active:scale-95 cursor-pointer"
+                    className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm px-5 py-2.5 rounded-xl shadow-lg transition-all transform hover:scale-105 active:scale-95 cursor-pointer"
                   >
-                    <span>{currentLang === 'ta' ? 'எனது உறுப்பினர் பலகை' : 'MY MEMBER DASHBOARD'}</span>
+                    <span>{currentLang === 'ta' ? 'எனது பலகை' : 'My Dashboard'}</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 ) : (
                   <button
                     onClick={() => onOpenJoinModal()}
-                    className="flex items-center gap-2 bg-[#8B1E26] hover:bg-[#72151C] text-white text-sm font-bold px-7 py-3.5 rounded-full shadow-lg transition-all transform hover:-translate-y-0.5 active:scale-95 cursor-pointer"
+                    className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs sm:text-sm px-5 py-2.5 rounded-xl shadow-lg transition-all transform hover:scale-105 active:scale-95 cursor-pointer"
                   >
-                    <span>{currentLang === 'ta' ? 'தமிழ் சங்கத்தில் சேரவும்' : 'Join Tamil Sangam'}</span>
-                    <ArrowRight className="w-4 h-4" />
+                    <IdCard className="w-4 h-4 text-slate-950" />
+                    <span>{currentLang === 'ta' ? 'உறுப்பினர் சேர்க்கை / விண்ணப்பம்' : 'Join Tamil Sangam'}</span>
                   </button>
                 )}
 
                 <button
-                  onClick={() => {
-                    const elem = document.getElementById('about');
-                    if (elem) elem.scrollIntoView({ behavior: 'smooth' });
-                    else if (setActiveTab) setActiveTab('about');
-                  }}
-                  className="flex items-center gap-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-300 dark:border-gray-700 hover:bg-white text-slate-800 dark:text-gray-200 text-sm font-bold px-7 py-3.5 rounded-full shadow-sm transition-all cursor-pointer"
+                  onClick={onOpenVerifyModal}
+                  className="flex items-center gap-2 bg-black/60 hover:bg-black/80 text-amber-300 border border-amber-400/50 font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl backdrop-blur-md shadow-md transition-all cursor-pointer"
                 >
-                  <span>{currentLang === 'ta' ? 'எங்கள் பணிகளை அறிய' : 'Explore Our Work'}</span>
+                  <CheckSquare className="w-4 h-4" />
+                  <span>{currentLang === 'ta' ? 'அட்டை சரிபார்ப்பு' : 'Verify ID Card'}</span>
+                </button>
+
+                <button
+                  onClick={onOpenDonateModal}
+                  className="flex items-center gap-2 bg-red-700/80 hover:bg-red-700 text-white font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl border border-red-500/50 shadow-md transition-all cursor-pointer"
+                >
+                  <Heart className="w-4 h-4 text-rose-300" />
+                  <span>{currentLang === 'ta' ? 'நன்கொடை' : 'Donate'}</span>
                 </button>
               </div>
-
-              {/* Social Proof Counter */}
-              <div className="flex items-center gap-4 pt-4 border-t border-slate-200/80 dark:border-gray-800">
-                <div className="flex -space-x-3 overflow-hidden">
-                  <img className="inline-block h-10 w-10 rounded-full ring-2 ring-white dark:ring-gray-900 object-cover" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" alt="Member" />
-                  <img className="inline-block h-10 w-10 rounded-full ring-2 ring-white dark:ring-gray-900 object-cover" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80" alt="Member" />
-                  <img className="inline-block h-10 w-10 rounded-full ring-2 ring-white dark:ring-gray-900 object-cover" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80" alt="Member" />
-                </div>
-                <div>
-                  <p className="text-sm font-extrabold text-slate-900 dark:text-white">10,000+</p>
-                  <p className="text-xs text-slate-500 dark:text-gray-400">
-                    {currentLang === 'ta' ? 'உறுப்பினர்கள் மற்றும் வளர்ச்சி' : 'Members and growing'}
-                  </p>
-                </div>
-              </div>
-
             </div>
-
-            {/* Right Column: Floating Quote Card on bottom right */}
-            <div className="lg:col-span-5 relative flex justify-end items-end h-full pt-12 lg:pt-0">
-              <div className="bg-white/95 dark:bg-[#1E232B]/95 backdrop-blur-md p-6 rounded-2xl shadow-2xl border border-slate-200/80 dark:border-gray-800 max-w-[280px] sm:max-w-[300px]">
-                <div className="flex items-start gap-3">
-                  <span className="text-3xl leading-none text-[#8B1E26] dark:text-red-400 font-serif">❝</span>
-                  <div>
-                    <p className="text-sm font-bold text-slate-900 dark:text-white font-serif leading-relaxed">
-                      {currentLang === 'ta' ? (
-                        <>
-                          தமிழ் வெல்லும் <br />
-                          தமிழர் பண்பாடு <br />
-                          தமிழர் முன்னேற்றம்
-                        </>
-                      ) : (
-                        <>
-                          Tamil Prevails <br />
-                          Tamilian Heritage <br />
-                          Tamilian Progress
-                        </>
-                      )}
-                    </p>
-                    <div className="w-12 h-1 bg-[#8B1E26] mt-3 rounded-full" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
           </div>
+
+          {/* 9 FEATURE PILLS BAR (MATCHING BOTTOM STRIP OF 2ND IMAGE) */}
+          <div className="bg-white/95 dark:bg-[#1E232B]/95 backdrop-blur-md rounded-2xl p-3 sm:p-4 shadow-xl border border-amber-400/40">
+            <p className="text-[11px] font-extrabold text-[#8B1E26] dark:text-amber-400 uppercase tracking-widest text-center mb-3">
+              {currentLang === 'ta' ? 'முதன்மைச் சேவைகள் & பாசறைகள்' : 'CORE SERVICES & WINGS'}
+            </p>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-2">
+              {heroFeaturePills.map((pill) => {
+                const IconComponent = pill.icon;
+                return (
+                  <button
+                    key={pill.id}
+                    onClick={() => {
+                      if (pill.id === 'unity' || pill.id === 'global') {
+                        onOpenJoinModal();
+                      } else {
+                        onOpenJoinModal(pill.id);
+                      }
+                    }}
+                    className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-gray-800 hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-slate-800 dark:text-gray-200 transition-all duration-200 group cursor-pointer text-center"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-[#8B1E26]/10 dark:bg-amber-400/10 flex items-center justify-center text-[#8B1E26] dark:text-amber-400 group-hover:scale-110 group-hover:bg-[#8B1E26] group-hover:text-white transition-all mb-1.5">
+                      <IconComponent className="w-4 h-4" />
+                    </div>
+                    <span className="text-[11px] font-bold leading-tight font-sans text-slate-800 dark:text-gray-200 group-hover:text-[#8B1E26] dark:group-hover:text-amber-300">
+                      {currentLang === 'ta' ? pill.nameTa : pill.nameEn}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
         </div>
+
+        {/* FULLSCREEN BANNER LIGHTBOX MODAL */}
+        {isBannerZoomed && (
+          <div 
+            onClick={() => setIsBannerZoomed(false)}
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-lg flex items-center justify-center p-4 cursor-zoom-out animate-fadeIn"
+          >
+            <div className="relative max-w-6xl w-full max-h-[90vh] bg-slate-950 rounded-2xl overflow-hidden border-2 border-amber-400 shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-[#8B1E26] to-[#600D13] text-white">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-amber-300" />
+                  <h3 className="font-extrabold text-sm sm:text-base text-amber-200">
+                    {currentLang === 'ta' ? 'தமிழ் சங்கம் - தமிழ்நாடு (முகப்பு 1st View)' : 'Tamil Sangam - Tamil Nadu Banner'}
+                  </h3>
+                </div>
+                <button 
+                  onClick={() => setIsBannerZoomed(false)}
+                  className="bg-black/40 hover:bg-black/80 text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-amber-400/40 cursor-pointer"
+                >
+                  ✕ Close
+                </button>
+              </div>
+              <div className="p-2 overflow-auto flex items-center justify-center bg-black">
+                <img 
+                  src="/tamil-sangam-banner.jpg" 
+                  alt="Full Banner" 
+                  className="max-w-full max-h-[80vh] object-contain rounded-lg" 
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* ========================================================================= */}
@@ -1142,9 +1196,9 @@ export const Hero: React.FC<HeroProps> = ({
               <img 
                 src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=1600&auto=format&fit=crop" 
                 alt="Support Tamil Sangam Initiatives" 
-                className="w-full h-full object-cover opacity-25 mix-blend-overlay"
+                className="w-full h-full object-cover opacity-50 transition-opacity duration-500"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#500F14]/90 via-[#72151C]/75 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#500F14]/95 via-[#72151C]/70 to-[#500F14]/30" />
             </div>
 
             <div className="relative z-10 max-w-2xl space-y-4">

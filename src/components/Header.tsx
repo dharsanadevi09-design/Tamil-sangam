@@ -63,10 +63,10 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => { setActiveTab('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
             className="flex items-center gap-1.5 sm:gap-2 cursor-pointer group shrink-0 mr-1 lg:mr-2 xl:mr-3"
           >
-            {/* Round Thiruvalluvar Emblem Logo */}
-            <div className="w-8 h-8 sm:w-9 sm:h-9 xl:w-10 xl:h-10 rounded-full bg-gradient-to-br from-[#8B1E26] to-[#600D13] p-0.5 shadow-md group-hover:scale-105 transition-transform duration-200 shrink-0">
-              <div className="w-full h-full rounded-full overflow-hidden border border-white/30 bg-[#FDF2F2]">
-                <img src="/thiruvalluvar-icon.png" alt="Thiruvalluvar" className="w-full h-full object-cover object-top" />
+            {/* Round Tamil Sangam Emblem Logo */}
+            <div className="w-9 h-9 sm:w-10 sm:h-10 xl:w-11 xl:h-11 rounded-full bg-gradient-to-br from-[#8B1E26] via-[#B8860B] to-[#600D13] p-0.5 shadow-lg group-hover:scale-105 transition-transform duration-200 shrink-0">
+              <div className="w-full h-full rounded-full overflow-hidden border border-amber-300/40 bg-[#FDF2F2]">
+                <img src="/tamil-sangam-logo.jpg" alt="தமிழ் சங்கம்" className="w-full h-full object-cover object-center" />
               </div>
             </div>
 
