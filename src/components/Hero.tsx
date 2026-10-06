@@ -117,108 +117,78 @@ export const Hero: React.FC<HeroProps> = ({
     <div id="home" className="bg-[#FAF8F5] dark:bg-slate-950 text-slate-800 dark:text-gray-100 transition-colors duration-300">
       
       {/* ========================================================================= */}
-      {/* 1. HERO MAIN SECTION - 1ST VIEW FEATURING 2ND IMAGE BANNER */}
+      {/* 1. HERO MAIN SECTION - FULL VIEW 1ST IMAGE AT TOP OF HOMEPAGE */}
       {/* ========================================================================= */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-[#2A080C] via-[#5C1017] to-[#8B1E26] text-white pt-4 sm:pt-6 pb-10 sm:pb-12 shadow-2xl">
+      <section className="relative w-full bg-[#FAF8F5] dark:bg-slate-950 pb-8 transition-colors duration-300">
         
-        {/* Ambient Glow & Gold Grid Background */}
-        <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#FFD700_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
-        
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 relative z-10 space-y-4 sm:space-y-6">
+        {/* Full View 1st Image */}
+        <div className="w-full relative bg-slate-950 shadow-md">
+          <img 
+            src="/tamil-sangam-banner.jpg" 
+            alt="தமிழ் சங்கம் தமிழ்நாடு - Full View" 
+            className="w-full h-auto object-cover object-center max-h-[720px] cursor-pointer shadow-lg"
+            onClick={() => setIsBannerZoomed(true)}
+          />
+        </div>
+
+        {/* Action Bar & Feature Pills Section right under the image */}
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 -mt-4 sm:-mt-6 relative z-10 space-y-4">
           
-          {/* Top Announcement Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-black/40 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-amber-500/30 text-xs text-amber-200">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-              <span className="font-extrabold tracking-wide text-amber-100">
-                {currentLang === 'ta' ? 'தமிழ்ப் சங்கம் - தமிழ்நாடு அறக்கட்டளை' : 'TAMIL SANGAM - TAMIL NADU TRUST'}
-              </span>
-              <span className="hidden sm:inline-block text-amber-400/60">|</span>
-              <span className="hidden sm:inline-block text-amber-300 font-semibold">
-                {currentLang === 'ta' ? 'இந்திய அரசு பதிவு எண்: TN-15-0042417' : 'Govt of India Reg No: TN-15-0042417'}
-              </span>
+          {/* Quick Action Buttons Bar */}
+          <div className="bg-white/95 dark:bg-[#1E232B]/95 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-slate-200/80 dark:border-gray-800 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-amber-400 p-0.5 bg-gradient-to-br from-[#8B1E26] to-[#600D13] shrink-0">
+                <img src="/tamil-sangam-logo.jpg" alt="Logo" className="w-full h-full object-cover rounded-full" />
+              </div>
+              <div>
+                <h2 className="text-base sm:text-lg font-extrabold text-[#8B1E26] dark:text-amber-400 font-heading">
+                  {currentLang === 'ta' ? 'தமிழ் சங்கம் - தமிழ்நாடு' : 'TAMIL SANGAM - TAMIL NADU'}
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-gray-400">
+                  {currentLang === 'ta' ? 'இந்திய அரசு பதிவு எண்: TN-15-0042417' : 'Govt of India Reg No: TN-15-0042417'}
+                </p>
+              </div>
             </div>
-            
-            <div className="flex items-center gap-2 ml-auto">
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              {isLoggedIn ? (
+                <button
+                  onClick={onGoToDashboard}
+                  className="flex items-center gap-2 bg-[#8B1E26] hover:bg-[#72151C] text-white text-xs sm:text-sm font-bold px-5 py-2.5 rounded-xl shadow-md transition-all cursor-pointer"
+                >
+                  <span>{currentLang === 'ta' ? 'எனது பலகை' : 'My Dashboard'}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              ) : (
+                <button
+                  onClick={() => onOpenJoinModal()}
+                  className="flex items-center gap-2 bg-[#8B1E26] hover:bg-[#72151C] text-white text-xs sm:text-sm font-bold px-5 py-2.5 rounded-xl shadow-md transition-all cursor-pointer"
+                >
+                  <IdCard className="w-4 h-4" />
+                  <span>{currentLang === 'ta' ? 'உறுப்பினர் சேர்க்கை / விண்ணப்பம்' : 'Join Tamil Sangam'}</span>
+                </button>
+              )}
+
               <button
-                onClick={() => setIsBannerZoomed(true)}
-                className="flex items-center gap-1.5 bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 text-[11px] font-bold px-3 py-1 rounded-lg border border-amber-400/40 transition-colors cursor-pointer"
+                onClick={onOpenVerifyModal}
+                className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-800 dark:text-gray-200 text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl border border-slate-300 dark:border-gray-700 transition-all cursor-pointer"
               >
-                <Eye className="w-3.5 h-3.5" />
-                <span>{currentLang === 'ta' ? 'முகப்பு படத்தைப் பெரிதாக்குக' : 'View Banner Fullscreen'}</span>
+                <CheckSquare className="w-4 h-4 text-[#8B1E26] dark:text-amber-400" />
+                <span>{currentLang === 'ta' ? 'அட்டை சரிபார்ப்பு' : 'Verify ID Card'}</span>
+              </button>
+
+              <button
+                onClick={onOpenDonateModal}
+                className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-md transition-all cursor-pointer"
+              >
+                <Heart className="w-4 h-4" />
+                <span>{currentLang === 'ta' ? 'நன்கொடை' : 'Donate'}</span>
               </button>
             </div>
           </div>
 
-          {/* MAIN 1ST VIEW IMAGE AT TOP OF HOME PAGE */}
-          <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-amber-400/40 bg-slate-950 group">
-            {/* Clean Cropped Image (Without redundant image navbar) */}
-            <img 
-              src="/tamil-sangam-banner.jpg" 
-              alt="தமிழ் சங்கம் தமிழ்நாடு" 
-              className="w-full h-auto max-h-[560px] object-cover object-center w-full transition-transform duration-700 cursor-pointer"
-              onClick={() => setIsBannerZoomed(true)}
-            />
-
-            {/* Bottom Floating Quick Actions Bar */}
-            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/75 to-transparent p-4 sm:p-6 flex flex-wrap items-center justify-between gap-4">
-              <div className="text-white space-y-1">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full overflow-hidden border border-amber-400 shrink-0">
-                    <img src="/tamil-sangam-logo.jpg" alt="Logo" className="w-full h-full object-cover" />
-                  </div>
-                  <h2 className="text-base sm:text-2xl font-black font-heading text-amber-300 drop-shadow-md">
-                    {currentLang === 'ta' ? 'தமிழ் சங்கம் - தமிழ்நாடு' : 'TAMIL SANGAM - TAMIL NADU'}
-                  </h2>
-                </div>
-                <p className="text-xs sm:text-sm text-slate-200 font-medium max-w-xl hidden sm:block">
-                  {currentLang === 'ta' 
-                    ? 'தமிழ் மொழி, பண்பாடு, கலாச்சாரம் மற்றும் சமுதாய மறுமலர்ச்சிக்கான மாநில ஒருங்கிணைப்பு போர்ட்டல்.' 
-                    : 'Statewide Digital Portal for Tamil Language, Culture, Heritage & Social Welfare.'}
-                </p>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                {isLoggedIn ? (
-                  <button
-                    onClick={onGoToDashboard}
-                    className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm px-5 py-2.5 rounded-xl shadow-lg transition-all transform hover:scale-105 active:scale-95 cursor-pointer"
-                  >
-                    <span>{currentLang === 'ta' ? 'எனது பலகை' : 'My Dashboard'}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => onOpenJoinModal()}
-                    className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs sm:text-sm px-5 py-2.5 rounded-xl shadow-lg transition-all transform hover:scale-105 active:scale-95 cursor-pointer"
-                  >
-                    <IdCard className="w-4 h-4 text-slate-950" />
-                    <span>{currentLang === 'ta' ? 'உறுப்பினர் சேர்க்கை / விண்ணப்பம்' : 'Join Tamil Sangam'}</span>
-                  </button>
-                )}
-
-                <button
-                  onClick={onOpenVerifyModal}
-                  className="flex items-center gap-2 bg-black/60 hover:bg-black/80 text-amber-300 border border-amber-400/50 font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl backdrop-blur-md shadow-md transition-all cursor-pointer"
-                >
-                  <CheckSquare className="w-4 h-4" />
-                  <span>{currentLang === 'ta' ? 'அட்டை சரிபார்ப்பு' : 'Verify ID Card'}</span>
-                </button>
-
-                <button
-                  onClick={onOpenDonateModal}
-                  className="flex items-center gap-2 bg-red-700/80 hover:bg-red-700 text-white font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl border border-red-500/50 shadow-md transition-all cursor-pointer"
-                >
-                  <Heart className="w-4 h-4 text-rose-300" />
-                  <span>{currentLang === 'ta' ? 'நன்கொடை' : 'Donate'}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
           {/* 9 FEATURE PILLS BAR (MATCHING BOTTOM STRIP OF 2ND IMAGE) */}
-          <div className="bg-white/95 dark:bg-[#1E232B]/95 backdrop-blur-md rounded-2xl p-3 sm:p-4 shadow-xl border border-amber-400/40">
+          <div className="bg-white dark:bg-[#1E232B] rounded-2xl p-3 sm:p-4 shadow-lg border border-slate-200/80 dark:border-gray-800">
             <p className="text-[11px] font-extrabold text-[#8B1E26] dark:text-amber-400 uppercase tracking-widest text-center mb-3">
               {currentLang === 'ta' ? 'முதன்மைச் சேவைகள் & பாசறைகள்' : 'CORE SERVICES & WINGS'}
             </p>
@@ -236,7 +206,7 @@ export const Hero: React.FC<HeroProps> = ({
                         onOpenJoinModal(pill.id);
                       }
                     }}
-                    className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-gray-800 hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-slate-800 dark:text-gray-200 transition-all duration-200 group cursor-pointer text-center"
+                    className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-gray-800 hover:border-[#8B1E26] hover:bg-red-50 dark:hover:bg-red-950/30 text-slate-800 dark:text-gray-200 transition-all duration-200 group cursor-pointer text-center"
                   >
                     <div className="w-8 h-8 rounded-lg bg-[#8B1E26]/10 dark:bg-amber-400/10 flex items-center justify-center text-[#8B1E26] dark:text-amber-400 group-hover:scale-110 group-hover:bg-[#8B1E26] group-hover:text-white transition-all mb-1.5">
                       <IconComponent className="w-4 h-4" />
