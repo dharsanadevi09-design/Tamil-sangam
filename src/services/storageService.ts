@@ -1,5 +1,5 @@
-import type { MemberApplication, DonationRecord, EventItem, CertificateItem, NewsItem, SystemNotification, MembershipCategory, AdminAccount } from '../types';
-import { INITIAL_MEMBERS, INITIAL_DONATIONS, INITIAL_EVENTS, INITIAL_NEWS, INITIAL_CERTIFICATES, MEMBERSHIP_CATEGORIES } from '../data/mockData';
+import type { MemberApplication, DonationRecord, EventItem, CertificateItem, NewsItem, SystemNotification, MembershipCategory, AdminAccount, GalleryItem, Pasarai } from '../types';
+import { INITIAL_MEMBERS, INITIAL_DONATIONS, INITIAL_EVENTS, INITIAL_NEWS, INITIAL_CERTIFICATES, MEMBERSHIP_CATEGORIES, PASARAI_WINGS } from '../data/mockData';
 
 const KEYS = {
   MEMBERS: 'ts_members_v1',
@@ -13,7 +13,20 @@ const KEYS = {
   ADMINS: 'ts_admins_v1',
   CURRENT_MEMBER_SESSION: 'ts_logged_in_member_v1',
   CURRENT_ADMIN_SESSION: 'ts_logged_in_admin_v1',
+  GALLERY: 'ts_gallery_v1',
+  PASARAI: 'ts_pasarai_v1',
 };
+
+export const INITIAL_GALLERY: GalleryItem[] = [
+  { id: 'GAL-01', title: 'Madurai Meenakshi Temple & Golden Pond', titleTamil: 'மதுரை மீனாட்சி அம்மன் கோயில் & பொற்றாமரைக் குளம்', category: 'Culture', img: '/hero-temple.jpg', date: '2026-01-15' },
+  { id: 'GAL-02', title: 'Madurai Temple Chariot Festival', titleTamil: 'மதுரை கோயில் தேரோட்டம்', category: 'Events', img: 'https://images.unsplash.com/photo-1609137144813-7d9921338f24?q=80&w=800&auto=format&fit=crop', date: '2026-01-18' },
+  { id: 'GAL-03', title: 'Classical Bharatanatyam Recital', titleTamil: 'பாரம்பரிய பரதநாட்டிய அரங்கேற்றம்', category: 'Culture', img: 'https://images.unsplash.com/photo-1601972599720-36938d4ecd31?q=80&w=800&auto=format&fit=crop', date: '2026-01-20' },
+  { id: 'GAL-04', title: 'Tree Sapling Plantation Drive', titleTamil: 'மரக்கன்றுகள் நடும் பசுமை இயக்கம்', category: 'Welfare', img: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=800&auto=format&fit=crop', date: '2026-01-22' },
+  { id: 'GAL-05', title: 'State Level Youth Assembly', titleTamil: 'மாநில இளைஞர் பேரவை மாநாடு', category: 'Events', img: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=800&auto=format&fit=crop', date: '2026-01-25' },
+  { id: 'GAL-06', title: 'Thiruvalluvar Statue Heritage Tour', titleTamil: 'திருவள்ளுவர் சிலை மரபுச் சுற்றுலா', category: 'Pasarai', img: 'https://images.unsplash.com/photo-1600100397608-f09074052329?q=80&w=800&auto=format&fit=crop', date: '2026-02-01' },
+  { id: 'GAL-07', title: 'Free Medical & Siddha Camp', titleTamil: 'இலவச சித்த & பொது மருத்துவ முகாம்', category: 'Welfare', img: 'https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?q=80&w=800&auto=format&fit=crop', date: '2026-02-05' },
+  { id: 'GAL-08', title: 'Sangam Literature Book Fair', titleTamil: 'சங்க இலக்கிய புத்தகக் கண்காட்சி', category: 'District', img: 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=800&auto=format&fit=crop', date: '2026-02-10' },
+];
 
 export const INITIAL_ADMINS: AdminAccount[] = [
   {
@@ -88,6 +101,12 @@ export const initStorage = () => {
   }
   if (!localStorage.getItem(KEYS.ADMINS)) {
     localStorage.setItem(KEYS.ADMINS, JSON.stringify(INITIAL_ADMINS));
+  }
+  if (!localStorage.getItem(KEYS.GALLERY)) {
+    localStorage.setItem(KEYS.GALLERY, JSON.stringify(INITIAL_GALLERY));
+  }
+  if (!localStorage.getItem(KEYS.PASARAI)) {
+    localStorage.setItem(KEYS.PASARAI, JSON.stringify(PASARAI_WINGS));
   }
 };
 
@@ -459,3 +478,61 @@ export const addNotification = (notif: Omit<SystemNotification, 'id' | 'date' | 
   list.unshift(newNotif);
   localStorage.setItem(KEYS.NOTIFICATIONS, JSON.stringify(list));
 };
+
+// --- GALLERY MANAGEMENT ---
+export const getGallery = (): GalleryItem[] => {
+  initStorage();
+  const data = localStorage.getItem(KEYS.GALLERY);
+  return data ? JSON.parse(data) : INITIAL_GALLERY;
+};
+
+export const saveGallery = (items: GalleryItem[]): void => {
+  localStorage.setItem(KEYS.GALLERY, JSON.stringify(items));
+};
+
+export const addGalleryItem = (itemData: Omit<GalleryItem, 'id' | 'date'> & { date?: string }): GalleryItem => {
+  const gallery = getGallery();
+  const newItem: GalleryItem = {
+    ...itemData,
+    id: `GAL-${Date.now().toString().slice(-4)}`,
+    date: itemData.date || new Date().toISOString().split('T')[0]
+  };
+  gallery.unshift(newItem);
+  saveGallery(gallery);
+  return newItem;
+};
+
+export const deleteGalleryItem = (id: string): void => {
+  const gallery = getGallery().filter(g => g.id !== id);
+  saveGallery(gallery);
+};
+
+// --- PASARAI WINGS MANAGEMENT ---
+export const getPasaraiWings = (): Pasarai[] => {
+  initStorage();
+  const data = localStorage.getItem(KEYS.PASARAI);
+  return data ? JSON.parse(data) : PASARAI_WINGS;
+};
+
+export const savePasaraiWings = (wings: Pasarai[]): void => {
+  localStorage.setItem(KEYS.PASARAI, JSON.stringify(wings));
+};
+
+export const addPasaraiWing = (wingData: Omit<Pasarai, 'id' | 'memberCount'> & { memberCount?: number; id?: string }): Pasarai => {
+  const wings = getPasaraiWings();
+  const seq = String(wings.length + 1).padStart(2, '0');
+  const newWing: Pasarai = {
+    ...wingData,
+    id: wingData.id || `PAS-${seq}`,
+    memberCount: wingData.memberCount || 100
+  };
+  wings.push(newWing);
+  savePasaraiWings(wings);
+  return newWing;
+};
+
+export const deletePasaraiWing = (id: string): void => {
+  const wings = getPasaraiWings().filter(w => w.id !== id);
+  savePasaraiWings(wings);
+};
+

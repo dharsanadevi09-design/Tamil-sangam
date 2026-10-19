@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Smartphone, ShieldCheck, ArrowRight, RefreshCw, X, Lock, CheckCircle2 } from 'lucide-react';
+import { Smartphone, ShieldCheck, ArrowRight, RefreshCw, X, Lock, CheckCircle2, Zap } from 'lucide-react';
 import { normalizeDigits } from '../../utils/numberUtils';
 
 interface OtpModalProps {
@@ -169,8 +169,8 @@ export const OtpModal: React.FC<OtpModalProps> = ({
   const cleanDigitsCount = normalizeDigits(mobileNumber).length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn">
-      <div className="bg-white dark:bg-[#1E232B] text-slate-900 dark:text-white rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-gray-800 relative overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white dark:bg-[#1E232B] text-slate-900 dark:text-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-200/80 dark:border-gray-800 relative overflow-hidden">
         
         {/* Close Button */}
         <button
@@ -182,8 +182,8 @@ export const OtpModal: React.FC<OtpModalProps> = ({
 
         {/* Modal Title & Header */}
         <div className="text-center space-y-2 mb-6">
-          <div className="w-16 h-16 bg-[#8B1E26]/10 border border-[#8B1E26]/30 text-[#8B1E26] dark:text-red-400 rounded-full flex items-center justify-center mx-auto shadow-inner">
-            <Smartphone className="w-8 h-8" />
+          <div className="w-14 h-14 bg-[#FDF2F2] dark:bg-red-950/60 border border-[#8B1E26]/20 text-[#8B1E26] dark:text-red-400 rounded-2xl flex items-center justify-center mx-auto shadow-sm">
+            <Smartphone className="w-7 h-7" />
           </div>
           <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white font-heading">
             {step === 'MOBILE'
@@ -199,20 +199,20 @@ export const OtpModal: React.FC<OtpModalProps> = ({
 
         {/* Simulated Real-Time SMS Toast Alert Banner */}
         {step === 'OTP' && showSmsBanner && (
-          <div className="mb-6 bg-[#8B1E26]/10 border-2 border-[#8B1E26] rounded-xl p-3.5 shadow-lg animate-bounce-subtle">
+          <div className="mb-6 bg-[#FAF8F5] dark:bg-slate-900 border-2 border-[#8B1E26] rounded-2xl p-3.5 shadow-md">
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-start gap-2.5">
                 <div className="p-1.5 bg-[#8B1E26] text-white rounded-lg shrink-0 mt-0.5 font-bold text-xs">
                   SMS
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-yellow-400 flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Tamil Sangam OTP Alert</span>
+                  <p className="text-xs font-bold text-[#8B1E26] dark:text-red-400 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>{currentLang === 'ta' ? 'தமிழ் சங்கம் OTP அறிவிப்பு' : 'Tamil Sangam OTP Alert'}</span>
                   </p>
-                  <p className="text-xs text-gray-200 mt-0.5">
-                    Verification OTP for <span className="text-yellow-400 font-mono font-bold">+91 {mobileNumber}</span>:{' '}
-                    <span className="font-mono text-base font-extrabold text-yellow-300 tracking-wider bg-slate-900/80 px-2 py-0.5 rounded border border-yellow-400/40">
+                  <p className="text-xs text-slate-700 dark:text-gray-200 mt-0.5">
+                    {currentLang === 'ta' ? 'சரிபார்ப்பு OTP எண் (+91 ' : 'Verification OTP for '}<span className="font-mono font-bold text-[#8B1E26] dark:text-amber-400">{currentLang === 'ta' ? `${mobileNumber})` : `+91 ${mobileNumber}`}</span>:{' '}
+                    <span className="font-mono text-base font-extrabold text-[#8B1E26] dark:text-amber-300 tracking-wider bg-white dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-300 dark:border-gray-700 shadow-sm">
                       {generatedOtp}
                     </span>
                   </p>
@@ -222,17 +222,17 @@ export const OtpModal: React.FC<OtpModalProps> = ({
               <button
                 type="button"
                 onClick={handleAutoFillOtp}
-                className="shrink-0 bg-yellow-400 hover:bg-yellow-300 text-slate-950 text-[11px] font-extrabold px-2.5 py-1.5 rounded-lg shadow transition-all active:scale-95 cursor-pointer"
+                className="shrink-0 bg-[#8B1E26] hover:bg-[#72151C] text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg shadow transition-all active:scale-95 cursor-pointer"
               >
-                Auto-Fill
+                {currentLang === 'ta' ? 'தானியங்கி நிரப்பு' : 'Auto-Fill'}
               </button>
             </div>
           </div>
         )}
 
         {/* Locked Feature Notice */}
-        <div className="bg-yellow-400/10 border border-yellow-400/30 rounded-xl p-3 text-xs text-yellow-300 mb-6 flex items-start gap-2">
-          <Lock className="w-4 h-4 shrink-0 mt-0.5" />
+        <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-xl p-3 text-xs text-amber-900 dark:text-amber-200 mb-6 flex items-start gap-2">
+          <Lock className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0 mt-0.5" />
           <span>
             {currentLang === 'ta'
               ? 'பாதுகாப்பு காரணம் கருதி OTP சரிபார்ப்பிற்கு பின்னரே உறுப்பினர் விண்ணப்பப் படிவம் திறக்கும்.'
@@ -241,7 +241,7 @@ export const OtpModal: React.FC<OtpModalProps> = ({
         </div>
 
         {errorMsg && (
-          <div className="mb-4 bg-red-900/60 border border-red-500 text-red-200 text-xs p-3 rounded-xl">
+          <div className="mb-4 bg-red-50 dark:bg-red-950/60 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-200 text-xs p-3 rounded-xl font-medium">
             {errorMsg}
           </div>
         )}
@@ -250,45 +250,47 @@ export const OtpModal: React.FC<OtpModalProps> = ({
         {step === 'MOBILE' ? (
           <form onSubmit={handleSendOtp} className="space-y-5">
             <div>
-              <label htmlFor="reg-mobile-input" className="block text-xs font-semibold text-gray-300 mb-1.5">
+              <label htmlFor="reg-mobile-input" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                 {currentLang === 'ta' ? 'உங்கள் 10 இலக்க கைபேசி எண்' : 'Type Your 10-Digit Mobile Number'}
               </label>
               <div className="relative cursor-text" onClick={() => inputRef.current?.focus()}>
-                <span className="absolute left-3.5 top-3.5 text-sm font-bold text-yellow-400 pointer-events-none select-none">+91</span>
+                <span className="absolute left-3.5 top-3.5 text-sm font-extrabold text-[#8B1E26] dark:text-amber-400 pointer-events-none select-none">+91</span>
                 <input
                   ref={inputRef}
                   id="reg-mobile-input"
                   type="tel"
                   inputMode="numeric"
                   maxLength={15}
-                  placeholder="Type any number e.g. 9876543210"
+                  placeholder={currentLang === 'ta' ? 'எ.கா. 9876543210' : 'Type any number e.g. 9876543210'}
                   value={mobileNumber}
                   onChange={(e) => {
                     const clean = e.target.value.replace(/\D/g, '').slice(0, 10);
                     setMobileNumber(clean);
                     setErrorMsg('');
                   }}
-                  className="w-full pl-14 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-xl text-base font-bold text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 font-mono tracking-wider cursor-text"
+                  className="w-full pl-14 pr-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-gray-700 rounded-xl text-base font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#8B1E26] focus:border-[#8B1E26] font-mono tracking-wider cursor-text shadow-sm"
                   autoFocus
                 />
               </div>
 
               {/* Live Count & Sample Chips */}
-              <div className="mt-2.5 flex items-center justify-between text-[11px] text-gray-400 flex-wrap gap-1">
+              <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-500 dark:text-gray-400 flex-wrap gap-1">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-gray-400">Sample Numbers:</span>
+                  <span className="text-slate-500 dark:text-gray-400 font-medium">
+                    {currentLang === 'ta' ? 'மாதிரி எண்கள்:' : 'Sample Numbers:'}
+                  </span>
                   {['9840123456', '9789012345', '9123456789', '9444012345'].map((demoNum) => (
                     <button
                       key={demoNum}
                       type="button"
                       onClick={() => { setMobileNumber(demoNum); setErrorMsg(''); }}
-                      className="bg-gray-800 hover:bg-yellow-400 hover:text-slate-950 font-mono text-yellow-400 px-2 py-0.5 rounded border border-gray-700 transition-colors cursor-pointer"
+                      className="bg-slate-100 dark:bg-slate-800 hover:bg-[#8B1E26] hover:text-white text-slate-700 dark:text-gray-300 font-mono text-[10px] px-2 py-0.5 rounded border border-slate-200 dark:border-gray-700 transition-colors cursor-pointer"
                     >
                       {demoNum}
                     </button>
                   ))}
                 </div>
-                <span className={`font-mono font-bold ${cleanDigitsCount >= 10 ? 'text-green-400' : 'text-yellow-400'}`}>
+                <span className={`font-mono font-bold ${cleanDigitsCount >= 10 ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#8B1E26] dark:text-amber-400'}`}>
                   {cleanDigitsCount}/10
                 </span>
               </div>
@@ -297,7 +299,7 @@ export const OtpModal: React.FC<OtpModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full flex items-center justify-center gap-2 bg-yellow-400 hover:bg-yellow-300 text-[#181B20] font-extrabold py-3.5 rounded-xl shadow-xl transition-all uppercase text-sm tracking-wider cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 bg-[#8B1E26] hover:bg-[#72151C] text-white font-extrabold py-3.5 rounded-xl shadow-lg transition-all uppercase text-sm tracking-wider cursor-pointer"
             >
               {isSubmitting ? (
                 <RefreshCw className="w-5 h-5 animate-spin" />
@@ -314,15 +316,16 @@ export const OtpModal: React.FC<OtpModalProps> = ({
           <form onSubmit={handleVerifyOtp} className="space-y-6">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-semibold text-gray-300">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
                   {currentLang === 'ta' ? '6 இலக்க OTP உள்ளிடவும்' : 'Enter 6-Digit OTP Code'}
                 </label>
                 <button
                   type="button"
                   onClick={handleAutoFillOtp}
-                  className="text-[11px] font-bold text-yellow-400 hover:text-yellow-300 bg-gray-800 hover:bg-gray-700 px-2.5 py-1 rounded-lg border border-yellow-400/40 cursor-pointer transition-colors"
+                  className="text-[11px] font-bold text-[#8B1E26] dark:text-amber-400 hover:text-[#72151C] bg-red-50 dark:bg-red-950/50 px-2.5 py-1 rounded-lg border border-red-200 dark:border-red-900 cursor-pointer transition-colors inline-flex items-center gap-1"
                 >
-                  ⚡ Auto-Fill ({generatedOtp})
+                  <Zap className="w-3 h-3 text-[#8B1E26] dark:text-amber-400" />
+                  <span>{currentLang === 'ta' ? 'தானியங்கி நிரப்பு' : 'Auto-Fill'} ({generatedOtp})</span>
                 </button>
               </div>
 
@@ -337,7 +340,7 @@ export const OtpModal: React.FC<OtpModalProps> = ({
                     value={digit}
                     onChange={(e) => handleDigitChange(idx, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                    className="w-11 h-13 text-center text-xl font-bold bg-gray-900 border border-gray-700 focus:border-yellow-400 rounded-xl text-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 font-mono"
+                    className="w-11 h-13 text-center text-xl font-bold bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-gray-700 focus:border-[#8B1E26] rounded-xl text-[#8B1E26] dark:text-amber-400 focus:outline-none focus:ring-2 focus:ring-[#8B1E26] font-mono shadow-sm"
                   />
                 ))}
               </div>
@@ -346,7 +349,7 @@ export const OtpModal: React.FC<OtpModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full flex items-center justify-center gap-2 bg-yellow-400 hover:bg-yellow-300 text-[#181B20] font-extrabold py-3.5 rounded-xl shadow-xl transition-all uppercase text-sm tracking-wider cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 bg-[#8B1E26] hover:bg-[#72151C] text-white font-extrabold py-3.5 rounded-xl shadow-lg transition-all uppercase text-sm tracking-wider cursor-pointer"
             >
               {isSubmitting ? (
                 <RefreshCw className="w-5 h-5 animate-spin" />
@@ -358,11 +361,11 @@ export const OtpModal: React.FC<OtpModalProps> = ({
               )}
             </button>
 
-            <div className="flex items-center justify-between text-xs text-gray-400 pt-2 border-t border-gray-800">
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-gray-400 pt-2 border-t border-slate-100 dark:border-gray-800">
               <button
                 type="button"
                 onClick={() => setStep('MOBILE')}
-                className="hover:text-yellow-400 transition-colors cursor-pointer"
+                className="hover:text-[#8B1E26] dark:hover:text-amber-400 transition-colors cursor-pointer font-semibold"
               >
                 ← {currentLang === 'ta' ? 'எண் மாற்றுக' : 'Change Mobile Number'}
               </button>
@@ -371,9 +374,9 @@ export const OtpModal: React.FC<OtpModalProps> = ({
                 type="button"
                 disabled={timer > 0}
                 onClick={handleResendOtp}
-                className="hover:text-yellow-400 transition-colors disabled:opacity-50 cursor-pointer"
+                className="hover:text-[#8B1E26] dark:hover:text-amber-400 transition-colors disabled:opacity-50 cursor-pointer font-semibold"
               >
-                {timer > 0 ? `Resend OTP in ${timer}s` : (currentLang === 'ta' ? 'மறுபடியும் OTP அனுப்புக' : 'Resend OTP')}
+                {timer > 0 ? (currentLang === 'ta' ? `${timer} வினாடிகளில் மறுபடி OTP` : `Resend OTP in ${timer}s`) : (currentLang === 'ta' ? 'மறுபடியும் OTP அனுப்புக' : 'Resend OTP')}
               </button>
             </div>
           </form>

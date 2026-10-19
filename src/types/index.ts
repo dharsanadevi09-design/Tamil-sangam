@@ -184,3 +184,14 @@ export interface SystemNotification {
   recipientMobile?: string;
   isRead: boolean;
 }
+
+export interface GalleryItem {
+  id: string;
+  title: string;
+  titleTamil?: string;
+  category: string;
+  img: string;
+  description?: string;
+  date?: string;
+}
+

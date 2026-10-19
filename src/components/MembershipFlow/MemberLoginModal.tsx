@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Smartphone, ShieldCheck, ArrowRight, RefreshCw, X, CheckCircle2, User } from 'lucide-react';
+import { Smartphone, ShieldCheck, ArrowRight, RefreshCw, X, CheckCircle2, User, Zap } from 'lucide-react';
 import { getOrCreateMemberByMobile } from '../../services/storageService';
 import type { MemberApplication } from '../../types';
 import { normalizeDigits } from '../../utils/numberUtils';
@@ -183,8 +183,8 @@ export const MemberLoginModal: React.FC<MemberLoginModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn">
-      <div className="bg-white dark:bg-[#1E232B] text-slate-900 dark:text-white rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-gray-800 relative overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white dark:bg-[#1E232B] text-slate-900 dark:text-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-200/80 dark:border-gray-800 relative overflow-hidden">
         
         {/* Close Button */}
         <button
@@ -196,15 +196,15 @@ export const MemberLoginModal: React.FC<MemberLoginModalProps> = ({
 
         {/* Modal Header */}
         <div className="text-center space-y-2 mb-6">
-          <div className="w-16 h-16 bg-[#8B1E26]/10 border border-[#8B1E26]/30 text-[#8B1E26] dark:text-red-400 rounded-full flex items-center justify-center mx-auto shadow-inner">
-            {step === 'MOBILE' ? <User className="w-8 h-8" /> : <Smartphone className="w-8 h-8" />}
+          <div className="w-14 h-14 bg-[#FDF2F2] dark:bg-red-950/60 border border-[#8B1E26]/20 text-[#8B1E26] dark:text-red-400 rounded-2xl flex items-center justify-center mx-auto shadow-sm">
+            {step === 'MOBILE' ? <User className="w-7 h-7" /> : <Smartphone className="w-7 h-7" />}
           </div>
-          <h3 className="text-2xl font-extrabold text-white">
+          <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white font-heading">
             {step === 'MOBILE'
               ? (currentLang === 'ta' ? 'உறுப்பினர் உள்நுழைவு' : 'Member Login Portal')
               : (currentLang === 'ta' ? 'OTP சரிபார்த்து உள்நுழையவும்' : 'Verify OTP & Login')}
           </h3>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-slate-500 dark:text-gray-400">
             {step === 'MOBILE'
               ? (currentLang === 'ta' ? 'எந்த கைபேசி எண்ணையும் தட்டச்சு செய்து ID Card காணலாம்' : 'Type ANY mobile number to view Digital ID Card & Member Dashboard')
               : (currentLang === 'ta' ? `OTP +91 ${mobileNumber} எண்ணிற்கு அனுப்பப்பட்டது` : `Verification OTP sent to +91 ${mobileNumber}`)}
@@ -213,20 +213,20 @@ export const MemberLoginModal: React.FC<MemberLoginModalProps> = ({
 
         {/* Simulated Real-Time SMS Toast Alert Banner */}
         {step === 'OTP' && showSmsBanner && (
-          <div className="mb-6 bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 border-2 border-yellow-400 rounded-xl p-3.5 shadow-lg animate-bounce-subtle">
+          <div className="mb-6 bg-gradient-to-r from-amber-500/10 via-amber-500/20 to-amber-500/10 border-2 border-amber-400 rounded-xl p-3.5 shadow-lg animate-bounce-subtle">
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-start gap-2.5">
-                <div className="p-1.5 bg-yellow-400 text-slate-950 rounded-lg shrink-0 mt-0.5 font-bold text-xs">
+                <div className="p-1.5 bg-amber-400 text-slate-950 rounded-lg shrink-0 mt-0.5 font-bold text-xs">
                   SMS
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-yellow-400 flex items-center gap-1">
+                  <p className="text-xs font-bold text-[#8B1E26] dark:text-amber-400 flex items-center gap-1">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>Tamil Sangam OTP Alert</span>
                   </p>
-                  <p className="text-xs text-gray-200 mt-0.5">
-                    Your login verification OTP for <span className="text-yellow-400 font-mono font-bold">+91 {mobileNumber}</span> is:{' '}
-                    <span className="font-mono text-base font-extrabold text-yellow-300 tracking-wider bg-slate-900/80 px-2 py-0.5 rounded border border-yellow-400/40">
+                  <p className="text-xs text-slate-700 dark:text-gray-200 mt-0.5">
+                    Your login verification OTP for <span className="text-[#8B1E26] dark:text-amber-300 font-mono font-bold">+91 {mobileNumber}</span> is:{' '}
+                    <span className="font-mono text-base font-extrabold text-[#8B1E26] dark:text-amber-300 tracking-wider bg-white dark:bg-slate-900 px-2 py-0.5 rounded border border-amber-400/40 shadow-sm">
                       {generatedOtp}
                     </span>
                   </p>
@@ -236,7 +236,7 @@ export const MemberLoginModal: React.FC<MemberLoginModalProps> = ({
               <button
                 type="button"
                 onClick={handleAutoFillOtp}
-                className="shrink-0 bg-yellow-400 hover:bg-yellow-300 text-slate-950 text-[11px] font-extrabold px-2.5 py-1.5 rounded-lg shadow transition-all active:scale-95 cursor-pointer"
+                className="shrink-0 bg-amber-400 hover:bg-amber-300 text-slate-950 text-[11px] font-extrabold px-2.5 py-1.5 rounded-lg shadow transition-all active:scale-95 cursor-pointer"
               >
                 Auto-Fill
               </button>
@@ -245,7 +245,7 @@ export const MemberLoginModal: React.FC<MemberLoginModalProps> = ({
         )}
 
         {errorMsg && (
-          <div className="mb-4 bg-red-900/60 border border-red-500 text-red-200 text-xs p-3 rounded-xl">
+          <div className="mb-4 bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs p-3 rounded-xl">
             {errorMsg}
           </div>
         )}
@@ -254,11 +254,11 @@ export const MemberLoginModal: React.FC<MemberLoginModalProps> = ({
         {step === 'MOBILE' ? (
           <form onSubmit={handleSendOtp} className="space-y-5">
             <div>
-              <label htmlFor="login-mobile-input" className="block text-xs font-semibold text-gray-300 mb-1.5">
+              <label htmlFor="login-mobile-input" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                 {currentLang === 'ta' ? 'உங்கள் 10 இலக்க அலைபேசி எண்' : 'Type Your 10-Digit Mobile Number'}
               </label>
               <div className="relative cursor-text" onClick={() => inputRef.current?.focus()}>
-                <span className="absolute left-3.5 top-3.5 text-sm font-bold text-yellow-400 pointer-events-none select-none">+91</span>
+                <span className="absolute left-3.5 top-3.5 text-sm font-extrabold text-[#8B1E26] dark:text-amber-400 pointer-events-none select-none">+91</span>
                 <input
                   ref={inputRef}
                   id="login-mobile-input"
@@ -272,28 +272,28 @@ export const MemberLoginModal: React.FC<MemberLoginModalProps> = ({
                     setMobileNumber(clean);
                     setErrorMsg('');
                   }}
-                  className="w-full pl-14 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-xl text-base font-bold text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 font-mono tracking-wider cursor-text"
+                  className="w-full pl-14 pr-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-gray-700 rounded-xl text-base font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#8B1E26] focus:border-[#8B1E26] font-mono tracking-wider cursor-text shadow-sm"
                   autoFocus
                 />
               </div>
 
               {/* Live Count & Samples */}
-              <div className="mt-2.5 flex items-center justify-between text-[11px] text-gray-400 flex-wrap gap-1">
+              <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-500 dark:text-gray-400 flex-wrap gap-1">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-gray-400">Quick 1-Click Login:</span>
+                  <span className="text-slate-500 dark:text-gray-400">Quick 1-Click Login:</span>
                   {['9840123456', '9789012345', '9123456789', '9444012345'].map((demoNum) => (
                     <button
                       key={demoNum}
                       type="button"
                       onClick={() => handleDirectQuickLogin(demoNum)}
-                      className="bg-gray-800 hover:bg-yellow-400 hover:text-slate-950 font-mono text-yellow-400 px-2 py-0.5 rounded border border-gray-700 transition-colors cursor-pointer"
+                      className="bg-slate-100 dark:bg-slate-800 hover:bg-[#8B1E26] hover:text-white text-slate-700 dark:text-gray-300 font-mono text-[10px] px-2 py-0.5 rounded border border-slate-200 dark:border-gray-700 transition-colors cursor-pointer"
                       title="Click for instant login & view ID card"
                     >
                       {demoNum}
                     </button>
                   ))}
                 </div>
-                <span className={`font-mono font-bold ${cleanDigitsCount >= 10 ? 'text-green-400' : 'text-yellow-400'}`}>
+                <span className={`font-mono font-bold ${cleanDigitsCount >= 10 ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#8B1E26] dark:text-amber-400'}`}>
                   {cleanDigitsCount}/10
                 </span>
               </div>
@@ -302,7 +302,7 @@ export const MemberLoginModal: React.FC<MemberLoginModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full flex items-center justify-center gap-2 bg-yellow-400 hover:bg-yellow-300 text-[#181B20] font-extrabold py-3.5 rounded-xl shadow-xl transition-all uppercase text-sm tracking-wider cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 bg-[#8B1E26] hover:bg-[#72151C] text-white font-extrabold py-3.5 rounded-xl shadow-lg transition-all uppercase text-sm tracking-wider cursor-pointer"
             >
               {isSubmitting ? (
                 <RefreshCw className="w-5 h-5 animate-spin" />
@@ -319,15 +319,16 @@ export const MemberLoginModal: React.FC<MemberLoginModalProps> = ({
           <form onSubmit={handleVerifyOtpAndLogin} className="space-y-6">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-semibold text-gray-300">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
                   {currentLang === 'ta' ? '6 இலக்க OTP உள்ளிடவும்' : 'Enter 6-Digit OTP Code'}
                 </label>
                 <button
                   type="button"
                   onClick={handleAutoFillOtp}
-                  className="text-[11px] font-bold text-yellow-400 hover:text-yellow-300 bg-gray-800 hover:bg-gray-700 px-2.5 py-1 rounded-lg border border-yellow-400/40 cursor-pointer transition-colors"
+                  className="text-[11px] font-bold text-[#8B1E26] dark:text-amber-400 hover:text-[#72151C] bg-red-50 dark:bg-red-950/50 px-2.5 py-1 rounded-lg border border-red-200 dark:border-red-900 cursor-pointer transition-colors inline-flex items-center gap-1"
                 >
-                  ⚡ Auto-Fill ({generatedOtp})
+                  <Zap className="w-3 h-3 text-[#8B1E26] dark:text-amber-400" />
+                  <span>{currentLang === 'ta' ? 'தானியங்கி நிரப்பு' : 'Auto-Fill'} ({generatedOtp})</span>
                 </button>
               </div>
 
@@ -342,7 +343,7 @@ export const MemberLoginModal: React.FC<MemberLoginModalProps> = ({
                     value={digit}
                     onChange={(e) => handleDigitChange(idx, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                    className="w-11 h-13 text-center text-xl font-bold bg-gray-900 border border-gray-700 focus:border-yellow-400 rounded-xl text-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 font-mono"
+                    className="w-11 h-13 text-center text-xl font-bold bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-gray-700 focus:border-[#8B1E26] rounded-xl text-[#8B1E26] dark:text-amber-400 focus:outline-none focus:ring-2 focus:ring-[#8B1E26] font-mono shadow-sm"
                   />
                 ))}
               </div>
@@ -351,7 +352,7 @@ export const MemberLoginModal: React.FC<MemberLoginModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full flex items-center justify-center gap-2 bg-yellow-400 hover:bg-yellow-300 text-[#181B20] font-extrabold py-3.5 rounded-xl shadow-xl transition-all uppercase text-sm tracking-wider cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 bg-[#8B1E26] hover:bg-[#72151C] text-white font-extrabold py-3.5 rounded-xl shadow-lg transition-all uppercase text-sm tracking-wider cursor-pointer"
             >
               {isSubmitting ? (
                 <RefreshCw className="w-5 h-5 animate-spin" />
@@ -363,11 +364,11 @@ export const MemberLoginModal: React.FC<MemberLoginModalProps> = ({
               )}
             </button>
 
-            <div className="flex items-center justify-between text-xs text-gray-400 pt-2 border-t border-gray-800">
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-gray-400 pt-2 border-t border-slate-200 dark:border-gray-800">
               <button
                 type="button"
                 onClick={() => setStep('MOBILE')}
-                className="hover:text-yellow-400 transition-colors cursor-pointer"
+                className="hover:text-[#8B1E26] dark:hover:text-amber-300 transition-colors cursor-pointer font-semibold"
               >
                 ← {currentLang === 'ta' ? 'எண் மாற்றுக' : 'Change Mobile Number'}
               </button>
@@ -376,7 +377,7 @@ export const MemberLoginModal: React.FC<MemberLoginModalProps> = ({
                 type="button"
                 disabled={timer > 0}
                 onClick={handleResendOtp}
-                className="hover:text-yellow-400 transition-colors disabled:opacity-50 cursor-pointer"
+                className="hover:text-[#8B1E26] dark:hover:text-amber-300 transition-colors disabled:opacity-50 cursor-pointer font-semibold"
               >
                 {timer > 0 ? `Resend OTP in ${timer}s` : (currentLang === 'ta' ? 'மறுபடியும் OTP அனுப்புக' : 'Resend OTP')}
               </button>

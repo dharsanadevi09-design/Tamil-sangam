@@ -93,7 +93,9 @@ export const PublicVerification: React.FC<PublicVerificationProps> = ({
                   <CheckCircle2 className="w-6 h-6 shrink-0 text-emerald-600" />
                   <div>
                     <h4 className="font-extrabold text-sm uppercase tracking-wide">
-                      {searchedMember.status === 'APPROVED' ? 'OFFICIALLY VERIFIED MEMBER ✓' : `STATUS: ${searchedMember.status}`}
+                      {searchedMember.status === 'APPROVED' 
+                        ? (currentLang === 'ta' ? 'அங்கீகரிக்கப்பட்ட உறுப்பினர்' : 'OFFICIALLY VERIFIED MEMBER') 
+                        : (currentLang === 'ta' ? `நிலை: ${searchedMember.status}` : `STATUS: ${searchedMember.status}`)}
                     </h4>
                     <p className="text-xs opacity-90">
                       Record matched in Tamil Sangam State Headquarters Central Register.

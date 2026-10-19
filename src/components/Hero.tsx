@@ -4,9 +4,10 @@ import {
   CheckSquare, ChevronLeft, ChevronRight, MapPin as LocationIcon, Heart,
   BookOpen, HelpCircle, ChevronDown, Sparkles, GraduationCap, Flag,
   HeartHandshake, Theater, ShieldCheck, FileText, Globe, TreePine,
-  Landmark, IdCard
+  Landmark, IdCard, ZoomIn, ZoomOut, RotateCcw, X, Info
 } from 'lucide-react';
 import { INITIAL_NEWS } from '../data/mockData';
+import { getGallery } from '../services/storageService';
 import type { NewsItem } from '../types';
 
 interface HeroProps {
@@ -32,6 +33,7 @@ export const Hero: React.FC<HeroProps> = ({
   const [wingSlideIndex, setWingSlideIndex] = useState(0);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const [isBannerZoomed, setIsBannerZoomed] = useState(false);
+  const [modalZoomScale, setModalZoomScale] = useState(1);
 
   // 9 Category feature pills matching the bottom bar of 2nd image banner
   const heroFeaturePills = [
@@ -46,18 +48,12 @@ export const Hero: React.FC<HeroProps> = ({
     { id: 'global', nameTa: 'உலகத் தமிழர் இணைப்பு', nameEn: 'Global Tamil Network', icon: Globe },
   ];
 
-  // Gallery items matching reference image
-  const galleryItems = [
-    { id: 1, category: 'Events', title: 'Temple Chariot Festival', img: 'https://images.unsplash.com/photo-1609137144813-7d9921338f24?q=80&w=800&auto=format&fit=crop' },
-    { id: 2, category: 'Culture', title: 'Classical Bharatanatyam', img: 'https://images.unsplash.com/photo-1601972599720-36938d4ecd31?q=80&w=800&auto=format&fit=crop' },
-    { id: 3, category: 'Welfare', title: 'Tree Sapling Plantation', img: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=800&auto=format&fit=crop' },
-    { id: 4, category: 'District', title: 'State Member Conference', img: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=800&auto=format&fit=crop' },
-    { id: 5, category: 'Pasarai', title: 'Heritage Temple Tour', img: '/hero-temple.jpg' },
-  ];
+  // Dynamic Gallery items from storage
+  const galleryItems = getGallery();
 
   const filteredGallery = activeGalleryFilter === 'All' 
     ? galleryItems 
-    : galleryItems.filter(g => g.category === activeGalleryFilter);
+    : galleryItems.filter(g => g.category.toLowerCase() === activeGalleryFilter.toLowerCase());
 
   // Wing cards with icons matching reference screenshot
   const wingCards = [
@@ -122,17 +118,32 @@ export const Hero: React.FC<HeroProps> = ({
       <section className="relative w-full bg-[#FAF8F5] dark:bg-slate-950 pb-8 transition-colors duration-300">
         
         {/* Full View 1st Image */}
-        <div className="w-full relative bg-slate-950 shadow-md">
-          <img 
-            src="/tamil-sangam-banner.jpg" 
-            alt="தமிழ் சங்கம் தமிழ்நாடு - Full View" 
-            className="w-full h-auto object-cover object-center max-h-[720px] cursor-pointer shadow-lg"
-            onClick={() => setIsBannerZoomed(true)}
-          />
+        <div className="w-full relative bg-[#FAF8F5] dark:bg-slate-950 shadow-md group">
+          <div className="w-full max-w-[1920px] mx-auto overflow-hidden">
+            <img 
+              src="/tamil-sangam-banner.jpg" 
+              alt="தமிழ் சங்கம் தமிழ்நாடு - Full View" 
+              className="w-full h-auto block object-contain object-center cursor-pointer transition-transform duration-300"
+              onClick={() => setIsBannerZoomed(true)}
+            />
+          </div>
+
+          {/* Subtle zoom hint badge on mobile & desktop - positioned at top right so it never overlaps the bottom icon strip */}
+          <button 
+            onClick={() => {
+              setModalZoomScale(1);
+              setIsBannerZoomed(true);
+            }}
+            className="absolute top-2 right-2 sm:top-3 sm:right-4 bg-black/60 hover:bg-black/85 backdrop-blur-md text-white text-[10px] sm:text-xs font-semibold px-2.5 py-1 rounded-full border border-amber-400/40 flex items-center gap-1.5 transition-all shadow-md cursor-pointer z-10 hover:border-amber-400"
+            title={currentLang === 'ta' ? 'முழுப்படத்தைக் காண சொடுக்கவும்' : 'Click to view full image'}
+          >
+            <Sparkles className="w-3 h-3 text-amber-300" />
+            <span>{currentLang === 'ta' ? 'முழு வடிவம் (Full View)' : 'Full View'}</span>
+          </button>
         </div>
 
-        {/* Action Bar & Feature Pills Section right under the image */}
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 -mt-4 sm:-mt-6 relative z-10 space-y-4">
+        {/* Action Bar & Feature Pills Section right under the image (no negative margin so banner is never covered) */}
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-3 sm:mt-5 lg:mt-6 relative z-10 space-y-4">
           
           {/* Quick Action Buttons Bar */}
           <div className="bg-white/95 dark:bg-[#1E232B]/95 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-slate-200/80 dark:border-gray-800 flex flex-wrap items-center justify-between gap-4">
@@ -222,33 +233,86 @@ export const Hero: React.FC<HeroProps> = ({
 
         </div>
 
-        {/* FULLSCREEN BANNER LIGHTBOX MODAL */}
+        {/* FULLSCREEN BANNER LIGHTBOX MODAL WITH ZOOM CONTROLS */}
         {isBannerZoomed && (
           <div 
             onClick={() => setIsBannerZoomed(false)}
-            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-lg flex items-center justify-center p-4 cursor-zoom-out animate-fadeIn"
+            className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 cursor-zoom-out animate-fadeIn"
           >
-            <div className="relative max-w-6xl w-full max-h-[90vh] bg-slate-950 rounded-2xl overflow-hidden border-2 border-amber-400 shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-[#8B1E26] to-[#600D13] text-white">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-amber-300" />
-                  <h3 className="font-extrabold text-sm sm:text-base text-amber-200">
-                    {currentLang === 'ta' ? 'தமிழ் சங்கம் - தமிழ்நாடு (முகப்பு 1st View)' : 'Tamil Sangam - Tamil Nadu Banner'}
+            <div 
+              className="relative max-w-6xl w-full max-h-[95vh] bg-slate-950 rounded-2xl overflow-hidden border-2 border-amber-400 shadow-2xl flex flex-col cursor-default" 
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="flex flex-wrap items-center justify-between gap-2 p-3 sm:p-4 bg-gradient-to-r from-[#8B1E26] to-[#600D13] text-white">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300 shrink-0" />
+                  <h3 className="font-extrabold text-xs sm:text-base text-amber-200 truncate">
+                    {currentLang === 'ta' ? 'தமிழ் சங்கம் - தமிழ்நாடு (முழுப் பார்வை)' : 'Tamil Sangam - Tamil Nadu Full Banner'}
                   </h3>
                 </div>
-                <button 
-                  onClick={() => setIsBannerZoomed(false)}
-                  className="bg-black/40 hover:bg-black/80 text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-amber-400/40 cursor-pointer"
-                >
-                  ✕ Close
-                </button>
+
+                {/* Zoom & Action Controls */}
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <button 
+                    onClick={() => setModalZoomScale(prev => Math.min(prev + 0.3, 2.5))}
+                    className="bg-black/40 hover:bg-black/70 text-white text-xs font-bold p-1.5 sm:px-2.5 sm:py-1 rounded-lg border border-amber-400/30 flex items-center gap-1 cursor-pointer"
+                    title={currentLang === 'ta' ? 'பெரிதாக்குக' : 'Zoom In'}
+                  >
+                    <ZoomIn className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">+</span>
+                  </button>
+
+                  <button 
+                    onClick={() => setModalZoomScale(prev => Math.max(prev - 0.3, 0.8))}
+                    className="bg-black/40 hover:bg-black/70 text-white text-xs font-bold p-1.5 sm:px-2.5 sm:py-1 rounded-lg border border-amber-400/30 flex items-center gap-1 cursor-pointer"
+                    title={currentLang === 'ta' ? 'சுருக்குக' : 'Zoom Out'}
+                  >
+                    <ZoomOut className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">-</span>
+                  </button>
+
+                  <button 
+                    onClick={() => setModalZoomScale(1)}
+                    className="bg-black/40 hover:bg-black/70 text-white text-xs font-bold p-1.5 sm:px-2.5 sm:py-1 rounded-lg border border-amber-400/30 flex items-center gap-1 cursor-pointer"
+                    title={currentLang === 'ta' ? 'இயல்பு நிலை' : 'Reset'}
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span className="text-[10px] hidden sm:inline">{Math.round(modalZoomScale * 100)}%</span>
+                  </button>
+
+                  <button 
+                    onClick={() => setIsBannerZoomed(false)}
+                    className="bg-red-950/80 hover:bg-red-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-red-500/40 cursor-pointer ml-1 inline-flex items-center gap-1"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    <span>{currentLang === 'ta' ? 'மூடுக' : 'Close'}</span>
+                  </button>
+                </div>
               </div>
-              <div className="p-2 overflow-auto flex items-center justify-center bg-black">
-                <img 
-                  src="/tamil-sangam-banner.jpg" 
-                  alt="Full Banner" 
-                  className="max-w-full max-h-[80vh] object-contain rounded-lg" 
-                />
+
+              {/* Modal Image Body with Panning & Scroll */}
+              <div className="p-2 sm:p-4 overflow-auto flex items-center justify-center bg-black/95 min-h-[220px] max-h-[80vh]">
+                <div 
+                  className="transition-transform duration-200 ease-out flex items-center justify-center max-w-none"
+                  style={{ transform: `scale(${modalZoomScale})`, transformOrigin: 'center center' }}
+                >
+                  <img 
+                    src="/tamil-sangam-banner.jpg" 
+                    alt="Full Banner" 
+                    className="w-full max-w-5xl h-auto object-contain rounded-lg shadow-2xl select-none" 
+                  />
+                </div>
+              </div>
+
+              {/* Mobile helper tip */}
+              <div className="p-2 bg-slate-900 text-center text-[10px] text-amber-300/80 border-t border-gray-800 flex items-center justify-center gap-1.5">
+                <Info className="w-3 h-3 text-amber-400 shrink-0" />
+                <span>
+                  {currentLang === 'ta' 
+                    ? 'கைபேசியில் விவரங்களை தெளிவாக வாசிக்க மேலுள்ள (+) பொத்தானைப் பயன்படுத்தி பெரிதாக்கவும்' 
+                    : 'Tip: Use the zoom buttons above to read all text and inscriptions clearly on mobile'}
+                </span>
               </div>
             </div>
           </div>
@@ -520,12 +584,12 @@ export const Hero: React.FC<HeroProps> = ({
             </div>
 
             {/* Right Image Column - Full right side container with Thiruvalluvar Statue Kanyakumari Sunset image */}
-            <div className="lg:col-span-6 relative min-h-[380px] sm:min-h-[460px] lg:min-h-[500px] w-full flex">
+            <div className="lg:col-span-6 relative min-h-[260px] sm:min-h-[400px] lg:min-h-[500px] w-full flex">
               <div className="w-full h-full rounded-3xl overflow-hidden shadow-2xl border-4 border-slate-100 dark:border-slate-800 relative group flex">
                 <img 
                   src="/kanyakumari-statue.png" 
                   alt="Thiruvalluvar Statue & Vivekananda Rock Memorial Kanyakumari Sunset" 
-                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 min-h-[380px] lg:min-h-[500px]"
+                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 min-h-[260px] sm:min-h-[400px] lg:min-h-[500px]"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent p-6 sm:p-8 flex flex-col justify-end pointer-events-none">
                   <span className="bg-[#8B1E26] text-white text-[10px] font-extrabold px-3 py-1 rounded-full w-fit uppercase tracking-widest mb-2 shadow-md">
@@ -935,8 +999,10 @@ export const Hero: React.FC<HeroProps> = ({
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex flex-col justify-end">
-                  <span className="text-[10px] font-bold text-red-300 uppercase">{item.category}</span>
-                  <p className="text-xs font-bold text-white line-clamp-1">{item.title}</p>
+                  <span className="text-[10px] font-bold text-amber-300 uppercase">{item.category}</span>
+                  <p className="text-xs font-bold text-white line-clamp-1">
+                    {currentLang === 'ta' && (item as any).titleTamil ? (item as any).titleTamil : item.title}
+                  </p>
                 </div>
               </div>
             ))}

@@ -25,7 +25,8 @@ import {
   getSavedLoggedInMember, 
   saveLoggedInMember, 
   getSavedLoggedInAdmin, 
-  saveLoggedInAdmin 
+  saveLoggedInAdmin,
+  getGallery
 } from './services/storageService';
 import type { MemberApplication, DonationRecord, AdminAccount } from './types';
 
@@ -321,35 +322,58 @@ export function App() {
             )}
 
             {/* 6. DEDICATED GALLERY VIEW */}
-            {activeTab === 'gallery' && (
-              <section className="py-16 min-h-screen bg-[#FAF8F5] dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-                  <div>
-                    <h1 className="text-3xl font-extrabold font-heading text-[#8B1E26] dark:text-red-400">Tamil Sangam Photo Gallery</h1>
-                    <p className="text-xs text-slate-500 dark:text-gray-400">Explore events, cultural celebrations, Pasarai meets, and heritage initiatives.</p>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {[
-                      { title: 'Madurai Meenakshi Temple & Golden Pond', img: '/hero-temple.jpg' },
-                      { title: 'Madurai Temple Chariot Festival', img: 'https://images.unsplash.com/photo-1609137144813-7d9921338f24?q=80&w=800&auto=format&fit=crop' },
-                      { title: 'Classical Bharatanatyam Recital', img: 'https://images.unsplash.com/photo-1601972599720-36938d4ecd31?q=80&w=800&auto=format&fit=crop' },
-                      { title: 'Tree Sapling Plantation Drive', img: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=800&auto=format&fit=crop' },
-                      { title: 'State Level Youth Assembly', img: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=800&auto=format&fit=crop' },
-                      { title: 'Thiruvalluvar Statue Heritage Tour', img: 'https://images.unsplash.com/photo-1600100397608-f09074052329?q=80&w=800&auto=format&fit=crop' },
-                      { title: 'Free Medical & Siddha Camp', img: 'https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?q=80&w=800&auto=format&fit=crop' },
-                      { title: 'Sangam Literature Book Fair', img: 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=800&auto=format&fit=crop' },
-                    ].map((g, idx) => (
-                      <div key={idx} className="overflow-hidden rounded-2xl bg-white dark:bg-[#1E232B] shadow-md group relative aspect-[4/3] border border-slate-200/80 dark:border-gray-800">
-                        <img src={g.img} alt={g.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex items-end">
-                          <p className="text-xs font-bold text-white">{g.title}</p>
-                        </div>
+            {activeTab === 'gallery' && (() => {
+              const allPhotos = getGallery();
+              return (
+                <section className="py-16 min-h-screen bg-[#FAF8F5] dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300">
+                  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-gray-800 pb-4">
+                      <div>
+                        <span className="text-xs font-bold text-[#8B1E26] dark:text-amber-400 bg-red-50 dark:bg-red-950/40 px-2.5 py-1 rounded uppercase border border-[#8B1E26]/20">
+                          {currentLang === 'ta' ? 'அதிகாரப்பூர்வ படங்கள்' : 'Official Archive'}
+                        </span>
+                        <h1 className="text-3xl font-extrabold font-heading text-[#8B1E26] dark:text-red-400 mt-1">
+                          {currentLang === 'ta' ? 'தமிழ் சங்கம் புகைப்படக் கூடம்' : 'Tamil Sangam Photo Gallery'}
+                        </h1>
+                        <p className="text-xs text-slate-500 dark:text-gray-400">
+                          {currentLang === 'ta'
+                            ? 'நிகழ்வுகள், கலை & கலாச்சாரக் கொண்டாட்டங்கள், பாசறைக் கூட்டங்கள் மற்றும் பாரம்பரிய முன்முயற்சிகள்.'
+                            : 'Explore events, cultural celebrations, Pasarai meets, and heritage initiatives.'}
+                        </p>
                       </div>
-                    ))}
+
+                      <span className="bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-800 font-extrabold text-xs px-3 py-1 rounded-full w-fit">
+                        {allPhotos.length} {currentLang === 'ta' ? 'புகைப்படங்கள்' : 'Photos'}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {allPhotos.map((g) => (
+                        <div key={g.id} className="overflow-hidden rounded-2xl bg-white dark:bg-[#1E232B] shadow-md group relative aspect-[4/3] border border-slate-200/80 dark:border-gray-800">
+                          <img 
+                            src={g.img} 
+                            alt={g.title} 
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=600&q=80';
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity p-3 flex flex-col justify-end">
+                            <span className="text-[10px] bg-amber-400 text-slate-950 font-black px-1.5 py-0.5 rounded w-fit mb-1">
+                              {g.category}
+                            </span>
+                            <p className="text-xs font-bold text-white line-clamp-1">{currentLang === 'ta' && g.titleTamil ? g.titleTamil : g.title}</p>
+                            {g.titleTamil && currentLang !== 'ta' && (
+                              <p className="text-[10px] text-amber-200 line-clamp-1">{g.titleTamil}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </section>
-            )}
+                </section>
+              );
+            })()}
 
             {/* 7. DEDICATED CONTACT PAGE */}
             {activeTab === 'contact' && (

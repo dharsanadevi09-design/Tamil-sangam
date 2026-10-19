@@ -39,19 +39,19 @@ export const DigitalIdCard: React.FC<DigitalIdCardProps> = ({
     <div className="flex flex-col items-center space-y-6">
       
       {/* Front / Back Toggle Buttons */}
-      <div className="no-print flex items-center justify-between w-full max-w-sm bg-slate-200 p-1 rounded-xl text-xs font-bold">
+      <div className="no-print flex items-center justify-between w-full max-w-sm bg-slate-200 dark:bg-slate-800 p-1.5 rounded-2xl text-xs font-bold border border-slate-300 dark:border-gray-700">
         <button
           onClick={() => setIsFlipped(false)}
-          className={`flex-1 py-2 rounded-lg transition-all ${
-            !isFlipped ? 'bg-yellow-400 text-slate-950 shadow' : 'text-slate-700 hover:text-slate-950'
+          className={`flex-1 py-2 rounded-xl transition-all cursor-pointer ${
+            !isFlipped ? 'bg-[#8B1E26] text-white shadow-md' : 'text-slate-700 dark:text-gray-300 hover:text-[#8B1E26]'
           }`}
         >
           {currentLang === 'ta' ? 'அட்டை முன்பக்கம்' : 'Card Front'}
         </button>
         <button
           onClick={() => setIsFlipped(true)}
-          className={`flex-1 py-2 rounded-lg transition-all ${
-            isFlipped ? 'bg-yellow-400 text-slate-950 shadow' : 'text-slate-700 hover:text-slate-950'
+          className={`flex-1 py-2 rounded-xl transition-all cursor-pointer ${
+            isFlipped ? 'bg-[#8B1E26] text-white shadow-md' : 'text-slate-700 dark:text-gray-300 hover:text-[#8B1E26]'
           }`}
         >
           {currentLang === 'ta' ? 'அட்டை பின்பக்கம்' : 'Card Back'}
@@ -59,11 +59,11 @@ export const DigitalIdCard: React.FC<DigitalIdCardProps> = ({
       </div>
 
       {/* Printable Area - ID Card Container */}
-      <div className="printable-area relative w-full max-w-sm aspect-[1.586/1] rounded-2xl overflow-hidden shadow-2xl border-2 border-yellow-400/80 bg-[#181B20] text-white flex flex-col justify-between select-none">
+      <div className="printable-area relative w-full max-w-sm aspect-[1.586/1] rounded-2xl overflow-hidden shadow-2xl border-2 border-amber-400 bg-gradient-to-br from-[#181B20] via-[#1D1719] to-[#281318] text-white flex flex-col justify-between select-none">
         
         {/* Background Watermark Pattern */}
         <div className="absolute inset-0 opacity-5 bg-[radial-gradient(#FFD100_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
-        <div className="absolute -right-12 -bottom-12 w-48 h-48 bg-yellow-400/10 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -right-12 -bottom-12 w-48 h-48 bg-amber-400/10 rounded-full blur-2xl pointer-events-none" />
 
         {!isFlipped ? (
           /* FRONT OF ID CARD */
@@ -77,10 +77,10 @@ export const DigitalIdCard: React.FC<DigitalIdCardProps> = ({
                 </div>
                 <div>
                   <h4 className="font-extrabold text-xs text-white tracking-wider">TAMIL SANGAM</h4>
-                  <p className="text-[9px] font-bold text-yellow-400">தமிழ் சங்கம் - தமிழ்நாடு</p>
+                  <p className="text-[9px] font-bold text-amber-300">தமிழ் சங்கம் - தமிழ்நாடு</p>
                 </div>
               </div>
-              <span className="bg-yellow-400 text-[#181B20] text-[9px] font-black px-1.5 py-0.5 rounded tracking-widest uppercase">
+              <span className="bg-amber-400 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded tracking-widest uppercase shadow-sm">
                 OFFICIAL ID
               </span>
             </div>
@@ -90,7 +90,7 @@ export const DigitalIdCard: React.FC<DigitalIdCardProps> = ({
               
               {/* Photo Box with Gold Border */}
               <div className="col-span-4 flex flex-col items-center">
-                <div className="w-20 h-24 rounded-lg overflow-hidden border-2 border-yellow-400 shadow-md bg-gray-900">
+                <div className="w-20 h-24 rounded-lg overflow-hidden border-2 border-amber-400 shadow-md bg-gray-900">
                   <img
                     src={member.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'}
                     alt={member.fullName}
@@ -107,13 +107,13 @@ export const DigitalIdCard: React.FC<DigitalIdCardProps> = ({
                 <div>
                   <span className="text-[9px] text-gray-400 uppercase font-semibold">Name</span>
                   <h5 className="font-extrabold text-sm text-white line-clamp-1 leading-tight">{member.fullName}</h5>
-                  <p className="text-xs font-semibold text-yellow-400 leading-tight">{member.nameTamil}</p>
+                  <p className="text-xs font-semibold text-amber-300 leading-tight">{member.nameTamil}</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px]">
                   <div>
                     <span className="text-gray-400">ID No:</span>
-                    <p className="font-mono font-extrabold text-white text-[10px] text-amber-300">
+                    <p className="font-mono font-extrabold text-amber-300 text-[10px]">
                       {member.membershipNumber || 'TS-TN-PENDING'}
                     </p>
                   </div>
@@ -156,7 +156,7 @@ export const DigitalIdCard: React.FC<DigitalIdCardProps> = ({
           /* BACK OF ID CARD */
           <div className="p-4 flex flex-col justify-between h-full relative z-10">
             <div className="border-b border-gray-800 pb-1.5 flex items-center justify-between">
-              <span className="text-[9px] font-bold text-yellow-400 uppercase tracking-wider">
+              <span className="text-[9px] font-bold text-amber-300 uppercase tracking-wider">
                 MEMBER ADDRESS & AUTHORISATION
               </span>
               <span className="text-[8px] text-gray-400">Card Ref: {member.id}</span>
@@ -177,7 +177,7 @@ export const DigitalIdCard: React.FC<DigitalIdCardProps> = ({
               </div>
 
               <div className="text-center">
-                <div className="font-script text-[10px] text-yellow-400 font-bold italic tracking-wide">
+                <div className="font-script text-[10px] text-amber-300 font-bold italic tracking-wide">
                   S. Ramachandran
                 </div>
                 <div className="text-[7px] font-bold text-gray-300 border-t border-gray-700 pt-0.5">
@@ -190,19 +190,19 @@ export const DigitalIdCard: React.FC<DigitalIdCardProps> = ({
 
       </div>
 
-      {/* Action Buttons */}
+      {/* Action Buttons in Home Page Styling */}
       <div className="no-print flex flex-wrap items-center justify-center gap-3">
         <button
           onClick={handlePrint}
-          className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition-all"
+          className="flex items-center gap-1.5 bg-[#8B1E26] hover:bg-[#72151C] text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md transition-all cursor-pointer"
         >
-          <Printer className="w-4 h-4 text-yellow-400" />
+          <Printer className="w-4 h-4 text-amber-300" />
           <span>Print / Save PDF</span>
         </button>
 
         <button
           onClick={handleSimulateWhatsApp}
-          className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition-all"
+          className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md transition-all cursor-pointer"
         >
           <Phone className="w-4 h-4" />
           <span>Send via WhatsApp</span>
@@ -210,7 +210,7 @@ export const DigitalIdCard: React.FC<DigitalIdCardProps> = ({
 
         <button
           onClick={handleSimulateEmail}
-          className="flex items-center gap-1.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition-all"
+          className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold px-4 py-2.5 rounded-xl shadow-md transition-all cursor-pointer"
         >
           <Mail className="w-4 h-4" />
           <span>Send via Email</span>

@@ -47,19 +47,19 @@ export const ReviewAndPaymentModal: React.FC<ReviewAndPaymentModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-white dark:bg-[#181B20] text-slate-900 dark:text-white rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-slate-800 my-8">
+      <div className="bg-white dark:bg-[#1E232B] text-slate-900 dark:text-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200/80 dark:border-gray-800 my-8">
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4 mb-6">
           <div>
-            <span className="text-xs font-bold text-amber-600 dark:text-yellow-400 bg-amber-50 dark:bg-amber-950/60 px-2.5 py-1 rounded">
+            <span className="text-xs font-bold text-[#8B1E26] dark:text-red-400 bg-[#FDF2F2] dark:bg-red-950/60 border border-[#8B1E26]/20 px-3 py-1 rounded-full uppercase tracking-wider">
               Final Step
             </span>
-            <h3 className="text-xl font-extrabold text-slate-900 dark:text-white mt-1">
+            <h3 className="text-xl sm:text-2xl font-extrabold text-[#8B1E26] dark:text-amber-400 font-heading mt-1.5">
               {currentLang === 'ta' ? 'விண்ணப்ப மறுஆய்வு & கட்டணம் செலுத்தல்' : 'Review Application & Confirm Payment'}
             </h3>
           </div>
-          <button onClick={onBack} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">
+          <button onClick={onBack} className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -67,10 +67,10 @@ export const ReviewAndPaymentModal: React.FC<ReviewAndPaymentModalProps> = ({
         {/* Application Summary Cards */}
         <div className="space-y-4 mb-6">
           
-          <div className="bg-slate-50 dark:bg-slate-900/80 rounded-xl p-4 border border-slate-200 dark:border-slate-800 text-xs space-y-2">
+          <div className="bg-slate-50 dark:bg-slate-900/80 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 text-xs space-y-2">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
               <span className="font-extrabold text-slate-900 dark:text-white text-sm">{applicationData.fullName}</span>
-              <span className="bg-yellow-400 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded">
+              <span className="bg-[#8B1E26] text-white text-[10px] font-black px-2.5 py-0.5 rounded shadow">
                 {applicationData.categoryName}
               </span>
             </div>
@@ -87,24 +87,27 @@ export const ReviewAndPaymentModal: React.FC<ReviewAndPaymentModalProps> = ({
             {applicationData.aadhaarDocUrl && (
               <div className="mt-3 pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center gap-3">
                 <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">Aadhaar Card Uploaded:</span>
-                <div className="w-16 h-12 rounded border border-amber-400 overflow-hidden shadow-sm">
+                <div className="w-16 h-12 rounded-lg border-2 border-[#8B1E26] dark:border-amber-400 overflow-hidden shadow-sm">
                   <img src={applicationData.aadhaarDocUrl} alt="Aadhaar" className="w-full h-full object-cover" />
                 </div>
               </div>
             )}
           </div>
 
-          {/* Membership Fee Box */}
-          <div className="bg-[#181B20] text-white p-4 rounded-xl flex items-center justify-between border-l-4 border-yellow-400 shadow-md">
+          {/* Membership Fee Box in Signature Home Page Maroon Gradient */}
+          <div className="bg-gradient-to-r from-[#8B1E26] via-[#72151C] to-[#600D13] text-white p-5 rounded-2xl flex items-center justify-between border-l-4 border-amber-400 shadow-xl">
             <div>
-              <p className="text-xs text-gray-300">Total Membership Registration Fee</p>
-              <p className="text-2xl font-extrabold text-yellow-400">
+              <p className="text-xs text-amber-100/90 font-medium">Total Membership Registration Fee</p>
+              <p className="text-3xl font-extrabold text-amber-300 font-mono tracking-tight">
                 ₹{applicationData.paymentAmount || 100}
               </p>
             </div>
-            <div className="text-right text-xs text-gray-400">
-              <p>Category: {applicationData.categoryName}</p>
-              <p className="text-emerald-400 font-semibold">Includes GST & Processing</p>
+            <div className="text-right text-xs text-amber-100/80">
+              <p className="font-semibold text-white">Category: {applicationData.categoryName}</p>
+              <p className="text-emerald-300 font-semibold flex items-center justify-end gap-1 mt-0.5">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Includes GST & Processing</span>
+              </p>
             </div>
           </div>
 
@@ -114,40 +117,40 @@ export const ReviewAndPaymentModal: React.FC<ReviewAndPaymentModalProps> = ({
         <form onSubmit={handlePaySubmit} className="space-y-6">
           
           <div>
-            <label className="block text-xs font-bold text-slate-900 dark:text-slate-200 mb-2">
+            <label className="block text-xs font-bold text-slate-900 dark:text-slate-200 mb-2 font-heading">
               Select Payment Method / செலுத்தும் முறை
             </label>
             <div className="grid grid-cols-3 gap-3 text-xs">
               <button
                 type="button"
                 onClick={() => setPaymentMethod('UPI')}
-                className={`p-3 rounded-xl border font-bold flex flex-col items-center justify-center gap-1.5 transition-all ${
-                  paymentMethod === 'UPI' ? 'bg-amber-500/10 border-yellow-400 text-amber-900 dark:text-yellow-400 ring-2 ring-yellow-400' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                className={`p-3 rounded-xl border font-bold flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  paymentMethod === 'UPI' ? 'bg-[#FDF2F2] dark:bg-red-950/50 border-2 border-[#8B1E26] dark:border-amber-400 text-[#8B1E26] dark:text-amber-300 ring-2 ring-[#8B1E26] dark:ring-amber-400 shadow-md' : 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300'
                 }`}
               >
-                <Smartphone className="w-5 h-5 text-amber-600 dark:text-yellow-400" />
+                <Smartphone className="w-5 h-5 text-[#8B1E26] dark:text-amber-400" />
                 <span>UPI / GPay / Paytm</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setPaymentMethod('CARD')}
-                className={`p-3 rounded-xl border font-bold flex flex-col items-center justify-center gap-1.5 transition-all ${
-                  paymentMethod === 'CARD' ? 'bg-amber-500/10 border-yellow-400 text-amber-900 dark:text-yellow-400 ring-2 ring-yellow-400' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                className={`p-3 rounded-xl border font-bold flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  paymentMethod === 'CARD' ? 'bg-[#FDF2F2] dark:bg-red-950/50 border-2 border-[#8B1E26] dark:border-amber-400 text-[#8B1E26] dark:text-amber-300 ring-2 ring-[#8B1E26] dark:ring-amber-400 shadow-md' : 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300'
                 }`}
               >
-                <CreditCard className="w-5 h-5 text-amber-600 dark:text-yellow-400" />
+                <CreditCard className="w-5 h-5 text-[#8B1E26] dark:text-amber-400" />
                 <span>Debit / Credit Card</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setPaymentMethod('NETBANKING')}
-                className={`p-3 rounded-xl border font-bold flex flex-col items-center justify-center gap-1.5 transition-all ${
-                  paymentMethod === 'NETBANKING' ? 'bg-amber-500/10 border-yellow-400 text-amber-900 dark:text-yellow-400 ring-2 ring-yellow-400' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                className={`p-3 rounded-xl border font-bold flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  paymentMethod === 'NETBANKING' ? 'bg-[#FDF2F2] dark:bg-red-950/50 border-2 border-[#8B1E26] dark:border-amber-400 text-[#8B1E26] dark:text-amber-300 ring-2 ring-[#8B1E26] dark:ring-amber-400 shadow-md' : 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300'
                 }`}
               >
-                <ShieldCheck className="w-5 h-5 text-amber-600 dark:text-yellow-400" />
+                <ShieldCheck className="w-5 h-5 text-[#8B1E26] dark:text-amber-400" />
                 <span>Net Banking</span>
               </button>
             </div>
@@ -161,7 +164,7 @@ export const ReviewAndPaymentModal: React.FC<ReviewAndPaymentModalProps> = ({
                 type="text"
                 value={upiId}
                 onChange={(e) => setUpiId(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-sm font-semibold text-slate-800 dark:text-white"
+                className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-sm font-semibold text-slate-800 dark:text-white focus:ring-2 focus:ring-[#8B1E26] focus:border-[#8B1E26] dark:focus:ring-amber-400 focus:outline-none"
                 required
               />
               <p className="text-[11px] text-slate-500 dark:text-slate-400">Supported: GPay, PhonePe, Paytm, BHIM, Amazon Pay</p>
@@ -176,18 +179,18 @@ export const ReviewAndPaymentModal: React.FC<ReviewAndPaymentModalProps> = ({
                   type="text"
                   value={cardNumber}
                   onChange={(e) => setCardNumber(e.target.value)}
-                  className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg font-semibold text-slate-800 dark:text-white"
+                  className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg font-semibold text-slate-800 dark:text-white focus:ring-2 focus:ring-[#8B1E26] focus:border-[#8B1E26] dark:focus:ring-amber-400 focus:outline-none"
                   required
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Expiry (MM/YY)</label>
-                  <input type="text" defaultValue="08/28" className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-white" />
+                  <input type="text" defaultValue="08/28" className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-white focus:ring-2 focus:ring-[#8B1E26] focus:border-[#8B1E26] dark:focus:ring-amber-400 focus:outline-none" />
                 </div>
                 <div>
                   <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">CVV</label>
-                  <input type="password" defaultValue="888" className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-white" />
+                  <input type="password" defaultValue="888" className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-white focus:ring-2 focus:ring-[#8B1E26] focus:border-[#8B1E26] dark:focus:ring-amber-400 focus:outline-none" />
                 </div>
               </div>
             </div>
@@ -196,7 +199,7 @@ export const ReviewAndPaymentModal: React.FC<ReviewAndPaymentModalProps> = ({
           {paymentMethod === 'NETBANKING' && (
             <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2 text-xs">
               <label className="block font-bold text-slate-700 dark:text-slate-300">Select Popular Bank</label>
-              <select className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg font-semibold text-slate-800 dark:text-white">
+              <select className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg font-semibold text-slate-800 dark:text-white focus:ring-2 focus:ring-[#8B1E26] focus:border-[#8B1E26] dark:focus:ring-amber-400 focus:outline-none">
                 <option>State Bank of India (SBI)</option>
                 <option>HDFC Bank</option>
                 <option>ICICI Bank</option>
@@ -217,7 +220,7 @@ export const ReviewAndPaymentModal: React.FC<ReviewAndPaymentModalProps> = ({
             <button
               type="button"
               onClick={onBack}
-              className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              className="text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
             >
               ← Edit Details
             </button>
@@ -225,7 +228,7 @@ export const ReviewAndPaymentModal: React.FC<ReviewAndPaymentModalProps> = ({
             <button
               type="submit"
               disabled={isProcessing}
-              className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-300 text-[#181B20] text-sm font-extrabold px-8 py-3.5 rounded-xl shadow-xl transition-all uppercase tracking-wide"
+              className="flex items-center gap-2 bg-[#8B1E26] hover:bg-[#72151C] text-white text-sm font-extrabold px-8 py-3.5 rounded-xl shadow-xl hover:shadow-[#8B1E26]/30 transition-all uppercase tracking-wide cursor-pointer"
             >
               {isProcessing ? (
                 <RefreshCw className="w-5 h-5 animate-spin" />

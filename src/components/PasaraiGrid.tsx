@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PASARAI_WINGS } from '../data/mockData';
+import { getPasaraiWings } from '../services/storageService';
 import type { Pasarai } from '../types';
 import { Search, ArrowRight, ShieldCheck, ChevronRight } from 'lucide-react';
 
@@ -19,11 +19,12 @@ export const PasaraiGrid: React.FC<PasaraiGridProps> = ({
   onGoToDashboard
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const allWings = getPasaraiWings();
   const [selectedWing, setSelectedWing] = useState<Pasarai | null>(
-    selectedPasaraiId ? PASARAI_WINGS.find(p => p.id === selectedPasaraiId) || PASARAI_WINGS[0] : PASARAI_WINGS[0]
+    selectedPasaraiId ? allWings.find(p => p.id === selectedPasaraiId) || allWings[0] : allWings[0]
   );
 
-  const filteredWings = PASARAI_WINGS.filter(w =>
+  const filteredWings = allWings.filter(w =>
     w.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     w.nameTamil.includes(searchQuery) ||
     w.category.toLowerCase().includes(searchQuery.toLowerCase())
@@ -36,15 +37,15 @@ export const PasaraiGrid: React.FC<PasaraiGridProps> = ({
         {/* Section Title */}
         <div className="text-center max-w-3xl mx-auto mb-12 space-y-3">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-300 text-xs font-bold uppercase tracking-wider">
-            <span>23 Specialized Wings</span>
+            <span>{allWings.length} Specialized Wings</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight font-heading">
-            {currentLang === 'ta' ? 'தமிழ் சங்கம் - 23 பாசறைகள்' : 'Tamil Sangam – 23 Pasarai Wings'}
+            {currentLang === 'ta' ? `தமிழ் சங்கம் - ${allWings.length} பாசறைகள்` : `Tamil Sangam – ${allWings.length} Pasarai Wings`}
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-300">
             {currentLang === 'ta'
               ? 'ஒவ்வொரு பாசறையும் தனக்கென தனித்துவமான குறிக்கோள், பொறுப்பாளர்கள் மற்றும் செயல்பாடுகளுடன் இயங்குகிறது. உங்கள் விருப்பமான பாசறையைத் தேர்வு செய்து இணையலாம்.'
-              : 'Each of the 23 wings operates with dedicated office bearers, targeted goals, and specialized social/cultural activities.'}
+              : `Each of the ${allWings.length} wings operates with dedicated office bearers, targeted goals, and specialized social/cultural activities.`}
           </p>
 
           {/* Search bar */}
