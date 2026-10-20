@@ -120,8 +120,8 @@ export function App() {
     setIsPaymentModalOpen(true);
   };
 
-  // STEP 3: Payment Confirmed -> Save Application, Auto-Login & Persist Session
-  const handleConfirmAndPay = (paymentDetails: { paymentMethod: string; transactionId: string }) => {
+  // STEP 3: Payment Confirmed -> Save Application & Generate ID Card
+  const handleConfirmAndPay = async (paymentDetails: { paymentMethod: string; transactionId: string }): Promise<MemberApplication | undefined> => {
     if (!pendingFormData) return;
 
     const fullApp: Omit<MemberApplication, 'id' | 'status'> = {
@@ -132,14 +132,17 @@ export function App() {
       mobileVerified: true,
     };
 
-    const created = addMemberApplication(fullApp);
+    const created = await addMemberApplication(fullApp);
+    return created;
+  };
+
+  // STEP 4: User Enters OTP -> Verify & Complete Login
+  const handlePostRegistrationLogin = (member: MemberApplication) => {
     setIsPaymentModalOpen(false);
     setVerifiedMobileForRegistration(null);
     setPendingFormData(null);
-
-    // Save persistent user session
-    saveLoggedInMember(created);
-    setLoggedInMember(created);
+    saveLoggedInMember(member);
+    setLoggedInMember(member);
     setActiveTab('member-dashboard');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -401,6 +404,14 @@ export function App() {
         isOpen={isOtpModalOpen}
         onClose={() => setIsOtpModalOpen(false)}
         onOtpVerified={handleOtpVerified}
+        onAlreadyRegistered={(existingMember) => {
+          setIsOtpModalOpen(false);
+          setVerifiedMobileForRegistration(null);
+          saveLoggedInMember(existingMember);
+          setLoggedInMember(existingMember);
+          setActiveTab('member-dashboard');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
         currentLang={currentLang}
       />
 
@@ -409,6 +420,7 @@ export function App() {
         <ReviewAndPaymentModal
           applicationData={pendingFormData}
           onConfirmAndPay={handleConfirmAndPay}
+          onLoginSuccess={handlePostRegistrationLogin}
           onBack={() => {
             setIsPaymentModalOpen(false);
             setVerifiedMobileForRegistration(pendingFormData.mobile || '9840123456');

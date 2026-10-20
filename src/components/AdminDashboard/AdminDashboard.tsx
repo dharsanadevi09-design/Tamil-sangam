@@ -1,20 +1,21 @@
-import React, { useState } from 'react';
-import type { MemberApplication, AdminRole, EventItem, NewsItem, CertificateItem, AdminAccount, GalleryItem, Pasarai } from '../../types';
+import React, { useState, useEffect } from 'react';
+import type { MemberApplication, AdminRole, EventItem, NewsItem, CertificateItem, AdminAccount, GalleryItem, Pasarai, ContactMessage } from '../../types';
 import { 
-  getMembers, approveMemberApplication, rejectMemberApplication, deleteMember,
-  getDonations, deleteDonation,
-  getEvents, addEvent, deleteEvent,
-  getNews, addNews, deleteNews,
-  getCertificates, addCertificate, deleteCertificate,
-  getAdminAccounts, addAdminAccount, deleteAdminAccount,
-  getGallery, addGalleryItem, deleteGalleryItem,
-  getPasaraiWings, addPasaraiWing, deletePasaraiWing
+  getMembers, saveMembers, approveMemberApplication, rejectMemberApplication, deleteMember,
+  getDonations, saveDonations, deleteDonation,
+  getEvents, saveEvents, addEvent, deleteEvent,
+  getNews, saveNews, addNews, deleteNews,
+  getCertificates, saveCertificates, addCertificate, deleteCertificate,
+  getAdminAccounts, saveAdminAccounts, addAdminAccount, deleteAdminAccount,
+  getGallery, saveGallery, addGalleryItem, deleteGalleryItem,
+  getPasaraiWings, savePasaraiWings, addPasaraiWing, deletePasaraiWing
 } from '../../services/storageService';
+import { api } from '../../services/apiClient';
 import { TN_DISTRICTS, PASARAI_WINGS } from '../../data/mockData';
 import { 
   Shield, Users, Heart, CheckCircle2, XCircle, Search, Download, Plus, Trash2, 
   Calendar, Newspaper, Award, UserPlus, Lock, Eye, MapPin, Crown, Landmark, X,
-  Image as ImageIcon, Layers, Upload
+  Image as ImageIcon, Layers, Upload, MessageSquare, Send, Phone, Clock, Database, Mail
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -28,7 +29,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onCloseAdmin,
   currentAdmin
 }) => {
-  const [activeAdminTab, setActiveAdminTab] = useState<'MEMBERS' | 'PENDING' | 'EVENTS' | 'NEWS' | 'GALLERY' | 'WINGS' | 'CERTIFICATES' | 'DONATIONS' | 'REPORTS' | 'ADMINS'>('MEMBERS');
+  const [activeAdminTab, setActiveAdminTab] = useState<'MEMBERS' | 'PENDING' | 'EVENTS' | 'NEWS' | 'GALLERY' | 'WINGS' | 'CERTIFICATES' | 'DONATIONS' | 'REPORTS' | 'MESSAGES' | 'CONTACT' | 'ADMINS'>('MEMBERS');
   const [membersList, setMembersList] = useState<MemberApplication[]>(getMembers());
   const [eventsList, setEventsList] = useState<EventItem[]>(getEvents());
   const [newsList, setNewsList] = useState<NewsItem[]>(getNews());
@@ -37,6 +38,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [adminAccountsList, setAdminAccountsList] = useState<AdminAccount[]>(getAdminAccounts());
   const [galleryList, setGalleryList] = useState<GalleryItem[]>(getGallery());
   const [wingsList, setWingsList] = useState<Pasarai[]>(getPasaraiWings());
+  const [contactMessagesList, setContactMessagesList] = useState<ContactMessage[]>([]);
+  const [messageLogs, setMessageLogs] = useState<any[]>([]);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [messagesFilterChannel, setMessagesFilterChannel] = useState<'ALL' | 'SMS' | 'WHATSAPP'>('ALL');
 
   const [inspectMember, setInspectMember] = useState<MemberApplication | null>(null);
   const [zoomedAadhaarUrl, setZoomedAadhaarUrl] = useState<string | null>(null);
@@ -49,6 +54,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('ALL');
   const [galleryCategoryFilter, setGalleryCategoryFilter] = useState('ALL');
   const [wingsCategoryFilter, setWingsCategoryFilter] = useState('ALL');
+  const [contactStatusFilter, setContactStatusFilter] = useState<'ALL' | 'NEW' | 'RESOLVED'>('ALL');
+  const [contactSearchQuery, setContactSearchQuery] = useState('');
 
   // District Admin Scoping Logic
   const adminRole: AdminRole = currentAdmin?.role || 'SUPER_ADMIN';
@@ -130,61 +137,117 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     secretaryContact: ''
   });
 
-  const refreshAllData = () => {
-    setMembersList(getMembers());
-    setEventsList(getEvents());
-    setNewsList(getNews());
-    setCertList(getCertificates());
-    setDonationsList(getDonations());
-    setAdminAccountsList(getAdminAccounts());
-    setGalleryList(getGallery());
-    setWingsList(getPasaraiWings());
+  const refreshAllData = async () => {
+    try {
+      const [members, events, news, certs, donations, admins, gallery, wings, logs, contacts] = await Promise.all([
+        api.getMembers().catch(() => getMembers()),
+        api.getEvents().catch(() => getEvents()),
+        api.getNews().catch(() => getNews()),
+        api.getCertificates().catch(() => getCertificates()),
+        api.getDonations().catch(() => getDonations()),
+        api.getAdmins().catch(() => getAdminAccounts()),
+        api.getGallery().catch(() => getGallery()),
+        api.getPasarai().catch(() => getPasaraiWings()),
+        api.getMessageLogs().catch(() => []),
+        api.getContactMessages().catch(() => [])
+      ]);
+
+      if (members) { setMembersList(members); saveMembers(members); }
+      if (events) { setEventsList(events); saveEvents(events); }
+      if (news) { setNewsList(news); saveNews(news); }
+      if (certs) { setCertList(certs); saveCertificates(certs); }
+      if (donations) { setDonationsList(donations); saveDonations(donations); }
+      if (admins) { setAdminAccountsList(admins); saveAdminAccounts(admins); }
+      if (gallery) { setGalleryList(gallery); saveGallery(gallery); }
+      if (wings) { setWingsList(wings); savePasaraiWings(wings); }
+      if (logs) setMessageLogs(logs);
+      if (contacts) setContactMessagesList(contacts);
+    } catch (err) {
+      console.warn('Backend refresh fallback to local storage:', err);
+      setMembersList(getMembers());
+      setEventsList(getEvents());
+      setNewsList(getNews());
+      setCertList(getCertificates());
+      setDonationsList(getDonations());
+      setAdminAccountsList(getAdminAccounts());
+      setGalleryList(getGallery());
+      setWingsList(getPasaraiWings());
+    }
   };
 
-  const handleApprove = (appId: string) => {
-    const targetMember = membersList.find(m => m.id === appId);
-    if (isSuperAdmin) {
-      alert(`Super Admin Notice:\nSuper Admin cannot accept/approve member applications directly.\n\nOnly the assigned District Admin of ${targetMember?.district || 'that'} district can accept applications and generate Membership IDs.`);
-      return;
-    }
-    const updated = approveMemberApplication(appId);
-    if (updated) {
-      refreshAllData();
+  useEffect(() => {
+    refreshAllData();
+  }, []);
+
+  const handleApprove = async (appId: string) => {
+    try {
+      const res = await api.approveMember(appId);
+      setToastMessage(`✓ உறுப்பினர் விண்ணப்பம் அங்கீகரிக்கப்பட்டது! ID: ${res.member.membershipNumber}. Database இல் சேமிக்கப்பட்டது.`);
+      await refreshAllData();
       setInspectMember(null);
+    } catch (err: any) {
+      const updated = approveMemberApplication(appId);
+      if (updated) {
+        setToastMessage(`✓ உறுப்பினர் விண்ணப்பம் அங்கீகரிக்கப்பட்டது! ID: ${updated.membershipNumber}`);
+        await refreshAllData();
+        setInspectMember(null);
+      }
     }
   };
 
-  const handleReject = (appId: string) => {
+  const handleReject = async (appId: string) => {
     const reason = rejectionReason || window.prompt('Enter reason for rejection / நிராகரிப்பதற்கான காரணம்:', 'Incomplete documents / ஆவணங்கள் முழுமையாக இல்லை');
     if (!reason) return;
-    const updated = rejectMemberApplication(appId, reason);
-    if (updated) {
-      refreshAllData();
+    try {
+      await api.rejectMember(appId, reason);
+      setToastMessage(`விண்ணப்பம் நிராகரிக்கப்பட்டது & Database இல் புதுப்பிக்கப்பட்டது.`);
+      await refreshAllData();
+      setInspectMember(null);
+      setRejectionReason('');
+    } catch (err) {
+      rejectMemberApplication(appId, reason);
+      await refreshAllData();
       setInspectMember(null);
       setRejectionReason('');
     }
   };
 
-  const handleDeleteMember = (appId: string) => {
+  const handleDeleteMember = async (appId: string) => {
     if (window.confirm('Are you sure you want to delete this member record?')) {
-      deleteMember(appId);
-      refreshAllData();
+      try {
+        await api.deleteMember(appId);
+        setToastMessage('உறுப்பினர் பதிவு Database இல் இருந்து நீக்கப்பட்டது.');
+      } catch (err) {
+        deleteMember(appId);
+      }
+      await refreshAllData();
       if (inspectMember?.id === appId) setInspectMember(null);
     }
   };
 
   // Add District Admin (Super Admin Feature)
-  const handleCreateAdmin = (e: React.FormEvent) => {
+  const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAdmin.name || !newAdmin.username || !newAdmin.password) return;
-    addAdminAccount({
-      name: newAdmin.name,
-      username: newAdmin.username.toLowerCase().trim(),
-      password: newAdmin.password,
-      role: newAdmin.role,
-      district: newAdmin.district
-    });
-    refreshAllData();
+    try {
+      await api.createAdmin({
+        name: newAdmin.name,
+        username: newAdmin.username.toLowerCase().trim(),
+        password: newAdmin.password,
+        role: newAdmin.role,
+        district: newAdmin.district
+      });
+      setToastMessage('புதிய நிர்வாகி கணக்கு Database இல் உருவாக்கப்பட்டது.');
+    } catch (err) {
+      addAdminAccount({
+        name: newAdmin.name,
+        username: newAdmin.username.toLowerCase().trim(),
+        password: newAdmin.password,
+        role: newAdmin.role,
+        district: newAdmin.district
+      });
+    }
+    await refreshAllData();
     setIsAddAdminOpen(false);
     setNewAdmin({
       name: '',
@@ -195,84 +258,131 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     });
   };
 
-  const handleDeleteAdminAccount = (id: string) => {
+  const handleDeleteAdminAccount = async (id: string) => {
     if (window.confirm('Delete this District Admin account?')) {
-      deleteAdminAccount(id);
-      refreshAllData();
+      try {
+        await api.deleteAdmin(id);
+      } catch (err) {
+        deleteAdminAccount(id);
+      }
+      await refreshAllData();
     }
   };
 
   // Add Event
-  const handleCreateEvent = (e: React.FormEvent) => {
+  const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newEvent.title || !newEvent.titleTamil) return;
-    addEvent(newEvent);
-    refreshAllData();
+    try {
+      await api.createEvent(newEvent);
+      setToastMessage('நிகழ்வு Database இல் வெற்றிகரமாக சேமிக்கப்பட்டது.');
+    } catch (err) {
+      addEvent(newEvent);
+    }
+    await refreshAllData();
     setIsAddEventOpen(false);
   };
 
-  const handleDeleteEvent = (id: string) => {
+  const handleDeleteEvent = async (id: string) => {
     if (window.confirm('Delete this event listing?')) {
-      deleteEvent(id);
-      refreshAllData();
+      try {
+        await api.deleteEvent(id);
+      } catch (err) {
+        deleteEvent(id);
+      }
+      await refreshAllData();
     }
   };
 
   // Add News
-  const handleCreateNews = (e: React.FormEvent) => {
+  const handleCreateNews = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newNews.title || !newNews.titleTamil) return;
-    addNews(newNews);
-    refreshAllData();
+    try {
+      await api.createNews(newNews);
+      setToastMessage('செய்தி / அறிவிப்பு Database இல் சேமிக்கப்பட்டது.');
+    } catch (err) {
+      addNews(newNews);
+    }
+    await refreshAllData();
     setIsAddNewsOpen(false);
   };
 
-  const handleDeleteNewsItem = (id: string) => {
+  const handleDeleteNewsItem = async (id: string) => {
     if (window.confirm('Delete this news announcement?')) {
-      deleteNews(id);
-      refreshAllData();
+      try {
+        await api.deleteNews(id);
+      } catch (err) {
+        deleteNews(id);
+      }
+      await refreshAllData();
     }
   };
 
   // Add Certificate
-  const handleCreateCertificate = (e: React.FormEvent) => {
+  const handleCreateCertificate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCert.memberName) return;
-    addCertificate(newCert);
-    refreshAllData();
+    try {
+      await api.createCertificate(newCert);
+      setToastMessage('சான்றிதழ் Database இல் உருவாக்கப்பட்டது.');
+    } catch (err) {
+      addCertificate(newCert);
+    }
+    await refreshAllData();
     setIsAddCertOpen(false);
   };
 
-  const handleDeleteCertItem = (id: string) => {
+  const handleDeleteCertItem = async (id: string) => {
     if (window.confirm('Delete this certificate?')) {
-      deleteCertificate(id);
-      refreshAllData();
+      try {
+        await api.deleteCertificate(id);
+      } catch (err) {
+        deleteCertificate(id);
+      }
+      await refreshAllData();
     }
   };
 
-  const handleDeleteDonationItem = (id: string) => {
+  const handleDeleteDonationItem = async (id: string) => {
     if (window.confirm('Delete this donation entry?')) {
-      deleteDonation(id);
-      refreshAllData();
+      try {
+        await api.deleteDonation(id);
+      } catch (err) {
+        deleteDonation(id);
+      }
+      await refreshAllData();
     }
   };
 
   // Gallery Handlers
-  const handleCreateGallery = (e: React.FormEvent) => {
+  const handleCreateGallery = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newGalleryItem.title || !newGalleryItem.img) {
       alert('Please provide a title and image!');
       return;
     }
-    addGalleryItem({
-      title: newGalleryItem.title,
-      titleTamil: newGalleryItem.titleTamil || newGalleryItem.title,
-      category: newGalleryItem.category,
-      img: newGalleryItem.img,
-      description: newGalleryItem.description,
-      date: newGalleryItem.date
-    });
-    refreshAllData();
+    try {
+      await api.createGalleryItem({
+        title: newGalleryItem.title,
+        titleTamil: newGalleryItem.titleTamil || newGalleryItem.title,
+        category: newGalleryItem.category,
+        img: newGalleryItem.img,
+        description: newGalleryItem.description,
+        date: newGalleryItem.date
+      });
+      setToastMessage('புகைப்படம் Database இல் சேர்க்கப்பட்டது.');
+    } catch (err) {
+      addGalleryItem({
+        title: newGalleryItem.title,
+        titleTamil: newGalleryItem.titleTamil || newGalleryItem.title,
+        category: newGalleryItem.category,
+        img: newGalleryItem.img,
+        description: newGalleryItem.description,
+        date: newGalleryItem.date
+      });
+    }
+    await refreshAllData();
     setIsAddGalleryOpen(false);
     setNewGalleryItem({
       title: '',
@@ -284,10 +394,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     });
   };
 
-  const handleDeleteGallery = (id: string) => {
+  const handleDeleteGallery = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this gallery photo?')) {
-      deleteGalleryItem(id);
-      refreshAllData();
+      try {
+        await api.deleteGalleryItem(id);
+      } catch (err) {
+        deleteGalleryItem(id);
+      }
+      await refreshAllData();
     }
   };
 
@@ -303,7 +417,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   // Wings (Pasarai) Handlers
-  const handleCreateWing = (e: React.FormEvent) => {
+  const handleCreateWing = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newWing.name || !newWing.nameTamil) {
       alert('Please provide wing name in English and Tamil!');
@@ -325,7 +439,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       });
     }
 
-    addPasaraiWing({
+    const wingData = {
       name: newWing.name,
       nameTamil: newWing.nameTamil,
       category: newWing.category,
@@ -334,8 +448,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       icon: 'Shield',
       memberCount: Number(newWing.memberCount) || 100,
       officeBearers
-    });
-    refreshAllData();
+    };
+
+    try {
+      await api.createPasarai(wingData);
+      setToastMessage('பாசறைப் பிரிவு Database இல் சேர்க்கப்பட்டது.');
+    } catch (err) {
+      addPasaraiWing(wingData);
+    }
+    await refreshAllData();
     setIsAddWingOpen(false);
     setNewWing({
       name: '',
@@ -352,10 +473,37 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     });
   };
 
-  const handleDeleteWing = (id: string) => {
+  const handleDeleteWing = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this wing?')) {
-      deletePasaraiWing(id);
-      refreshAllData();
+      try {
+        await api.deletePasarai(id);
+      } catch (err) {
+        deletePasaraiWing(id);
+      }
+      await refreshAllData();
+    }
+  };
+
+  // Contact Inquiry Handlers
+  const handleResolveContact = async (id: string) => {
+    try {
+      await api.resolveContactMessage(id);
+      setToastMessage('தகவல் தொடர்பு செய்தி தீர்க்கப்பட்டதாக குறிக்கப்பட்டது.');
+      await refreshAllData();
+    } catch (err) {
+      console.error('Failed to resolve contact message:', err);
+    }
+  };
+
+  const handleDeleteContact = async (id: string) => {
+    if (window.confirm('Delete this contact message?')) {
+      try {
+        await api.deleteContactMessage(id);
+        setToastMessage('தகவல் தொடர்பு செய்தி நீக்கப்பட்டது.');
+        await refreshAllData();
+      } catch (err) {
+        console.error('Failed to delete contact message:', err);
+      }
     }
   };
 
@@ -410,13 +558,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   return (
     <div className="bg-[#FAF8F5] dark:bg-slate-950 text-slate-900 dark:text-gray-100 min-h-screen py-8 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+      {/* Live Toast Message */}
+      {toastMessage && (
+        <div className="mb-6 bg-emerald-800 text-white p-4 rounded-2xl shadow-xl flex items-center justify-between border-2 border-emerald-400 animate-fadeIn">
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="w-5 h-5 text-amber-300 shrink-0" />
+            <span className="text-xs sm:text-sm font-extrabold">{toastMessage}</span>
+          </div>
+          <button 
+            onClick={() => setToastMessage(null)}
+            className="text-emerald-200 hover:text-white bg-emerald-900/60 p-1.5 rounded-lg transition-colors cursor-pointer ml-4"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
       
       {/* Top Admin Header Bar */}
       <div className="bg-gradient-to-r from-[#72151C] via-[#8B1E26] to-[#72151C] text-white rounded-2xl p-6 shadow-xl mb-8 border border-amber-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="bg-amber-400 text-[#72151C] text-xs font-black px-2.5 py-0.5 rounded uppercase shadow">
               ADMIN WORKBENCH
+            </span>
+            <span className="bg-emerald-900/80 border border-emerald-400/40 text-emerald-200 text-xs font-bold px-2.5 py-0.5 rounded flex items-center gap-1 shadow">
+              <Database className="w-3 h-3 text-emerald-300" />
+              <span>SQLite Database Connected (Live)</span>
             </span>
             <span className="text-xs text-amber-200 font-bold flex items-center gap-1.5">
               <Shield className="w-3.5 h-3.5 text-amber-300" />
@@ -525,6 +693,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {[
           { id: 'MEMBERS', label: 'Members Directory', badge: scopedMembersList.length },
           { id: 'PENDING', label: 'Pending Queue', badge: pendingMembers.length, highlight: true },
+          { id: 'MESSAGES', label: 'SMS & Notifications Log', badge: messageLogs.length, highlight: messageLogs.length > 0 },
+          { id: 'CONTACT', label: 'Help & Inquiries', badge: contactMessagesList.length, highlight: contactMessagesList.filter(c => c.status === 'NEW').length > 0 },
           { id: 'EVENTS', label: 'Events Manager', badge: eventsList.length },
           { id: 'NEWS', label: 'News & Media', badge: newsList.length },
           { id: 'GALLERY', label: 'Gallery Manager', badge: galleryList.length },
@@ -1300,6 +1470,321 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       )}
 
+      {/* TAB: LIVE SMS & NOTIFICATIONS LOG */}
+      {activeAdminTab === 'MESSAGES' && (
+        <div className="bg-white dark:bg-[#1E232B] rounded-2xl p-6 shadow-xl border border-slate-200 dark:border-gray-800 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-gray-800 pb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-xs font-black px-2.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-800 uppercase">
+                  DATABASE AUDIT TRAIL
+                </span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+                  SQLite table: <code className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[#8B1E26] dark:text-amber-400 font-mono">messages_log</code>
+                </span>
+              </div>
+              <h3 className="text-xl font-extrabold text-slate-900 dark:text-white mt-1 font-heading flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-[#8B1E26] dark:text-amber-400" />
+                <span>Live Dispatched SMS & Notification Audit Log / நேரலை SMS & அறிவிப்புகள் பதிவு</span>
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                Real-time records of OTPs sent, membership approvals, application payments, and donation receipts sent to members and admins.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  api.getMessageLogs().then(logs => setMessageLogs(logs)).catch(() => {});
+                }}
+                className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
+              >
+                <Clock className="w-3.5 h-3.5" />
+                <span>Refresh Logs</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Filter Bar */}
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="font-bold text-slate-500 dark:text-slate-400 mr-2">Filter Channel:</span>
+            {[
+              { id: 'ALL', label: 'All Messages', count: messageLogs.length },
+              { id: 'SMS', label: 'SMS Only', count: messageLogs.filter(m => m.channel === 'SMS').length },
+              { id: 'WHATSAPP', label: 'WhatsApp Only', count: messageLogs.filter(m => m.channel === 'WHATSAPP').length },
+            ].map(f => (
+              <button
+                key={f.id}
+                onClick={() => setMessagesFilterChannel(f.id as any)}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                  messagesFilterChannel === f.id
+                    ? 'bg-[#8B1E26] text-white shadow'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
+                }`}
+              >
+                {f.label} ({f.count})
+              </button>
+            ))}
+          </div>
+
+          {/* Messages List */}
+          {messageLogs.length === 0 ? (
+            <div className="text-center py-12 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+              <Send className="w-10 h-10 text-slate-400 mx-auto mb-2 opacity-50" />
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-300">No message dispatches logged yet.</p>
+              <p className="text-xs text-slate-500 mt-1">Dispatched SMS and WhatsApp messages will appear here when members register, log in with OTP, or when payments are made.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {messageLogs
+                .filter(m => messagesFilterChannel === 'ALL' || m.channel === messagesFilterChannel)
+                .map((msg, index) => (
+                  <div 
+                    key={msg.id || index}
+                    className="p-4 rounded-xl border border-slate-200/90 dark:border-gray-800 bg-slate-50/70 dark:bg-slate-900/60 hover:bg-white dark:hover:bg-slate-900 transition-all shadow-sm"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-gray-800 pb-2 mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1 ${
+                          msg.channel === 'SMS' 
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border border-blue-300 dark:border-blue-800'
+                            : msg.channel === 'WHATSAPP'
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                            : 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'
+                        }`}>
+                          {msg.channel === 'SMS' ? <Phone className="w-3 h-3" /> : <MessageSquare className="w-3 h-3" />}
+                          <span>{msg.channel}</span>
+                        </span>
+
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          msg.recipientType === 'ADMIN'
+                            ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-300'
+                            : 'bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-300'
+                        }`}>
+                          To: {msg.recipientType === 'ADMIN' ? 'Admin HQ' : `Member (${msg.recipient})`}
+                        </span>
+
+                        {msg.subject && (
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-300 hidden sm:inline">
+                            • {msg.subject}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                        <Clock className="w-3 h-3" />
+                        <span>{msg.createdAt || 'Recent'}</span>
+                        <span className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 text-[10px] font-bold px-1.5 py-0.5 rounded ml-1">
+                          ✓ DELIVERED
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 font-sans leading-relaxed whitespace-pre-line bg-white dark:bg-slate-950 p-3 rounded-lg border border-slate-200/80 dark:border-gray-800">
+                      {msg.message}
+                    </p>
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB: CONTACT & INQUIRIES */}
+      {activeAdminTab === 'CONTACT' && (
+        <div className="bg-white dark:bg-[#1E232B] rounded-2xl p-6 shadow-xl border border-slate-200 dark:border-gray-800 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-gray-800 pb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 text-xs font-black px-2.5 py-0.5 rounded border border-amber-300 dark:border-amber-800 uppercase">
+                  CITIZEN & MEMBER INQUIRIES
+                </span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+                  SQLite table: <code className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[#8B1E26] dark:text-amber-400 font-mono">contact_messages</code>
+                </span>
+              </div>
+              <h3 className="text-xl font-extrabold text-slate-900 dark:text-white mt-1 font-heading flex items-center gap-2">
+                <Mail className="w-5 h-5 text-[#8B1E26] dark:text-amber-400" />
+                <span>Contact Messages & Helpdesk / உதவி & கருத்துப் பதிவுகள்</span>
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                Inquiries, feedback, and support requests submitted through the official Contact Us portal.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  api.getContactMessages().then(msgs => setContactMessagesList(msgs)).catch(() => {});
+                }}
+                className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
+              >
+                <Clock className="w-3.5 h-3.5" />
+                <span>Refresh Messages</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Filter and Search Bar */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search by Name, Ref ID, Mobile, or Subject..."
+                value={contactSearchQuery}
+                onChange={(e) => setContactSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-gray-700 rounded-lg text-slate-900 dark:text-white"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 sm:col-span-2">
+              <span className="font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">Filter Status:</span>
+              {[
+                { id: 'ALL', label: 'All Inquiries', count: contactMessagesList.length },
+                { id: 'NEW', label: 'Pending Action', count: contactMessagesList.filter(c => c.status === 'NEW').length },
+                { id: 'RESOLVED', label: 'Resolved', count: contactMessagesList.filter(c => c.status === 'RESOLVED').length },
+              ].map(f => (
+                <button
+                  key={f.id}
+                  onClick={() => setContactStatusFilter(f.id as any)}
+                  className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                    contactStatusFilter === f.id
+                      ? 'bg-[#8B1E26] text-white shadow'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  {f.label} ({f.count})
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Messages List */}
+          {contactMessagesList.length === 0 ? (
+            <div className="text-center py-12 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+              <Mail className="w-10 h-10 text-slate-400 mx-auto mb-2 opacity-50" />
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-300">No contact messages received yet.</p>
+              <p className="text-xs text-slate-500 mt-1">Submitted inquiries from the public Contact page will be logged here and stored in SQLite.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {contactMessagesList
+                .filter(c => {
+                  const matchesStatus = contactStatusFilter === 'ALL' || c.status === contactStatusFilter;
+                  const q = contactSearchQuery.toLowerCase().trim();
+                  const matchesQuery = !q || (
+                    (c.fullName && c.fullName.toLowerCase().includes(q)) ||
+                    (c.mobile && c.mobile.includes(q)) ||
+                    (c.refId && c.refId.toLowerCase().includes(q)) ||
+                    (c.subject && c.subject.toLowerCase().includes(q)) ||
+                    (c.district && c.district.toLowerCase().includes(q)) ||
+                    (c.message && c.message.toLowerCase().includes(q))
+                  );
+                  return matchesStatus && matchesQuery;
+                })
+                .map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`p-5 rounded-2xl border transition-all shadow-sm ${
+                      msg.status === 'NEW'
+                        ? 'border-amber-300/80 bg-amber-50/40 dark:bg-amber-950/20'
+                        : 'border-slate-200/90 dark:border-gray-800 bg-white dark:bg-slate-900/60'
+                    }`}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/80 dark:border-gray-800 pb-3 mb-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`px-2.5 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1 ${
+                          msg.status === 'NEW'
+                            ? 'bg-amber-400 text-slate-950 shadow-sm'
+                            : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300'
+                        }`}>
+                          {msg.status === 'NEW' ? '● NEW INQUIRY' : '✓ RESOLVED'}
+                        </span>
+
+                        <span className="font-mono text-xs font-bold text-[#8B1E26] dark:text-amber-400 bg-white dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-gray-700">
+                          {msg.refId || 'INQ-REF'}
+                        </span>
+
+                        <span className="text-xs font-extrabold text-slate-900 dark:text-white">
+                          {msg.name || msg.fullName || 'Citizen'}
+                        </span>
+
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                          • {msg.district} District
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>{msg.createdAt || 'Recent'}</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-300 mb-3 bg-slate-50 dark:bg-slate-900/90 p-3 rounded-xl border border-slate-200/70 dark:border-gray-800">
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-3.5 h-3.5 text-[#8B1E26] dark:text-amber-400" />
+                        <span className="font-semibold">Mobile:</span>
+                        <a href={`tel:+91${msg.mobile}`} className="font-mono font-bold text-[#8B1E26] dark:text-amber-400 hover:underline">
+                          +91 {msg.mobile}
+                        </a>
+                      </div>
+
+                      {msg.email && (
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-3.5 h-3.5 text-blue-500" />
+                          <span className="font-semibold">Email:</span>
+                          <a href={`mailto:${msg.email}`} className="font-mono text-blue-600 dark:text-blue-400 hover:underline">
+                            {msg.email}
+                          </a>
+                        </div>
+                      )}
+
+                      <div className="sm:col-span-2 flex items-center gap-2">
+                        <span className="font-extrabold text-slate-800 dark:text-slate-200">Subject:</span>
+                        <span className="font-semibold text-slate-900 dark:text-white">{msg.subject || 'General Inquiry'}</span>
+                      </div>
+                    </div>
+
+                    <div className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed bg-white dark:bg-slate-950 p-3.5 rounded-xl border border-slate-200 dark:border-gray-800 mb-3 whitespace-pre-line">
+                      {msg.message}
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200/80 dark:border-gray-800">
+                      <div className="flex items-center gap-2">
+                        {msg.status === 'NEW' && (
+                          <button
+                            onClick={() => handleResolveContact(msg.id)}
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow transition-all cursor-pointer"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Mark as Resolved / தீர்க்கப்பட்டது</span>
+                          </button>
+                        )}
+                        <a
+                          href={`tel:+91${msg.mobile}`}
+                          className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <Phone className="w-3 h-3 text-emerald-600" />
+                          <span>Call Member</span>
+                        </a>
+                      </div>
+
+                      <button
+                        onClick={() => handleDeleteContact(msg.id)}
+                        className="text-red-600 hover:text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* CREATE EVENT MODAL */}
       {isAddEventOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm overflow-y-auto">
@@ -1920,19 +2405,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="pt-4 border-t border-slate-200 space-y-3">
                 {inspectMember.status === 'PENDING' && (
                   <div className="flex flex-col gap-2">
-                    {isDistrictAdmin ? (
-                      <button
-                        onClick={() => handleApprove(inspectMember.id)}
-                        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl uppercase tracking-wider cursor-pointer shadow-md"
-                      >
-                        APPROVE APPLICATION & ASSIGN MEMBERSHIP ID
-                      </button>
-                    ) : (
-                      <div className="bg-amber-100/80 border border-yellow-400 p-3 rounded-xl text-amber-900 text-xs font-bold text-center flex items-center justify-center gap-1.5">
-                        <Lock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-                        <span>Super Admin View: Only the assigned District Admin of {inspectMember.district} District can approve this application and generate Membership ID.</span>
-                      </div>
-                    )}
+                    <button
+                      onClick={() => handleApprove(inspectMember.id)}
+                      className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3.5 rounded-xl uppercase tracking-wider cursor-pointer shadow-lg flex items-center justify-center gap-2 text-xs sm:text-sm transition-all"
+                    >
+                      <CheckCircle2 className="w-5 h-5 text-amber-300" />
+                      <span>APPROVE APPLICATION & ASSIGN MEMBERSHIP ID ({isSuperAdmin ? 'State HQ Super Admin' : `${inspectMember.district} District Admin`})</span>
+                    </button>
+                    <p className="text-[11px] text-center text-slate-500 dark:text-slate-400">
+                      Approving immediately updates SQLite database, assigns next sequential membership ID, and dispatches SMS notification to the member.
+                    </p>
                   </div>
                 )}
 

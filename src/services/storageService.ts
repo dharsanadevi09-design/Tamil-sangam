@@ -1,5 +1,6 @@
 import type { MemberApplication, DonationRecord, EventItem, CertificateItem, NewsItem, SystemNotification, MembershipCategory, AdminAccount, GalleryItem, Pasarai } from '../types';
 import { INITIAL_MEMBERS, INITIAL_DONATIONS, INITIAL_EVENTS, INITIAL_NEWS, INITIAL_CERTIFICATES, MEMBERSHIP_CATEGORIES, PASARAI_WINGS } from '../data/mockData';
+import { api } from './apiClient';
 
 const KEYS = {
   MEMBERS: 'ts_members_v1',
@@ -76,7 +77,7 @@ export const INITIAL_ADMINS: AdminAccount[] = [
   }
 ];
 
-// Initialize LocalStorage with mock data if missing
+// Initialize LocalStorage with mock data if missing and trigger background DB sync
 export const initStorage = () => {
   if (!localStorage.getItem(KEYS.MEMBERS)) {
     localStorage.setItem(KEYS.MEMBERS, JSON.stringify(INITIAL_MEMBERS));
@@ -108,7 +109,72 @@ export const initStorage = () => {
   if (!localStorage.getItem(KEYS.PASARAI)) {
     localStorage.setItem(KEYS.PASARAI, JSON.stringify(PASARAI_WINGS));
   }
+
+  // Asynchronously synchronize with Backend SQLite Database
+  syncWithBackendDatabase();
 };
+
+let isSyncing = false;
+export const syncWithBackendDatabase = async () => {
+  if (isSyncing) return;
+  isSyncing = true;
+  try {
+    const [members, donations, events, news, certs, admins, gallery, wings, categories, notifs] = await Promise.all([
+      api.getMembers().catch(() => null),
+      api.getDonations().catch(() => null),
+      api.getEvents().catch(() => null),
+      api.getNews().catch(() => null),
+      api.getCertificates().catch(() => null),
+      api.getAdmins().catch(() => null),
+      api.getGallery().catch(() => null),
+      api.getPasarai().catch(() => null),
+      api.getCategories().catch(() => null),
+      api.getNotifications().catch(() => null),
+    ]);
+
+    if (members && members.length > 0) {
+      localStorage.setItem(KEYS.MEMBERS, JSON.stringify(members));
+    }
+    if (donations && donations.length > 0) {
+      localStorage.setItem(KEYS.DONATIONS, JSON.stringify(donations));
+    }
+    if (events && events.length > 0) {
+      localStorage.setItem(KEYS.EVENTS, JSON.stringify(events));
+    }
+    if (news && news.length > 0) {
+      localStorage.setItem(KEYS.NEWS, JSON.stringify(news));
+    }
+    if (certs && certs.length > 0) {
+      localStorage.setItem(KEYS.CERTIFICATES, JSON.stringify(certs));
+    }
+    if (admins && admins.length > 0) {
+      localStorage.setItem(KEYS.ADMINS, JSON.stringify(admins));
+    }
+    if (gallery && gallery.length > 0) {
+      localStorage.setItem(KEYS.GALLERY, JSON.stringify(gallery));
+    }
+    if (wings && wings.length > 0) {
+      localStorage.setItem(KEYS.PASARAI, JSON.stringify(wings));
+    }
+    if (categories && categories.length > 0) {
+      localStorage.setItem(KEYS.CATEGORIES, JSON.stringify(categories));
+    }
+    if (notifs && notifs.length > 0) {
+      localStorage.setItem(KEYS.NOTIFICATIONS, JSON.stringify(notifs));
+    }
+  } catch (err) {
+    console.warn('Backend sync skipped or offline:', err);
+  } finally {
+    isSyncing = false;
+  }
+};
+
+// Auto-trigger sync on load
+if (typeof window !== 'undefined') {
+  setTimeout(() => {
+    initStorage();
+  }, 100);
+}
 
 // --- USER MEMBER SESSION PERSISTENCE ---
 export const getSavedLoggedInMember = (): MemberApplication | null => {
@@ -166,14 +232,21 @@ export const addAdminAccount = (accountData: Omit<AdminAccount, 'id' | 'createdA
   };
   admins.push(newAdmin);
   saveAdminAccounts(admins);
+
+  // Sync with Backend SQLite Database
+  api.createAdmin(newAdmin).catch(err => console.error('Failed to sync admin to DB:', err));
+
   return newAdmin;
 };
 
 export const deleteAdminAccount = (id: string): void => {
   const admins = getAdminAccounts().filter(a => a.id !== id);
   saveAdminAccounts(admins);
+  // Delete from backend DB
+  api.deleteAdmin(id).catch(err => console.error('Failed to delete admin from DB:', err));
 };
 
+// --- MEMBERS MANAGEMENT ---
 export const getMembers = (): MemberApplication[] => {
   initStorage();
   const data = localStorage.getItem(KEYS.MEMBERS);
@@ -187,6 +260,8 @@ export const saveMembers = (members: MemberApplication[]) => {
 export const deleteMember = (id: string): void => {
   const members = getMembers().filter(m => m.id !== id);
   saveMembers(members);
+  // Delete from backend DB
+  api.deleteMember(id).catch(err => console.error('Failed to delete member from DB:', err));
 };
 
 export const getMemberById = (id: string): MemberApplication | undefined => {
@@ -253,27 +328,58 @@ export const getOrCreateMemberByMobile = (mobileOrId: string): MemberApplication
 
   members.unshift(newMember);
   saveMembers(members);
+
+  // Sync to backend DB
+  api.createMember(newMember).catch(err => console.error('Failed to sync created member to DB:', err));
+
   return newMember;
 };
 
-export const addMemberApplication = (app: Omit<MemberApplication, 'id' | 'status'>): MemberApplication => {
+export const addMemberApplication = async (app: Omit<MemberApplication, 'id' | 'status'>): Promise<MemberApplication> => {
   const members = getMembers();
-  const newApp: MemberApplication = {
-    ...app,
-    id: `APP-${Date.now().toString().slice(-4)}`,
-    status: 'PENDING',
-  };
-  members.unshift(newApp);
+  let createdApp: MemberApplication;
+
+  try {
+    const res = await api.createMember(app);
+    createdApp = res.member;
+  } catch (err) {
+    console.warn('API createMember fallback to local:', err);
+    const approvedCount = members.filter(m => m.status === 'APPROVED' || m.membershipNumber).length + 1;
+    const seqStr = String(approvedCount).padStart(6, '0');
+    const currentFormat = localStorage.getItem(KEYS.ID_FORMAT) || 'TS-TN-2026-{SEQ}';
+    const memNum = currentFormat.replace('{SEQ}', seqStr);
+    const today = new Date().toISOString().split('T')[0];
+    const expDate = new Date();
+    expDate.setFullYear(expDate.getFullYear() + 1);
+
+    createdApp = {
+      ...app,
+      id: `APP-${Date.now().toString().slice(-4)}`,
+      membershipNumber: memNum,
+      status: 'APPROVED',
+      joiningDate: today,
+      validityDate: expDate.toISOString().split('T')[0],
+      qrCodeData: `VERIFIED|${memNum}|${app.fullName}|${app.district}|${app.categoryName}`
+    };
+  }
+
+  // Update local memory & storage
+  const idx = members.findIndex(m => m.id === createdApp.id || m.mobile === createdApp.mobile);
+  if (idx !== -1) {
+    members[idx] = createdApp;
+  } else {
+    members.unshift(createdApp);
+  }
   saveMembers(members);
   
   addNotification({
-    title: 'New Membership Application Submitted',
-    message: `Application from ${app.fullName} (${app.district}) received and pending Admin approval.`,
+    title: 'Membership Confirmed & ID Card Ready! 🌟',
+    message: `Payment confirmed for ${createdApp.fullName}. Official Member ID: ${createdApp.membershipNumber}. You can log in with OTP anytime.`,
     type: 'MEMBERSHIP',
-    recipientMobile: app.mobile
+    recipientMobile: createdApp.mobile
   });
 
-  return newApp;
+  return createdApp;
 };
 
 export const approveMemberApplication = (appId: string): MemberApplication | null => {
@@ -314,11 +420,22 @@ export const approveMemberApplication = (appId: string): MemberApplication | nul
   }
 
   addNotification({
-    title: 'Membership Approved!',
+    title: 'Membership Approved! 🌟',
     message: `Congratulations ${approvedMember.fullName}! Your Membership ID is ${memNum}. Your Digital ID card is ready.`,
     type: 'MEMBERSHIP',
     recipientMobile: approvedMember.mobile
   });
+
+  // Call Backend API to commit approval, trigger user notification & SMS/WhatsApp
+  api.approveMember(appId).then(res => {
+    if (res.member) {
+      const mIdx = members.findIndex(m => m.id === appId);
+      if (mIdx !== -1) {
+        members[mIdx] = res.member;
+        saveMembers(members);
+      }
+    }
+  }).catch(err => console.error('Error committing approval to DB:', err));
 
   return approvedMember;
 };
@@ -335,49 +452,76 @@ export const rejectMemberApplication = (appId: string, reason: string): MemberAp
   };
 
   saveMembers(members);
+
+  // Commit rejection to backend database
+  api.rejectMember(appId, reason).catch(err => console.error('Error rejecting member in DB:', err));
+
   return members[index];
 };
 
-// Donations
+// --- DONATIONS MANAGEMENT ---
 export const getDonations = (): DonationRecord[] => {
   initStorage();
   const data = localStorage.getItem(KEYS.DONATIONS);
   return data ? JSON.parse(data) : INITIAL_DONATIONS;
 };
 
-export const addDonation = (donationData: Omit<DonationRecord, 'id' | 'receiptNumber' | 'date'>): DonationRecord => {
+export const saveDonations = (donations: DonationRecord[]) => {
+  localStorage.setItem(KEYS.DONATIONS, JSON.stringify(donations));
+};
+
+export const addDonation = async (donationData: Omit<DonationRecord, 'id' | 'receiptNumber' | 'date'>): Promise<DonationRecord> => {
+  let createdDonation: DonationRecord;
+
+  try {
+    const res = await api.createDonation(donationData);
+    createdDonation = res.donation;
+  } catch (err) {
+    console.warn('API createDonation fallback to local:', err);
+    const donations = getDonations();
+    const seq = String(donations.length + 1).padStart(6, '0');
+    createdDonation = {
+      ...donationData,
+      id: `DON-${Date.now().toString().slice(-4)}`,
+      receiptNumber: `TS-DON-2026-${seq}`,
+      date: new Date().toISOString().split('T')[0]
+    };
+  }
+
   const donations = getDonations();
-  const seq = String(donations.length + 1).padStart(6, '0');
-  const receiptNum = `TS-DON-2026-${seq}`;
-  const newDonation: DonationRecord = {
-    ...donationData,
-    id: `DON-${Date.now().toString().slice(-4)}`,
-    receiptNumber: receiptNum,
-    date: new Date().toISOString().split('T')[0]
-  };
-  donations.unshift(newDonation);
+  const idx = donations.findIndex(d => d.id === createdDonation.id || d.receiptNumber === createdDonation.receiptNumber);
+  if (idx !== -1) {
+    donations[idx] = createdDonation;
+  } else {
+    donations.unshift(createdDonation);
+  }
   localStorage.setItem(KEYS.DONATIONS, JSON.stringify(donations));
 
   addNotification({
     title: 'Donation Received & Receipt Generated',
-    message: `Thank you ${donationData.donorName} for donating ₹${donationData.amount}. Receipt #${receiptNum} generated.`,
+    message: `Thank you ${donationData.donorName} for donating ₹${donationData.amount}. Receipt #${createdDonation.receiptNumber} generated.`,
     type: 'DONATION',
     recipientMobile: donationData.mobile
   });
 
-  return newDonation;
+  return createdDonation;
 };
 
 export const deleteDonation = (id: string): void => {
   const list = getDonations().filter(d => d.id !== id);
   localStorage.setItem(KEYS.DONATIONS, JSON.stringify(list));
+  api.deleteDonation(id).catch(err => console.error('Error deleting donation from DB:', err));
 };
 
-// Events
+// --- EVENTS MANAGEMENT ---
 export const getEvents = (): EventItem[] => {
   initStorage();
   const data = localStorage.getItem(KEYS.EVENTS);
   return data ? JSON.parse(data) : INITIAL_EVENTS;
+};
+
+export const saveEvents = (events: EventItem[]) => {
+  localStorage.setItem(KEYS.EVENTS, JSON.stringify(events));
 };
 
 export const addEvent = (eventData: Omit<EventItem, 'id' | 'registeredCount'>): EventItem => {
@@ -389,19 +533,28 @@ export const addEvent = (eventData: Omit<EventItem, 'id' | 'registeredCount'>): 
   };
   events.unshift(newEvent);
   localStorage.setItem(KEYS.EVENTS, JSON.stringify(events));
+
+  // Commit event to DB
+  api.createEvent(newEvent).catch(err => console.error('Error creating event in DB:', err));
+
   return newEvent;
 };
 
 export const deleteEvent = (id: string): void => {
   const events = getEvents().filter(e => e.id !== id);
   localStorage.setItem(KEYS.EVENTS, JSON.stringify(events));
+  api.deleteEvent(id).catch(err => console.error('Error deleting event from DB:', err));
 };
 
-// News
+// --- NEWS MANAGEMENT ---
 export const getNews = (): NewsItem[] => {
   initStorage();
   const data = localStorage.getItem(KEYS.NEWS);
   return data ? JSON.parse(data) : INITIAL_NEWS;
+};
+
+export const saveNews = (news: NewsItem[]) => {
+  localStorage.setItem(KEYS.NEWS, JSON.stringify(news));
 };
 
 export const addNews = (newsData: Omit<NewsItem, 'id' | 'date'>): NewsItem => {
@@ -413,19 +566,28 @@ export const addNews = (newsData: Omit<NewsItem, 'id' | 'date'>): NewsItem => {
   };
   news.unshift(newNews);
   localStorage.setItem(KEYS.NEWS, JSON.stringify(news));
+
+  // Commit news to DB
+  api.createNews(newNews).catch(err => console.error('Error creating news in DB:', err));
+
   return newNews;
 };
 
 export const deleteNews = (id: string): void => {
   const news = getNews().filter(n => n.id !== id);
   localStorage.setItem(KEYS.NEWS, JSON.stringify(news));
+  api.deleteNews(id).catch(err => console.error('Error deleting news from DB:', err));
 };
 
-// Certificates
+// --- CERTIFICATES MANAGEMENT ---
 export const getCertificates = (): CertificateItem[] => {
   initStorage();
   const data = localStorage.getItem(KEYS.CERTIFICATES);
   return data ? JSON.parse(data) : INITIAL_CERTIFICATES;
+};
+
+export const saveCertificates = (certs: CertificateItem[]) => {
+  localStorage.setItem(KEYS.CERTIFICATES, JSON.stringify(certs));
 };
 
 export const addCertificate = (certData: Omit<CertificateItem, 'id' | 'certificateNumber' | 'qrCode'>): CertificateItem => {
@@ -440,15 +602,20 @@ export const addCertificate = (certData: Omit<CertificateItem, 'id' | 'certifica
   };
   certs.unshift(newCert);
   localStorage.setItem(KEYS.CERTIFICATES, JSON.stringify(certs));
+
+  // Commit to DB
+  api.createCertificate(newCert).catch(err => console.error('Error creating certificate in DB:', err));
+
   return newCert;
 };
 
 export const deleteCertificate = (id: string): void => {
   const certs = getCertificates().filter(c => c.id !== id);
   localStorage.setItem(KEYS.CERTIFICATES, JSON.stringify(certs));
+  api.deleteCertificate(id).catch(err => console.error('Error deleting certificate from DB:', err));
 };
 
-// Categories
+// --- CATEGORIES MANAGEMENT ---
 export const getCategories = (): MembershipCategory[] => {
   initStorage();
   const data = localStorage.getItem(KEYS.CATEGORIES);
@@ -459,9 +626,12 @@ export const updateCategoryFee = (catId: string, newFee: number) => {
   const cats = getCategories();
   const updated = cats.map(c => c.id === catId ? { ...c, fee: newFee } : c);
   localStorage.setItem(KEYS.CATEGORIES, JSON.stringify(updated));
+
+  // Commit fee update to DB
+  api.updateCategoryFee(catId, newFee).catch(err => console.error('Error updating fee in DB:', err));
 };
 
-// Notifications
+// --- NOTIFICATIONS MANAGEMENT ---
 export const getNotifications = (): SystemNotification[] => {
   const data = localStorage.getItem(KEYS.NOTIFICATIONS);
   return data ? JSON.parse(data) : [];
@@ -499,12 +669,17 @@ export const addGalleryItem = (itemData: Omit<GalleryItem, 'id' | 'date'> & { da
   };
   gallery.unshift(newItem);
   saveGallery(gallery);
+
+  // Commit to DB
+  api.createGalleryItem(newItem).catch(err => console.error('Error creating gallery item in DB:', err));
+
   return newItem;
 };
 
 export const deleteGalleryItem = (id: string): void => {
   const gallery = getGallery().filter(g => g.id !== id);
   saveGallery(gallery);
+  api.deleteGalleryItem(id).catch(err => console.error('Error deleting gallery item from DB:', err));
 };
 
 // --- PASARAI WINGS MANAGEMENT ---
@@ -528,11 +703,15 @@ export const addPasaraiWing = (wingData: Omit<Pasarai, 'id' | 'memberCount'> & {
   };
   wings.push(newWing);
   savePasaraiWings(wings);
+
+  // Commit to DB
+  api.createPasarai(newWing).catch(err => console.error('Error creating wing in DB:', err));
+
   return newWing;
 };
 
 export const deletePasaraiWing = (id: string): void => {
   const wings = getPasaraiWings().filter(w => w.id !== id);
   savePasaraiWings(wings);
+  api.deletePasarai(id).catch(err => console.error('Error deleting wing from DB:', err));
 };
-

@@ -195,3 +195,17 @@ export interface GalleryItem {
   date?: string;
 }
 
+export interface ContactMessage {
+  id: string;
+  refId?: string;
+  name: string;
+  fullName?: string;
+  mobile: string;
+  email?: string;
+  district: string;
+  subject?: string;
+  message: string;
+  status: 'NEW' | 'RESOLVED';
+  createdAt?: string;
+}
+

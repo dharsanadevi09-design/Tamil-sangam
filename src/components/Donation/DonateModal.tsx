@@ -49,19 +49,18 @@ export const DonateModal: React.FC<DonateModalProps> = ({
     setPaymentMethod('UPI / GPay / PhonePe');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const finalAmount = customAmount ? parseFloat(customAmount) : amount;
     const validAmount = (!finalAmount || isNaN(finalAmount) || finalAmount <= 0) ? 1000 : finalAmount;
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      try {
-        confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
-      } catch (err) {}
+    try {
+      // Step 1: Gateway payment verification
+      await new Promise((r) => setTimeout(r, 1200));
 
-      const newReceipt = addDonation({
+      // Step 2: Save to SQLite Database & trigger Admin & User Notifications
+      const newReceipt = await addDonation({
         donorName: donorName.trim() || 'Anonymous Donor',
         mobile: mobile.trim() || '9841000000',
         whatsapp: whatsapp.trim() || mobile.trim() || '9841000000',
@@ -70,11 +69,19 @@ export const DonateModal: React.FC<DonateModalProps> = ({
         amount: validAmount,
         purpose,
         paymentMethod,
-        transactionId: `TXN-${Date.now().toString().slice(-8)}`
+        transactionId: `TXN-DON-${Date.now().toString().slice(-8)}`
       });
 
+      try {
+        confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+      } catch (err) {}
+
+      setIsSubmitting(false);
       onDonationCompleted(newReceipt);
-    }, 1000);
+    } catch (err: any) {
+      setIsSubmitting(false);
+      console.error('Donation processing error:', err);
+    }
   };
 
   return (

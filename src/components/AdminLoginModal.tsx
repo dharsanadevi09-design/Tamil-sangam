@@ -3,6 +3,8 @@ import type { AdminAccount } from '../types';
 import { getAdminAccounts, saveLoggedInAdmin } from '../services/storageService';
 import { Shield, Lock, Key, X, AlertTriangle, ArrowRight, UserCheck } from 'lucide-react';
 
+import { api } from '../services/apiClient';
+
 interface AdminLoginModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -23,17 +25,30 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const accounts = getAdminAccounts();
     const cleanUsername = usernameInput.trim().toLowerCase();
 
-    // Find account by matching username & password
+    try {
+      const res = await api.adminLogin(cleanUsername, passwordInput);
+      if (res.admin) {
+        setErrorMsg('');
+        setUsernameInput('');
+        setPasswordInput('');
+        saveLoggedInAdmin(res.admin);
+        onSuccess(res.admin);
+        return;
+      }
+    } catch (err: any) {
+      console.warn('Backend admin login error, checking local fallback:', err);
+    }
+
+    // Local fallback check
+    const accounts = getAdminAccounts();
     let match = accounts.find(
       a => (a.username.toLowerCase() === cleanUsername || a.id.toLowerCase() === cleanUsername) && a.password === passwordInput
     );
 
-    // Support default admin fallback if exact username is superadmin and password matches default
     if (!match && passwordInput === 'p@$$word' && (!cleanUsername || cleanUsername === 'superadmin' || cleanUsername === 'admin')) {
       match = accounts.find(a => a.role === 'SUPER_ADMIN') || accounts[0];
     }

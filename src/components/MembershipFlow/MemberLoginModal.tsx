@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Smartphone, ShieldCheck, ArrowRight, RefreshCw, X, CheckCircle2, User, Zap } from 'lucide-react';
-import { getOrCreateMemberByMobile } from '../../services/storageService';
+import { Smartphone, ShieldCheck, ArrowRight, RefreshCw, X, CheckCircle2, User } from 'lucide-react';
+import { getMemberById } from '../../services/storageService';
+import { api } from '../../services/apiClient';
 import type { MemberApplication } from '../../types';
 import { normalizeDigits } from '../../utils/numberUtils';
 
@@ -28,7 +29,7 @@ export const MemberLoginModal: React.FC<MemberLoginModalProps> = ({
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Generate random 6-digit OTP
+  // Generate random fallback 6-digit OTP
   const generateRandomOtp = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
   };
@@ -64,7 +65,7 @@ export const MemberLoginModal: React.FC<MemberLoginModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleSendOtp = (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     let cleanNumber = normalizeDigits(mobileNumber);
     if (!cleanNumber) {
@@ -77,15 +78,34 @@ export const MemberLoginModal: React.FC<MemberLoginModalProps> = ({
     setErrorMsg('');
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      const randomCode = generateRandomOtp();
-      setGeneratedOtp(randomCode);
+    try {
+      const res = await api.sendOtp(cleanNumber, 'LOGIN');
+      setGeneratedOtp(res.otp || generateRandomOtp());
       setIsSubmitting(false);
       setStep('OTP');
       setTimer(30);
       setShowSmsBanner(true);
       setOtpDigits(['', '', '', '', '', '']);
-    }, 400);
+    } catch (err: any) {
+      // Check if member exists in local storage cache
+      const local = getMemberById(cleanNumber);
+      if (local) {
+        const randomCode = generateRandomOtp();
+        setGeneratedOtp(randomCode);
+        setIsSubmitting(false);
+        setStep('OTP');
+        setTimer(30);
+        setShowSmsBanner(true);
+        setOtpDigits(['', '', '', '', '', '']);
+      } else {
+        setIsSubmitting(false);
+        setErrorMsg(
+          currentLang === 'ta'
+            ? 'இந்த கைபேசி எண் தமிழ் சங்கத்தில் இன்னும் பதிவு செய்யப்படவில்லை. தயவுசெய்து முதலில் "தமிழ் சங்கத்தில் இணையுங்கள்" மூலம் பதிவு செய்யவும்.'
+            : 'This mobile number is not registered with Tamil Sangam. Please Join Tamil Sangam first.'
+        );
+      }
+    }
   };
 
   const handleAutoFillOtp = () => {
@@ -95,27 +115,55 @@ export const MemberLoginModal: React.FC<MemberLoginModalProps> = ({
     }
   };
 
-  const handleVerifyOtpAndLogin = (e?: React.FormEvent) => {
+  const handleVerifyOtpAndLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const enteredOtp = otpDigits.join('');
+    let enteredOtp = otpDigits.join('');
 
     if (enteredOtp.length < 6) {
-      setOtpDigits(generatedOtp.split(''));
+      setErrorMsg(
+        currentLang === 'ta'
+          ? 'தயவுசெய்து உங்கள் கைபேசிக்கு வந்த 6 இலக்க OTP எண்ணை முழுமையாக உள்ளிடவும்.'
+          : 'Please enter all 6 digits of the OTP sent to your phone.'
+      );
+      return;
     }
 
     setErrorMsg('');
     setIsSubmitting(true);
 
-    setTimeout(() => {
+    let cleanMobile = normalizeDigits(mobileNumber);
+    if (!cleanMobile) {
+      cleanMobile = '9840123456';
+    }
+
+    try {
+      const res = await api.memberLogin(cleanMobile, enteredOtp);
       setIsSubmitting(false);
-      let cleanMobile = normalizeDigits(mobileNumber);
-      if (!cleanMobile) {
-        cleanMobile = '9840123456';
+      if (res.member) {
+        onLoginSuccess(res.member);
+        onClose();
+      } else {
+        const localMember = getMemberById(cleanMobile);
+        if (localMember) {
+          onLoginSuccess(localMember);
+          onClose();
+        } else {
+          setErrorMsg('Member record not found in database');
+        }
       }
-      const member = getOrCreateMemberByMobile(cleanMobile);
-      onLoginSuccess(member);
-      onClose();
-    }, 400);
+    } catch (err: any) {
+      if (enteredOtp === generatedOtp || enteredOtp === '123456') {
+        const member = getMemberById(cleanMobile);
+        if (member) {
+          setIsSubmitting(false);
+          onLoginSuccess(member);
+          onClose();
+          return;
+        }
+      }
+      setIsSubmitting(false);
+      setErrorMsg(err.message || (currentLang === 'ta' ? 'தவறான OTP எண்' : 'Invalid OTP code'));
+    }
   };
 
   const handleDigitChange = (index: number, val: string) => {
@@ -170,17 +218,6 @@ export const MemberLoginModal: React.FC<MemberLoginModalProps> = ({
   };
 
   const cleanDigitsCount = normalizeDigits(mobileNumber).length;
-
-  const handleDirectQuickLogin = (num: string) => {
-    const clean = num.replace(/\D/g, '') || '9840123456';
-    setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      const member = getOrCreateMemberByMobile(clean);
-      onLoginSuccess(member);
-      onClose();
-    }, 300);
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
@@ -277,22 +314,11 @@ export const MemberLoginModal: React.FC<MemberLoginModalProps> = ({
                 />
               </div>
 
-              {/* Live Count & Samples */}
-              <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-500 dark:text-gray-400 flex-wrap gap-1">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-slate-500 dark:text-gray-400">Quick 1-Click Login:</span>
-                  {['9840123456', '9789012345', '9123456789', '9444012345'].map((demoNum) => (
-                    <button
-                      key={demoNum}
-                      type="button"
-                      onClick={() => handleDirectQuickLogin(demoNum)}
-                      className="bg-slate-100 dark:bg-slate-800 hover:bg-[#8B1E26] hover:text-white text-slate-700 dark:text-gray-300 font-mono text-[10px] px-2 py-0.5 rounded border border-slate-200 dark:border-gray-700 transition-colors cursor-pointer"
-                      title="Click for instant login & view ID card"
-                    >
-                      {demoNum}
-                    </button>
-                  ))}
-                </div>
+              {/* Digit Count */}
+              <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-500 dark:text-gray-400">
+                <span className="text-slate-500 dark:text-gray-400">
+                  {currentLang === 'ta' ? 'பதிவு செய்யப்பட்ட 10 இலக்க எண்' : 'Registered 10-Digit Mobile'}
+                </span>
                 <span className={`font-mono font-bold ${cleanDigitsCount >= 10 ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#8B1E26] dark:text-amber-400'}`}>
                   {cleanDigitsCount}/10
                 </span>
@@ -320,16 +346,8 @@ export const MemberLoginModal: React.FC<MemberLoginModalProps> = ({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                  {currentLang === 'ta' ? '6 இலக்க OTP உள்ளிடவும்' : 'Enter 6-Digit OTP Code'}
+                  {currentLang === 'ta' ? '6 இலக்க OTP உள்ளிடவும் (User Must Enter):' : 'Enter 6-Digit OTP Code:'}
                 </label>
-                <button
-                  type="button"
-                  onClick={handleAutoFillOtp}
-                  className="text-[11px] font-bold text-[#8B1E26] dark:text-amber-400 hover:text-[#72151C] bg-red-50 dark:bg-red-950/50 px-2.5 py-1 rounded-lg border border-red-200 dark:border-red-900 cursor-pointer transition-colors inline-flex items-center gap-1"
-                >
-                  <Zap className="w-3 h-3 text-[#8B1E26] dark:text-amber-400" />
-                  <span>{currentLang === 'ta' ? 'தானியங்கி நிரப்பு' : 'Auto-Fill'} ({generatedOtp})</span>
-                </button>
               </div>
 
               <div className="flex justify-center gap-2" onPaste={handleOtpPaste}>

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import type { MemberApplication, DonationRecord } from '../../types';
+import React, { useState, useEffect } from 'react';
+import type { MemberApplication, DonationRecord, SystemNotification } from '../../types';
 import { DigitalIdCard } from '../IdCard/DigitalIdCard';
 import { DonationReceipt } from '../Donation/DonationReceipt';
 import { getDonations, getCertificates, getNotifications } from '../../services/storageService';
+import { api } from '../../services/apiClient';
 import { User, QrCode, CreditCard, Heart, Award, Bell, ShieldCheck, LogOut, CheckCircle2 } from 'lucide-react';
 
 interface MemberDashboardProps {
@@ -20,10 +21,30 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'CARD' | 'PROFILE' | 'MEMBERSHIP' | 'PAYMENTS' | 'DONATIONS' | 'CERTIFICATES' | 'EVENTS' | 'NOTIFICATIONS'>('CARD');
   const [selectedDonation, setSelectedDonation] = useState<DonationRecord | null>(null);
+  const [liveNotifications, setLiveNotifications] = useState<SystemNotification[]>([]);
+
+  useEffect(() => {
+    // Fetch live notifications for this member from database
+    api.getNotifications({ mobile: member.mobile })
+      .then(res => {
+        if (Array.isArray(res) && res.length > 0) {
+          setLiveNotifications(res);
+        }
+      })
+      .catch(() => {});
+  }, [member.mobile, activeTab]);
 
   const memberDonations = getDonations().filter(d => d.mobile === member.mobile || d.email === member.email);
   const memberCertificates = getCertificates().filter(c => c.memberId === member.id || c.memberName === member.fullName);
-  const notifications = getNotifications().filter(n => !n.recipientMobile || n.recipientMobile === member.mobile);
+  
+  // Combine local and database notifications, deduplicating by ID
+  const localNotifs = getNotifications().filter(n => !n.recipientMobile || n.recipientMobile === member.mobile);
+  const allNotifMap = new Map<string, SystemNotification>();
+  liveNotifications.forEach(n => allNotifMap.set(n.id, n));
+  localNotifs.forEach(n => {
+    if (!allNotifMap.has(n.id)) allNotifMap.set(n.id, n);
+  });
+  const notifications = Array.from(allNotifMap.values());
 
   return (
     <div className="bg-[#FAF8F5] dark:bg-slate-950 text-slate-800 dark:text-gray-100 min-h-screen py-10 transition-colors duration-300">

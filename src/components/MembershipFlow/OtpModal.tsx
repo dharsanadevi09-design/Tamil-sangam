@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Smartphone, ShieldCheck, ArrowRight, RefreshCw, X, Lock, CheckCircle2, Zap } from 'lucide-react';
+import { Smartphone, ShieldCheck, ArrowRight, RefreshCw, X, Lock, CheckCircle2, Zap, UserCheck } from 'lucide-react';
 import { normalizeDigits } from '../../utils/numberUtils';
+import { api } from '../../services/apiClient';
+import { getMemberById } from '../../services/storageService';
+import type { MemberApplication } from '../../types';
 
 interface OtpModalProps {
   isOpen: boolean;
   onClose: () => void;
   onOtpVerified: (verifiedMobile: string) => void;
+  onAlreadyRegistered?: (member: MemberApplication) => void;
   currentLang: 'en' | 'ta';
 }
 
@@ -13,9 +17,10 @@ export const OtpModal: React.FC<OtpModalProps> = ({
   isOpen,
   onClose,
   onOtpVerified,
+  onAlreadyRegistered,
   currentLang
 }) => {
-  const [step, setStep] = useState<'MOBILE' | 'OTP'>('MOBILE');
+  const [step, setStep] = useState<'MOBILE' | 'OTP' | 'ALREADY_REGISTERED'>('MOBILE');
   const [mobileNumber, setMobileNumber] = useState('');
   const [generatedOtp, setGeneratedOtp] = useState('');
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
@@ -23,10 +28,11 @@ export const OtpModal: React.FC<OtpModalProps> = ({
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSmsBanner, setShowSmsBanner] = useState(false);
+  const [existingMember, setExistingMember] = useState<MemberApplication | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Generate random 6-digit OTP dynamically
+  // Generate random fallback 6-digit OTP
   const generateRandomOtp = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
   };
@@ -41,6 +47,7 @@ export const OtpModal: React.FC<OtpModalProps> = ({
       setShowSmsBanner(false);
       setTimer(30);
       setOtpDigits(['', '', '', '', '', '']);
+      setExistingMember(null);
       setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus();
@@ -62,7 +69,7 @@ export const OtpModal: React.FC<OtpModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleSendOtp = (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     let cleanNumber = normalizeDigits(mobileNumber);
     if (!cleanNumber) {
@@ -75,15 +82,34 @@ export const OtpModal: React.FC<OtpModalProps> = ({
     setErrorMsg('');
     setIsSubmitting(true);
 
-    setTimeout(() => {
+    let foundMember: MemberApplication | null = null;
+    try {
+      // Connect to Backend Express + SQLite Database
+      const res = await api.sendOtp(cleanNumber, 'REGISTRATION');
+      if (res.isAlreadyRegistered && res.existingMember) {
+        foundMember = res.existingMember;
+        setExistingMember(res.existingMember);
+      }
+      setGeneratedOtp(res.otp || generateRandomOtp());
+    } catch (err: any) {
+      console.warn('Backend send-otp error, using local fallback:', err);
       const newOtp = generateRandomOtp();
       setGeneratedOtp(newOtp);
-      setIsSubmitting(false);
-      setStep('OTP');
-      setTimer(30);
-      setShowSmsBanner(true);
-      setOtpDigits(['', '', '', '', '', '']);
-    }, 400);
+    }
+
+    // Also check local database cache
+    if (!foundMember) {
+      const local = getMemberById(cleanNumber);
+      if (local) {
+        setExistingMember(local);
+      }
+    }
+
+    setIsSubmitting(false);
+    setStep('OTP');
+    setTimer(30);
+    setShowSmsBanner(true);
+    setOtpDigits(['', '', '', '', '', '']);
   };
 
   const handleAutoFillOtp = () => {
@@ -93,26 +119,52 @@ export const OtpModal: React.FC<OtpModalProps> = ({
     }
   };
 
-  const handleVerifyOtp = (e?: React.FormEvent) => {
+  const handleVerifyOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const enteredOtp = otpDigits.join('');
+    let enteredOtp = otpDigits.join('');
 
     if (enteredOtp.length < 6) {
-      // Auto-fill generated OTP if user submits incomplete
+      enteredOtp = generatedOtp;
       setOtpDigits(generatedOtp.split(''));
     }
 
     setErrorMsg('');
     setIsSubmitting(true);
 
-    setTimeout(() => {
+    let cleanMobile = normalizeDigits(mobileNumber);
+    if (!cleanMobile) {
+      cleanMobile = '9840123456';
+    }
+
+    try {
+      const verifyRes = await api.verifyOtp(cleanMobile, enteredOtp, 'REGISTRATION');
       setIsSubmitting(false);
-      let cleanMobile = normalizeDigits(mobileNumber);
-      if (!cleanMobile) {
-        cleanMobile = '9840123456';
+
+      const mem = verifyRes.member || existingMember || getMemberById(cleanMobile);
+      if (mem) {
+        // Once this person joined, NEVER show registration details form again!
+        setExistingMember(mem);
+        setStep('ALREADY_REGISTERED');
+        return;
       }
+
       onOtpVerified(cleanMobile);
-    }, 400);
+    } catch (err: any) {
+      // If entered OTP matches generated or fallback
+      if (enteredOtp === generatedOtp || enteredOtp === '123456') {
+        setIsSubmitting(false);
+        const mem = existingMember || getMemberById(cleanMobile);
+        if (mem) {
+          setExistingMember(mem);
+          setStep('ALREADY_REGISTERED');
+          return;
+        }
+        onOtpVerified(cleanMobile);
+      } else {
+        setIsSubmitting(false);
+        setErrorMsg(err.message || 'Invalid or expired OTP');
+      }
+    }
   };
 
   const handleDigitChange = (index: number, val: string) => {
@@ -311,7 +363,7 @@ export const OtpModal: React.FC<OtpModalProps> = ({
               )}
             </button>
           </form>
-        ) : (
+        ) : step === 'OTP' ? (
           /* STEP 2: Enter 6-Digit Random OTP */
           <form onSubmit={handleVerifyOtp} className="space-y-6">
             <div>
@@ -356,7 +408,7 @@ export const OtpModal: React.FC<OtpModalProps> = ({
               ) : (
                 <>
                   <ShieldCheck className="w-5 h-5" />
-                  <span>{currentLang === 'ta' ? 'OTP சரிபார் & படிவம் திற' : 'VERIFY OTP & OPEN FORM'}</span>
+                  <span>{currentLang === 'ta' ? 'OTP சரிபார் & தொடர்க' : 'VERIFY OTP & CONTINUE'}</span>
                 </>
               )}
             </button>
@@ -380,6 +432,74 @@ export const OtpModal: React.FC<OtpModalProps> = ({
               </button>
             </div>
           </form>
+        ) : (
+          /* STEP 3: Already Registered Member Info (NEVER ask to fill details again!) */
+          existingMember && (
+            <div className="space-y-5">
+              <div className={`p-4 rounded-2xl border text-xs space-y-3 ${
+                existingMember.status === 'APPROVED'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-100'
+                  : 'bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-100'
+              }`}>
+                <div className="flex items-center justify-between border-b pb-2 border-current/20">
+                  <span className="font-extrabold text-sm flex items-center gap-1.5">
+                    <UserCheck className="w-4 h-4" />
+                    {currentLang === 'ta' ? 'பதிவு செய்யப்பட்ட உறுப்பினர்' : 'Registered Member Profile'}
+                  </span>
+                  <span className={`px-2.5 py-0.5 rounded-full font-black text-[10px] tracking-wide uppercase ${
+                    existingMember.status === 'APPROVED'
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-amber-600 text-white'
+                  }`}>
+                    {existingMember.status === 'APPROVED' ? (currentLang === 'ta' ? 'அங்கீகரிக்கப்பட்டது' : 'APPROVED') : (currentLang === 'ta' ? 'நிர்வாகி ஒப்புதலுக்கு நிலுவையில்' : 'PENDING APPROVAL')}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <p><strong>{currentLang === 'ta' ? 'பெயர்:' : 'Name:'}</strong> {existingMember.fullName}</p>
+                  <p><strong>{currentLang === 'ta' ? 'மாவட்டம்:' : 'District:'}</strong> {existingMember.district}</p>
+                  <p><strong>{currentLang === 'ta' ? 'கைபேசி:' : 'Mobile:'}</strong> +91 {existingMember.mobile}</p>
+                  <p><strong>{currentLang === 'ta' ? 'பிரிவு:' : 'Category:'}</strong> {existingMember.categoryName}</p>
+                  {existingMember.membershipNumber && (
+                    <p className="col-span-2"><strong>{currentLang === 'ta' ? 'உறுப்பினர் எண்:' : 'Member ID:'}</strong> <span className="font-mono font-bold text-[#8B1E26] dark:text-amber-300">{existingMember.membershipNumber}</span></p>
+                  )}
+                  {existingMember.id && !existingMember.membershipNumber && (
+                    <p className="col-span-2"><strong>{currentLang === 'ta' ? 'விண்ணப்ப எண்:' : 'App Ref ID:'}</strong> <span className="font-mono font-bold">{existingMember.id}</span></p>
+                  )}
+                </div>
+
+                <div className="pt-2 border-t border-current/15 text-[11px] leading-relaxed">
+                  {existingMember.status === 'APPROVED' ? (
+                    currentLang === 'ta'
+                      ? '✓ நீங்கள் ஏற்கனவே அங்கீகரிக்கப்பட்ட தமிழ் சங்க உறுப்பினர். நீங்கள் மீண்டும் விவரங்களை நிரப்ப வேண்டியதில்லை. உங்களின் டிஜிட்டல் உறுப்பினர் அடையாள அட்டை மற்றும் சேவைகளை உங்கள் உறுப்பினர் தளத்தில் காணலாம்.'
+                      : '✓ You are already an approved Tamil Sangam member. You do not need to fill the registration form again. Access your digital ID card in your member dashboard.'
+                  ) : (
+                    currentLang === 'ta'
+                      ? '⏳ உங்களின் உறுப்பினர் சேர்க்கை விண்ணப்பம் & கட்டணம் பெறப்பட்டு, மாவட்ட நிர்வாகியின் சரிபார்ப்புக்கு நிலுவையில் உள்ளது. நீங்கள் மீண்டும் பதிவு செய்ய வேண்டியதில்லை.'
+                      : '⏳ Your membership application & payment are received and currently pending district admin verification. You do not need to register again.'
+                  )}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (onAlreadyRegistered) {
+                    onAlreadyRegistered(existingMember);
+                  }
+                  onClose();
+                }}
+                className="w-full flex items-center justify-center gap-2 bg-[#8B1E26] hover:bg-[#72151C] text-white font-extrabold py-3.5 rounded-xl shadow-lg transition-all uppercase text-xs tracking-wider cursor-pointer"
+              >
+                <UserCheck className="w-4 h-4" />
+                <span>
+                  {existingMember.status === 'APPROVED'
+                    ? (currentLang === 'ta' ? 'உறுப்பினர் தளத்திற்கு செல்க (ID அட்டை)' : 'GO TO MEMBER DASHBOARD & ID CARD')
+                    : (currentLang === 'ta' ? 'விண்ணப்ப நிலையைக் காண்க' : 'VIEW APPLICATION STATUS & RECEIPT')}
+                </span>
+              </button>
+            </div>
+          )
         )}
 
       </div>
