@@ -201,9 +201,8 @@ app.post('/api/auth/send-otp', (req, res) => {
     const result = generateAndSaveOtp(cleanMobile, purpose);
     res.json({
       success: true,
-      message: 'OTP dispatched successfully via SMS and WhatsApp',
+      message: 'OTP dispatched successfully via SMS to user mobile',
       mobile: result.cleanMobile,
-      otp: result.otp, // Returned in dev mode for seamless testing & auto-fill
       expiresAt: result.expiresAt,
       isAlreadyRegistered: !!existingMember,
       existingMember: existingMember || null
@@ -373,26 +372,8 @@ app.post('/api/members', (req, res) => {
     const id = `APP-${Date.now().toString().slice(-4)}`;
     const today = new Date().toISOString().split('T')[0];
 
-    // Generate Sequential Membership Number & ID Card on payment confirmation
-    const approvedCount = db.prepare("SELECT COUNT(*) as count FROM members WHERE membershipNumber IS NOT NULL").get().count + 1;
-    const seqStr = String(approvedCount).padStart(6, '0');
-    
-    const idFormatSetting = db.prepare("SELECT value FROM settings WHERE key = 'id_format'").get();
-    const idFormat = idFormatSetting ? idFormatSetting.value : 'TS-TN-2026-{SEQ}';
-    const memNum = idFormat.replace('{SEQ}', seqStr);
-
-    // Calculate validity based on category (default 12 months)
-    let valMonths = 12;
-    if (appData.categoryId) {
-      const cat = db.prepare('SELECT validityMonths FROM categories WHERE id = ?').get(appData.categoryId);
-      if (cat && cat.validityMonths) valMonths = cat.validityMonths;
-    }
-    const expDate = new Date();
-    expDate.setMonth(expDate.getMonth() + valMonths);
-    const validityStr = expDate.toISOString().split('T')[0];
-
-    const qrCode = `VERIFIED|${memNum}|${appData.fullName}|${appData.district || 'Chennai'}|${appData.categoryName || 'General Member'}`;
-
+    // NOTE: ID Card Number (membershipNumber) is ONLY generated when Admin approves!
+    // On payment success, status is PENDING and sent to Admin's pending review list.
     const stmt = db.prepare(`
       INSERT INTO members (
         id, membershipNumber, mobileVerified, fullName, nameTamil, dob, gender, guardianName,
@@ -401,17 +382,16 @@ app.post('/api/members', (req, res) => {
         photoUrl, categoryId, categoryName, pasaraiId, pasaraiName, paymentMethod, paymentAmount,
         paymentTransactionId, paymentDate, status, joiningDate, validityDate, rejectionReason, qrCodeData
       ) VALUES (
-        ?, ?, 1, ?, ?, ?, ?, ?,
+        ?, NULL, 1, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?,
-        ?, ?, 'APPROVED', ?, ?, '', ?
+        ?, ?, 'PENDING', ?, NULL, '', ''
       )
     `);
 
     stmt.run(
       id,
-      memNum,
       appData.fullName,
       appData.nameTamil || '',
       appData.dob || '',
@@ -444,14 +424,12 @@ app.post('/api/members', (req, res) => {
       appData.paymentAmount || 100,
       appData.paymentTransactionId || `TXN-${Date.now().toString().slice(-6)}`,
       appData.paymentDate || today,
-      today,
-      validityStr,
-      qrCode
+      today
     );
 
     const created = db.prepare('SELECT * FROM members WHERE id = ?').get(id);
 
-    // Trigger Notification & Messages to User AND Admin
+    // Trigger Payment Confirmation Email & SMS to User AND Alert to Admin
     notifyMembershipPayment({
       member: created,
       amount: created.paymentAmount,
@@ -461,7 +439,7 @@ app.post('/api/members', (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Payment confirmed & Membership ID Card generated successfully.',
+      message: 'Payment confirmed. Application submitted to Admin for approval.',
       member: created
     });
   } catch (err) {

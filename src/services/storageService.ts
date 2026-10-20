@@ -344,22 +344,16 @@ export const addMemberApplication = async (app: Omit<MemberApplication, 'id' | '
     createdApp = res.member;
   } catch (err) {
     console.warn('API createMember fallback to local:', err);
-    const approvedCount = members.filter(m => m.status === 'APPROVED' || m.membershipNumber).length + 1;
-    const seqStr = String(approvedCount).padStart(6, '0');
-    const currentFormat = localStorage.getItem(KEYS.ID_FORMAT) || 'TS-TN-2026-{SEQ}';
-    const memNum = currentFormat.replace('{SEQ}', seqStr);
     const today = new Date().toISOString().split('T')[0];
-    const expDate = new Date();
-    expDate.setFullYear(expDate.getFullYear() + 1);
 
     createdApp = {
       ...app,
       id: `APP-${Date.now().toString().slice(-4)}`,
-      membershipNumber: memNum,
-      status: 'APPROVED',
+      membershipNumber: undefined, // Only generated on Admin Approval
+      status: 'PENDING',
       joiningDate: today,
-      validityDate: expDate.toISOString().split('T')[0],
-      qrCodeData: `VERIFIED|${memNum}|${app.fullName}|${app.district}|${app.categoryName}`
+      validityDate: undefined,
+      qrCodeData: ''
     };
   }
 
@@ -373,8 +367,8 @@ export const addMemberApplication = async (app: Omit<MemberApplication, 'id' | '
   saveMembers(members);
   
   addNotification({
-    title: 'Membership Confirmed & ID Card Ready! 🌟',
-    message: `Payment confirmed for ${createdApp.fullName}. Official Member ID: ${createdApp.membershipNumber}. You can log in with OTP anytime.`,
+    title: 'Membership Fee Paid - Pending Admin Approval 📋',
+    message: `Payment confirmed for ${createdApp.fullName}. Application #${createdApp.id} is waiting for Admin approval. ID Card will be issued upon approval.`,
     type: 'MEMBERSHIP',
     recipientMobile: createdApp.mobile
   });

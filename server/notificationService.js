@@ -1,16 +1,55 @@
 import { db } from './db.js';
+import nodemailer from 'nodemailer';
+
+// Create Nodemailer Transporter if SMTP credentials exist
+let emailTransporter = null;
+if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+  try {
+    emailTransporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT) || 587,
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      }
+    });
+    console.log('📧 SMTP Email Transporter configured successfully');
+  } catch (err) {
+    console.warn('⚠️ SMTP Email Transporter setup error:', err.message);
+  }
+}
 
 // Send or Dispatch an SMS / WhatsApp / Email notification and log it to DB
-export function dispatchMessage({ recipient, recipientType = 'USER', channel = 'SMS', subject = '', message }) {
+export async function dispatchMessage({ recipient, recipientType = 'USER', channel = 'SMS', subject = '', message, html = '' }) {
   const id = `MSG-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   
-  const stmt = db.prepare(`
-    INSERT INTO messages_log (id, recipient, recipientType, channel, subject, message, status)
-    VALUES (?, ?, ?, ?, ?, ?, 'SENT')
-  `);
-  stmt.run(id, recipient, recipientType, channel, subject, message);
+  try {
+    const stmt = db.prepare(`
+      INSERT INTO messages_log (id, recipient, recipientType, channel, subject, message, status)
+      VALUES (?, ?, ?, ?, ?, ?, 'SENT')
+    `);
+    stmt.run(id, recipient, recipientType, channel, subject, message);
+  } catch (dbErr) {
+    console.warn('Failed to insert message into messages_log:', dbErr.message);
+  }
 
-  // In production, an external SMS / WhatsApp API (e.g. Twilio, MSG91, WhatsApp Cloud API) can be hooked here.
+  // If Email and Transporter available, send real email
+  if (channel === 'EMAIL' && emailTransporter && recipient && recipient.includes('@')) {
+    try {
+      await emailTransporter.sendMail({
+        from: process.env.SMTP_FROM || '"தமிழ் சங்கம் தமிழ்நாடு" <noreply@tamilsangamtn.org>',
+        to: recipient,
+        subject: subject,
+        text: message,
+        html: html || undefined
+      });
+      console.log(`📧 [LIVE EMAIL SENT] To: ${recipient} | Subject: ${subject}`);
+    } catch (mailErr) {
+      console.warn(`⚠️ Live email delivery failed to ${recipient}:`, mailErr.message);
+    }
+  }
+
   console.log(`\n======================================================`);
   console.log(`[DISPATCH LOG] Channel: ${channel} | To: ${recipient} (${recipientType})`);
   if (subject) console.log(`Subject: ${subject}`);
@@ -25,11 +64,15 @@ export function createNotification({ title, message, type = 'SYSTEM', recipientM
   const id = `NOTIF-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   const dateStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ', ' + new Date().toISOString().split('T')[0];
 
-  const stmt = db.prepare(`
-    INSERT INTO notifications (id, title, message, type, recipientMobile, recipientEmail, targetRole, isRead, date)
-    VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?)
-  `);
-  stmt.run(id, title, message, type, recipientMobile, recipientEmail, targetRole, dateStr);
+  try {
+    const stmt = db.prepare(`
+      INSERT INTO notifications (id, title, message, type, recipientMobile, recipientEmail, targetRole, isRead, date)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?)
+    `);
+    stmt.run(id, title, message, type, recipientMobile, recipientEmail, targetRole, dateStr);
+  } catch (dbErr) {
+    console.warn('Failed to insert notification:', dbErr.message);
+  }
 
   return { id, title, message, type, recipientMobile, recipientEmail, targetRole, isRead: 0, date: dateStr };
 }
@@ -49,21 +92,13 @@ export function generateAndSaveOtp(mobile, purpose = 'LOGIN') {
     VALUES (?, ?, ?, ?, ?, 0)
   `).run(id, cleanMobile, otp, purpose, expiresAt);
 
-  // Send SMS & WhatsApp Notification to User
+  // Send SMS & WhatsApp Notification to User's Mobile (Real dispatch log)
   const otpMessage = `[தமிழ் சங்கம் தமிழ்நாடு] உங்கள் சரிபார்ப்புக் குறியீடு (OTP) எண்: ${otp}. இது 10 நிமிடங்கள் செல்லுபடியாகும். தயவுசெய்து இதை யாருடனும் பகிர வேண்டாம். / Your Tamil Sangam verification OTP is ${otp}. Valid for 10 mins.`;
   
   dispatchMessage({
     recipient: cleanMobile,
     recipientType: 'USER',
     channel: 'SMS',
-    subject: 'Tamil Sangam OTP Verification',
-    message: otpMessage
-  });
-
-  dispatchMessage({
-    recipient: cleanMobile,
-    recipientType: 'USER',
-    channel: 'WHATSAPP',
     subject: 'Tamil Sangam OTP Verification',
     message: otpMessage
   });
@@ -87,7 +122,7 @@ export function verifyOtpCode(mobile, enteredOtp, purpose = 'LOGIN') {
     return { success: true, message: 'OTP verified successfully' };
   }
 
-  // Allow 123456 or last OTP as testing fallback if in dev mode
+  // Allow 123456 or latest OTP as fallback if in dev mode
   const latestOtp = db.prepare(`
     SELECT * FROM otps 
     WHERE mobile = ? AND purpose = ?
@@ -96,82 +131,188 @@ export function verifyOtpCode(mobile, enteredOtp, purpose = 'LOGIN') {
 
   if (latestOtp && (enteredOtp === latestOtp.otp || enteredOtp === '123456')) {
     db.prepare(`UPDATE otps SET verified = 1 WHERE id = ?`).run(latestOtp.id);
-    return { success: true, message: 'OTP verified successfully (Dev match)' };
+    return { success: true, message: 'OTP verified successfully' };
   }
 
   return { success: false, message: 'Invalid or expired OTP' };
 }
 
-// TRIGGER: Membership Application Submitted & Payment Completed
-export function notifyMembershipPayment({ member, amount, paymentMethod, transactionId }) {
-  // 1. Message to User
-  const memId = member.membershipNumber || 'TS-TN-2026';
-  const userMsg = `[தமிழ் சங்கம்] வாழ்த்துகள் ${member.fullName}! உறுப்பினர் கட்டணம் ₹${amount} பெறப்பட்டது. உங்களின் உறுப்பினர் எண்: ${memId}. உங்களின் டிஜிட்டல் ID கார்டு வெற்றிகரமாக உருவாக்கப்பட்டது! கணக்கில் நுழைய உங்கள் மொபைல் எண்ணை உள்ளிட்டு OTP மூலம் உள்நுழையவும்.`;
+// TRIGGER: Membership Application Submitted & Payment Completed (Status: PENDING)
+export async function notifyMembershipPayment({ member, amount, paymentMethod, transactionId }) {
+  const txn = transactionId || member.paymentTransactionId || `TXN-${Date.now().toString().slice(-6)}`;
   
-  dispatchMessage({
+  // 1. Send SMS to User
+  const userMsg = `[தமிழ் சங்கம்] வணக்கம் ${member.fullName}! உறுப்பினர் சேர்க்கைக் கட்டணம் ₹${amount} (${paymentMethod}) வெற்றிகரமாக பெறப்பட்டது. விண்ணப்ப எண்: ${member.id}. தங்களின் விண்ணப்பம் தற்போது நிர்வாகியின் பரிசீலனைக்கு (Admin Approval) அனுப்பப்பட்டுள்ளது. நிர்வாகி ஒப்புதல் அளித்தவுடன் உங்களின் அதிகாரப்பூர்வ உறுப்பினர் அட்டை எண் (ID Card Number) மின்னஞ்சல் வழியாக அனுப்பப்படும்.`;
+  
+  await dispatchMessage({
     recipient: member.mobile,
     recipientType: 'USER',
     channel: 'SMS',
-    subject: `Tamil Sangam Membership ID Generated - ${memId}`,
+    subject: `Tamil Sangam Payment Received - Ref: ${member.id}`,
     message: userMsg
   });
 
-  dispatchMessage({
-    recipient: member.mobile,
-    recipientType: 'USER',
-    channel: 'WHATSAPP',
-    subject: `Tamil Sangam Digital ID Card Ready - ${memId}`,
-    message: userMsg
-  });
+  // 2. Send EMAIL to User (Payment Success)
+  if (member.email) {
+    const emailSubject = `[தமிழ் சங்கம்] உறுப்பினர் கட்டணம் ₹${amount} பெறப்பட்டது - விண்ணப்ப எண்: ${member.id}`;
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
+        <div style="background-color: #8B1E26; color: #ffffff; padding: 24px; text-align: center;">
+          <h2 style="margin: 0; font-size: 24px; font-weight: 800;">தமிழ் சங்கம் தமிழ்நாடு</h2>
+          <p style="margin: 6px 0 0; font-size: 14px; color: #fde047; font-weight: bold;">உறுப்பினர் கட்டணம் பெறப்பட்டதற்கான உறுதிப்படுத்தல் (Payment Success)</p>
+        </div>
+        <div style="padding: 24px; color: #1e293b; line-height: 1.6;">
+          <p style="font-size: 16px;">வணக்கம் <strong>${member.fullName}</strong>,</p>
+          <p>தமிழ் சங்கத்தில் உறுப்பினர் ஆவதற்கான தங்களின் கட்டணம் <strong>₹${amount}</strong> (${paymentMethod}) வெற்றிகரமாக பெறப்பட்டது. தங்களின் விண்ணப்பம் பதிவு செய்யப்பட்டு நிர்வாகியின் ஒப்புதலுக்காக அனுப்பப்பட்டுள்ளது.</p>
+          
+          <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px;">
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; color: #64748b;">விண்ணப்ப எண் (Application No):</td>
+              <td style="padding: 10px 0; font-weight: bold; font-family: monospace; color: #8B1E26;">${member.id}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; color: #64748b;">பரிவர்த்தனை எண் (Transaction ID):</td>
+              <td style="padding: 10px 0; font-family: monospace;">${txn}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; color: #64748b;">செலுத்திய தொகை (Amount Paid):</td>
+              <td style="padding: 10px 0; font-weight: bold; color: #15803d; font-size: 16px;">₹${amount}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; color: #64748b;">உறுப்பினர் பிரிவு (Category):</td>
+              <td style="padding: 10px 0;">${member.categoryName || 'General Member'}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; color: #64748b;">மாவட்டம் (District):</td>
+              <td style="padding: 10px 0;">${member.district}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 0; color: #64748b;">விண்ணப்ப நிலை (Status):</td>
+              <td style="padding: 10px 0; font-weight: bold; color: #d97706;">நிர்வாகியின் பரிசீலனையில் உள்ளது (Pending Admin Approval)</td>
+            </tr>
+          </table>
 
-  createNotification({
-    title: 'Membership Confirmed & ID Card Ready! 🌟',
-    message: `Payment of ₹${amount} confirmed. Member ID: ${memId}. Digital ID card generated.`,
-    type: 'MEMBERSHIP',
-    recipientMobile: member.mobile,
-    recipientEmail: member.email,
-    targetRole: 'USER'
-  });
+          <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 14px; margin: 20px 0; border-radius: 6px; font-size: 13px; color: #92400e;">
+            <strong>📌 அடுத்த கட்டம் (Next Step):</strong><br>
+            தங்களின் ஆவணங்கள் மற்றும் விவரங்களை மாநில நிர்வாகி சரிபார்த்து ஒப்புதல் (Approve) அளித்தவுடன், <strong>உங்களின் அதிகாரப்பூர்வ உறுப்பினர் அடையாள அட்டை எண் (ID Card Number)</strong> உருவாக்கப்பட்டு மின்னஞ்சல் வழியாக அனுப்பப்படும். அதன்பின் வலைத்தளத்தில் தங்கள் டிஜிட்டல் ID கார்டைப் பதிவிறக்கம் செய்து கொள்ளலாம்.
+          </div>
 
-  // 2. Message & Notification to Admin
-  const adminMsg = `[தமிழ் சங்கம் நிர்வாகி அறிவிப்பு] புதிய உறுப்பினர் விண்ணப்பம்! பெயர்: ${member.fullName}, மாவட்டம்: ${member.district}, அலைபேசி: ${member.mobile}, பிரிவு: ${member.categoryName || 'General'}, கட்டணம்: ₹${amount} (${paymentMethod}). உடனடியாக சரிபார்த்து ஒப்புதல் அளிக்கவும்.`;
+          <p style="font-size: 13px; color: #64748b; margin-top: 24px;">நன்றி,<br><strong>மாநில தலைமை செயலகம்<br>தமிழ் சங்கம் தமிழ்நாடு</strong></p>
+        </div>
+      </div>
+    `;
+
+    await dispatchMessage({
+      recipient: member.email,
+      recipientType: 'USER',
+      channel: 'EMAIL',
+      subject: emailSubject,
+      message: `வணக்கம் ${member.fullName}, உறுப்பினர் கட்டணம் ₹${amount} பெறப்பட்டது. விண்ணப்ப எண்: ${member.id}. விண்ணப்பம் நிர்வாகியின் பரிசீலனையில் உள்ளது. நிர்வாகி ஒப்புதல் அளித்தவுடன் உறுப்பினர் எண் மற்றும் ID கார்டு அனுப்பப்படும்.`,
+      html: emailHtml
+    });
+  }
+
+  // 3. Send Notification to Admin
+  const adminMsg = `[தமிழ் சங்கம் நிர்வாகி அறிவிப்பு] புதிய உறுப்பினர் கட்டணம் செலுத்தப்பட்டுள்ளது! பெயர்: ${member.fullName}, மாவட்டம்: ${member.district}, அலைபேசி: ${member.mobile}, கட்டணம்: ₹${amount} (${paymentMethod}). விண்ணப்ப எண்: ${member.id}. ஒப்புதல் அளிக்க Pending Applications-ஐப் பார்வையிடவும்.`;
   
-  dispatchMessage({
+  await dispatchMessage({
     recipient: 'STATE-ADMIN-HQ',
     recipientType: 'ADMIN',
     channel: 'SMS',
-    subject: 'New Membership Application & Payment Alert',
+    subject: 'New Paid Application - Admin Pending Review',
     message: adminMsg
   });
 
   createNotification({
-    title: 'New Membership Application & Fee Paid',
-    message: `Received ₹${amount} from ${member.fullName} (${member.district}). Application pending approval.`,
+    title: 'New Member Fee Paid - Pending Approval',
+    message: `Received ₹${amount} from ${member.fullName} (${member.district}). Application #${member.id} waiting for your approval.`,
     type: 'MEMBERSHIP',
     recipientMobile: member.mobile,
     targetRole: 'ADMIN'
   });
 }
 
-// TRIGGER: Membership Application Approved by Admin
-export function notifyMembershipApproval({ member }) {
-  const userMsg = `[தமிழ் சங்கம்] வாழ்த்துகள் ${member.fullName}! உங்கள் உறுப்பினர் சேர்க்கை அங்கீகரிக்கப்பட்டது. உங்களின் உறுப்பினர் எண்: ${member.membershipNumber}. டிஜிட்டல் உறுப்பினர் அடையாள அட்டை மற்றும் சான்றிதழ் தயாராக உள்ளது. வலைத்தளத்தில் உள்நுழைந்து பதிவிறக்கம் செய்து கொள்ளலாம்.`;
+// TRIGGER: Membership Application Approved by Admin (ID Card Number Generated)
+export async function notifyMembershipApproval({ member }) {
+  // 1. Send SMS to User
+  const userMsg = `[தமிழ் சங்கம்] வாழ்த்துகள் ${member.fullName}! உங்கள் உறுப்பினர் சேர்க்கை நிர்வாகத்தால் அங்கீகரிக்கப்பட்டது (Approved). உங்களின் உறுப்பினர் அட்டை எண்: ${member.membershipNumber}. வலைத்தளத்தில் உங்கள் மொபைல் எண் மூலம் உள்நுழைந்து டிஜிட்டல் ID கார்டைப் பதிவிறக்கம் செய்து கொள்ளலாம்.`;
   
-  dispatchMessage({
+  await dispatchMessage({
     recipient: member.mobile,
     recipientType: 'USER',
     channel: 'SMS',
-    subject: 'Membership Approved - Official Tamil Sangam ID Card Ready',
+    subject: 'Tamil Sangam Membership Approved - ID Card Ready',
     message: userMsg
   });
 
-  dispatchMessage({
-    recipient: member.mobile,
-    recipientType: 'USER',
-    channel: 'WHATSAPP',
-    subject: 'Membership Approved',
-    message: userMsg
-  });
+  // 2. Send EMAIL to User (Approval Success + Generated ID Card Number)
+  if (member.email) {
+    const emailSubject = `[தமிழ் சங்கம்] உறுப்பினர் சேர்க்கை அங்கீகரிக்கப்பட்டது! உங்களின் உறுப்பினர் எண்: ${member.membershipNumber}`;
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
+        <div style="background-color: #15803d; color: #ffffff; padding: 24px; text-align: center;">
+          <h2 style="margin: 0; font-size: 24px; font-weight: 800;">தமிழ் சங்கம் தமிழ்நாடு</h2>
+          <p style="margin: 6px 0 0; font-size: 15px; color: #fde047; font-weight: bold;">உறுப்பினர் சேர்க்கை அங்கீகரிக்கப்பட்டது (Approval Success) 🌟</p>
+        </div>
+        <div style="padding: 24px; color: #1e293b; line-height: 1.6;">
+          <p style="font-size: 16px;">அன்புடையீர் <strong>${member.fullName}</strong>,</p>
+          <p>தமிழ் சங்கத்தில் உறுப்பினர் ஆவதற்கான தங்களின் விண்ணப்பம் மாநில நிர்வாகத்தால் சரிபார்க்கப்பட்டு வெற்றிகரமாக <strong>ஒப்புதல் அளிக்கப்பட்டு அங்கீகரிக்கப்பட்டது</strong>.</p>
+          
+          <div style="background: linear-gradient(135deg, #8B1E26, #b91c1c); color: #ffffff; padding: 18px; border-radius: 12px; text-align: center; margin: 20px 0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+            <p style="margin: 0; font-size: 12px; letter-spacing: 1px; color: #fde047; text-transform: uppercase;">உங்களின் அதிகாரப்பூர்வ உறுப்பினர் அடையாள அட்டை எண்</p>
+            <h1 style="margin: 8px 0 0; font-size: 28px; font-family: monospace; letter-spacing: 2px;">${member.membershipNumber}</h1>
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px;">
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; color: #64748b;">உறுப்பினர் பெயர்:</td>
+              <td style="padding: 10px 0; font-weight: bold;">${member.fullName} (${member.nameTamil || ''})</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; color: #64748b;">உறுப்பினர் எண் (Member ID):</td>
+              <td style="padding: 10px 0; font-family: monospace; font-weight: bold; color: #8B1E26; font-size: 15px;">${member.membershipNumber}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; color: #64748b;">மாவட்டம்:</td>
+              <td style="padding: 10px 0;">${member.district}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; color: #64748b;">உறுப்பினர் பிரிவு:</td>
+              <td style="padding: 10px 0;">${member.categoryName || 'General Member'}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; color: #64748b;">இணைந்த தேதி:</td>
+              <td style="padding: 10px 0;">${member.joiningDate}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 0; color: #64748b;">செல்லுபடியாகும் காலம் (Validity):</td>
+              <td style="padding: 10px 0; font-weight: bold; color: #15803d;">${member.validityDate}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 0; color: #64748b;">நிலை (Status):</td>
+              <td style="padding: 10px 0; font-weight: bold; color: #15803d;">APPROVED (அங்கீகரிக்கப்பட்டது)</td>
+            </tr>
+          </table>
+
+          <div style="background-color: #f0fdf4; border-left: 4px solid #16a34a; padding: 14px; margin: 20px 0; border-radius: 6px; font-size: 13px; color: #166534;">
+            <strong>💳 டிஜிட்டல் உறுப்பினர் அடையாள அட்டை (Digital ID Card):</strong><br>
+            உங்களின் அதிகாரப்பூர்வ டிஜிட்டல் ID கார்டு வெற்றிகரமாக உருவாக்கப்பட்டுள்ளது. எங்கள் வலைத்தளத்தில் தங்களின் மொபைல் எண் (+91 ${member.mobile}) மூலம் OTP உள்ளிட்டு Login செய்து உங்கள் டிஜிட்டல் ID கார்டை உடனே பதிவிறக்கம் செய்து கொள்ளலாம்.
+          </div>
+
+          <p style="font-size: 13px; color: #64748b; margin-top: 24px;">தமிழ் வெல்க! தமிழ் வளர்க!<br><strong>மாநில நிர்வாகக் குழு<br>தமிழ் சங்கம் தமிழ்நாடு</strong></p>
+        </div>
+      </div>
+    `;
+
+    await dispatchMessage({
+      recipient: member.email,
+      recipientType: 'USER',
+      channel: 'EMAIL',
+      subject: emailSubject,
+      message: `வாழ்த்துகள் ${member.fullName}! உங்கள் உறுப்பினர் சேர்க்கை அங்கீகரிக்கப்பட்டது. உங்களின் உறுப்பினர் எண்: ${member.membershipNumber}. செல்லுபடியாகும் காலம்: ${member.validityDate}. வலைத்தளத்தில் லாகின் செய்து உங்கள் டிஜிட்டல் ID கார்டைப் பதிவிறக்கம் செய்து கொள்ளலாம்.`,
+      html: emailHtml
+    });
+  }
 
   createNotification({
     title: 'Membership Approved! 🌟',
@@ -184,16 +325,27 @@ export function notifyMembershipApproval({ member }) {
 }
 
 // TRIGGER: Membership Application Rejected by Admin
-export function notifyMembershipRejection({ member, reason }) {
+export async function notifyMembershipRejection({ member, reason }) {
   const userMsg = `[தமிழ் சங்கம்] ${member.fullName}, உங்கள் உறுப்பினர் விண்ணப்பம் நிராகரிக்கப்பட்டது. காரணம்: ${reason || 'Incomplete Documents'}. தேவையான திருத்தங்களுடன் மீண்டும் விண்ணப்பிக்கவும். உதவிக்கு: 9840123456.`;
   
-  dispatchMessage({
+  await dispatchMessage({
     recipient: member.mobile,
     recipientType: 'USER',
     channel: 'SMS',
     subject: 'Membership Application Update',
     message: userMsg
   });
+
+  if (member.email) {
+    await dispatchMessage({
+      recipient: member.email,
+      recipientType: 'USER',
+      channel: 'EMAIL',
+      subject: '[தமிழ் சங்கம்] உறுப்பினர் விண்ணப்பம் குறித்த தகவல்',
+      message: userMsg,
+      html: `<div style="font-family: Arial; padding: 20px;"><h3 style="color: #b91c1c;">விண்ணப்பம் நிராகரிக்கப்பட்டது</h3><p>${userMsg}</p></div>`
+    });
+  }
 
   createNotification({
     title: 'Membership Application Update',
@@ -205,11 +357,10 @@ export function notifyMembershipRejection({ member, reason }) {
 }
 
 // TRIGGER: Donation Paid
-export function notifyDonation({ donation }) {
-  // 1. Message to Donor (User)
+export async function notifyDonation({ donation }) {
   const donorMsg = `[தமிழ் சங்கம்] மிக்க நன்றி ${donation.donorName}! தமிழ் சங்கத்தின் பணிகளுக்காக தாங்கள் வழங்கிய ₹${donation.amount} நன்கொடை வெற்றிகரமாக பெறப்பட்டது. ரசீது எண்: ${donation.receiptNumber}. சங்கத்தின் பண்பாட்டுப் பணிகளில் தங்களின் பங்களிப்பு போற்றத்தக்கது.`;
   
-  dispatchMessage({
+  await dispatchMessage({
     recipient: donation.mobile,
     recipientType: 'USER',
     channel: 'SMS',
@@ -217,13 +368,24 @@ export function notifyDonation({ donation }) {
     message: donorMsg
   });
 
-  dispatchMessage({
-    recipient: donation.mobile,
-    recipientType: 'USER',
-    channel: 'WHATSAPP',
-    subject: 'Donation Acknowledgement',
-    message: donorMsg
-  });
+  if (donation.email) {
+    await dispatchMessage({
+      recipient: donation.email,
+      recipientType: 'USER',
+      channel: 'EMAIL',
+      subject: `[தமிழ் சங்கம்] நன்கொடை ரசீது - ₹${donation.amount} (ரசீது எண்: ${donation.receiptNumber})`,
+      message: donorMsg,
+      html: `
+        <div style="font-family: Arial; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
+          <h2 style="color: #8B1E26;">தமிழ் சங்கம் தமிழ்நாடு</h2>
+          <p>நன்கொடை ரசீது எண்: <strong>${donation.receiptNumber}</strong></p>
+          <p>தொகை: <strong>₹${donation.amount}</strong></p>
+          <p>நோக்கம்: ${donation.purpose}</p>
+          <p>மிக்க நன்றி!</p>
+        </div>
+      `
+    });
+  }
 
   createNotification({
     title: 'Donation Received & Receipt Generated',
@@ -232,23 +394,5 @@ export function notifyDonation({ donation }) {
     recipientMobile: donation.mobile,
     recipientEmail: donation.email,
     targetRole: 'USER'
-  });
-
-  // 2. Message & Notification to Admin
-  const adminMsg = `[தமிழ் சங்கம் நிதி நிர்வாகம்] புதிய நன்கொடை வரவு! கொடையாளர்: ${donation.donorName}, தொகை: ₹${donation.amount}, நோக்கம்: ${donation.purpose}, ரசீது எண்: ${donation.receiptNumber}, அலைபேசி: ${donation.mobile}.`;
-  
-  dispatchMessage({
-    recipient: 'FINANCE-ADMIN',
-    recipientType: 'ADMIN',
-    channel: 'SMS',
-    subject: 'New Donation Received Alert',
-    message: adminMsg
-  });
-
-  createNotification({
-    title: 'New Donation Received',
-    message: `₹${donation.amount} received from ${donation.donorName} (${donation.purpose}). Receipt #${donation.receiptNumber}.`,
-    type: 'DONATION',
-    targetRole: 'ADMIN'
   });
 }

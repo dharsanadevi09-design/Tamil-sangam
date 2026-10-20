@@ -4,7 +4,7 @@ import { DigitalIdCard } from '../IdCard/DigitalIdCard';
 import { DonationReceipt } from '../Donation/DonationReceipt';
 import { getDonations, getCertificates, getNotifications } from '../../services/storageService';
 import { api } from '../../services/apiClient';
-import { User, QrCode, CreditCard, Heart, Award, Bell, ShieldCheck, LogOut, CheckCircle2 } from 'lucide-react';
+import { User, QrCode, CreditCard, Heart, Award, Bell, ShieldCheck, LogOut, CheckCircle2, Clock, Mail, FileText } from 'lucide-react';
 
 interface MemberDashboardProps {
   member: MemberApplication;
@@ -137,15 +137,119 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({
           {activeTab === 'CARD' && (
             <div className="space-y-6">
               <div className="border-b border-slate-200 dark:border-gray-800 pb-4">
-                <h3 className="text-xl font-extrabold text-[#8B1E26] dark:text-amber-400 font-heading">Digital Membership ID Card</h3>
-                <p className="text-xs text-slate-500 dark:text-gray-400">Official verified ID card with active QR code.</p>
+                <h3 className="text-xl font-extrabold text-[#8B1E26] dark:text-amber-400 font-heading">
+                  {member.status === 'APPROVED' && member.membershipNumber
+                    ? (currentLang === 'ta' ? 'அதிகாரப்பூர்வ டிஜிட்டல் ID கார்டு' : 'Digital Membership ID Card')
+                    : (currentLang === 'ta' ? 'விண்ணப்ப நிலை & பரிசீலனை' : 'Application Status & Verification')}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-gray-400">
+                  {member.status === 'APPROVED' && member.membershipNumber
+                    ? (currentLang === 'ta' ? 'அங்கீகரிக்கப்பட்ட டிஜிட்டல் உறுப்பினர் அடையாள அட்டை' : 'Official verified ID card with active QR code.')
+                    : (currentLang === 'ta' ? 'நிர்வாகியின் பரிசீலனையில் உள்ள விண்ணப்ப விவரங்கள்' : 'Application under admin review and ID card dispatch tracker.')}
+                </p>
               </div>
 
-              <DigitalIdCard
-                member={member}
-                onVerifyQrCode={onVerifyQrCode}
-                currentLang={currentLang}
-              />
+              {member.status === 'APPROVED' && member.membershipNumber ? (
+                <DigitalIdCard
+                  member={member}
+                  onVerifyQrCode={onVerifyQrCode}
+                  currentLang={currentLang}
+                />
+              ) : (
+                <div className="space-y-6 animate-fadeIn">
+                  {/* Status Banner */}
+                  <div className="bg-gradient-to-r from-amber-500/15 via-amber-500/20 to-amber-500/10 border-2 border-amber-400 dark:border-amber-500/60 rounded-3xl p-6 sm:p-8 text-slate-900 dark:text-white shadow-lg space-y-4">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center shrink-0 shadow-md">
+                        <Clock className="w-6 h-6 animate-spin-slow" />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="bg-amber-400 text-slate-950 font-black text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                          STATUS: PENDING ADMIN APPROVAL
+                        </span>
+                        <h4 className="text-xl font-extrabold font-heading text-slate-900 dark:text-amber-300">
+                          {currentLang === 'ta'
+                            ? 'உறுப்பினர் விண்ணப்பம் நிர்வாகியின் பரிசீலனையில் உள்ளது'
+                            : 'Application Under State Admin Review'}
+                        </h4>
+                        <p className="text-xs text-slate-600 dark:text-gray-300 leading-relaxed">
+                          {currentLang === 'ta'
+                            ? `வணக்கம் ${member.fullName}! நீங்கள் உறுப்பினர் சேர்க்கைக் கட்டணம் ₹${member.paymentAmount || 100} வெற்றிகரமாக செலுத்திவிட்டீர்கள். உங்களின் விண்ணப்பம் (Ref: ${member.id}) மாநில தலைமை நிர்வாகியின் பரிசீலனைக்கு அனுப்பப்பட்டுள்ளது.`
+                            : `Hello ${member.fullName}! Your membership fee of ₹${member.paymentAmount || 100} has been received. Your application (Ref: ${member.id}) is under review by State HQ Admin.`}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Progress Workflow Tracker */}
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-3">
+                      <div className="bg-white/80 dark:bg-slate-800/80 p-3 rounded-2xl border border-emerald-500/40 text-xs flex items-center gap-2.5">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <div>
+                          <p className="font-bold text-slate-900 dark:text-white text-[11px]">1. Mobile OTP</p>
+                          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Verified ✓</p>
+                        </div>
+                      </div>
+
+                      <div className="bg-white/80 dark:bg-slate-800/80 p-3 rounded-2xl border border-emerald-500/40 text-xs flex items-center gap-2.5">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <div>
+                          <p className="font-bold text-slate-900 dark:text-white text-[11px]">2. Fee Paid</p>
+                          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">₹{member.paymentAmount || 100} Paid ✓</p>
+                        </div>
+                      </div>
+
+                      <div className="bg-amber-100/90 dark:bg-amber-950/60 p-3 rounded-2xl border-2 border-amber-400 text-xs flex items-center gap-2.5 shadow-sm">
+                        <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 animate-pulse" />
+                        <div>
+                          <p className="font-bold text-amber-950 dark:text-amber-200 text-[11px]">3. Admin Review</p>
+                          <p className="text-[10px] text-amber-700 dark:text-amber-300 font-bold">In Progress ⏳</p>
+                        </div>
+                      </div>
+
+                      <div className="bg-white/40 dark:bg-slate-800/40 p-3 rounded-2xl border border-dashed border-slate-300 dark:border-gray-700 text-xs flex items-center gap-2.5 opacity-70">
+                        <ShieldCheck className="w-5 h-5 text-slate-400 shrink-0" />
+                        <div>
+                          <p className="font-bold text-slate-600 dark:text-slate-400 text-[11px]">4. ID Card Generated</p>
+                          <p className="text-[10px] text-slate-500 font-semibold">Upon Approval</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Email & SMS Dispatch Notice */}
+                    <div className="bg-white dark:bg-slate-950/60 p-4 rounded-2xl border border-amber-300/80 dark:border-gray-800 text-xs space-y-2">
+                      <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-bold text-xs">
+                        <Mail className="w-4 h-4" />
+                        <span>
+                          {currentLang === 'ta'
+                            ? `கட்டணம் பெறப்பட்டதற்கான மின்னஞ்சல் (${member.email || 'Email'}) முகவரிக்கு அனுப்பப்பட்டுள்ளது.`
+                            : `Payment confirmation email sent to ${member.email || 'your email'}.`}
+                        </span>
+                      </div>
+                      <p className="text-slate-600 dark:text-gray-300 leading-relaxed text-[11px]">
+                        {currentLang === 'ta'
+                          ? `நிர்வாகி ஒப்புதல் அளித்தவுடன், உங்களின் அதிகாரப்பூர்வ உறுப்பினர் அடையாள அட்டை எண் (எ.கா. TS-TN-2026-XXXXXX) உருவாக்கப்பட்டு உங்கள் மின்னஞ்சல் மற்றும் குறுஞ்செய்திக்கு (SMS) உடனடியாக அனுப்பப்படும். அதன்பின் உங்களின் டிஜிட்டல் ID கார்டை இங்கே பதிவிறக்கம் செய்து கொள்ளலாம்.`
+                          : `As soon as the Admin approves your application, your official Membership ID Number (e.g. TS-TN-2026-XXXXXX) will be generated and dispatched to your email and phone. Your downloadable Digital ID card will then appear here.`}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Submission Summary Table */}
+                  <div className="bg-slate-50 dark:bg-slate-900/60 p-5 rounded-2xl border border-slate-200 dark:border-gray-800 space-y-3">
+                    <h5 className="font-bold text-xs text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-[#8B1E26] dark:text-amber-400" />
+                      <span>{currentLang === 'ta' ? 'விண்ணப்ப விவரங்கள்' : 'Application Summary'}</span>
+                    </h5>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <p><span className="text-slate-500">Applicant:</span> <strong className="text-slate-900 dark:text-white">{member.fullName} ({member.nameTamil})</strong></p>
+                      <p><span className="text-slate-500">Mobile:</span> <strong className="text-slate-900 dark:text-white">+91 {member.mobile}</strong></p>
+                      <p><span className="text-slate-500">Email:</span> <strong className="text-slate-900 dark:text-white">{member.email}</strong></p>
+                      <p><span className="text-slate-500">District:</span> <strong className="text-slate-900 dark:text-white">{member.district}</strong></p>
+                      <p><span className="text-slate-500">Category:</span> <strong className="text-slate-900 dark:text-white">{member.categoryName}</strong></p>
+                      <p><span className="text-slate-500">Txn Reference:</span> <strong className="font-mono text-emerald-700 dark:text-emerald-400">{member.paymentTransactionId || 'TXN-ONLINE'}</strong></p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

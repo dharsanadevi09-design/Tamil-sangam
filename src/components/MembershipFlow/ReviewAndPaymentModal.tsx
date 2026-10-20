@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { MemberApplication } from '../../types';
-import { ShieldCheck, CreditCard, X, RefreshCw, Smartphone, Lock, CheckCircle2, ArrowRight, Bell, KeyRound } from 'lucide-react';
+import { ShieldCheck, CreditCard, X, RefreshCw, Smartphone, Lock, CheckCircle2, ArrowRight, KeyRound } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { DigitalIdCard } from '../IdCard/DigitalIdCard';
 import { api } from '../../services/apiClient';
 import { normalizeDigits } from '../../utils/numberUtils';
 
@@ -232,48 +231,53 @@ export const ReviewAndPaymentModal: React.FC<ReviewAndPaymentModalProps> = ({
                 <CheckCircle2 className="w-10 h-10" />
               </div>
               <h4 className="text-2xl font-extrabold text-slate-900 dark:text-white font-heading">
-                {currentLang === 'ta' ? 'கட்டணம் மற்றும் உறுப்பினர் அட்டை தயார்!' : 'Payment Confirmed & Digital ID Card Ready!'}
+                {currentLang === 'ta' ? 'கட்டணம் வெற்றிகரமாக பெறப்பட்டது!' : 'Payment Received Successfully!'}
               </h4>
               <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto">
                 {currentLang === 'ta'
-                  ? 'உங்களின் கட்டணம் பெறப்பட்டு அதிகாரப்பூர்வ உறுப்பினர் அடையாள அட்டை உருவாக்கப்பட்டுள்ளது.'
-                  : 'Your registration fee has been received and your official membership ID card has been issued.'}
+                  ? 'உங்களின் உறுப்பினர் கட்டணம் பெறப்பட்டு விண்ணப்பம் நிர்வாகியின் ஒப்புதலுக்காக அனுப்பப்பட்டுள்ளது.'
+                  : 'Your membership fee has been received and your application is submitted for Admin Approval.'}
               </p>
             </div>
 
-            {/* Official Member ID Badge */}
-            <div className="bg-gradient-to-r from-[#8B1E26] via-[#72151C] to-[#8B1E26] text-white p-4 rounded-2xl flex items-center justify-between border-2 border-amber-400 shadow-xl">
-              <div>
-                <span className="text-[10px] uppercase font-bold text-amber-200 tracking-wider">OFFICIAL MEMBERSHIP NUMBER</span>
-                <p className="text-2xl font-mono font-black text-amber-300 tracking-wider">
-                  {createdMember?.membershipNumber || 'TS-TN-2026-000005'}
-                </p>
-                {generatedTxn && (
-                  <p className="text-[10px] font-mono text-amber-200/90 mt-0.5">
-                    Txn ID: {generatedTxn}
+            {/* Application & Payment Submission Receipt */}
+            <div className="bg-gradient-to-r from-[#8B1E26] via-[#72151C] to-[#8B1E26] text-white p-5 rounded-2xl border-2 border-amber-400 shadow-xl space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-amber-200 tracking-wider">
+                    {currentLang === 'ta' ? 'விண்ணப்ப எண்' : 'APPLICATION REFERENCE'}
+                  </span>
+                  <p className="text-xl font-mono font-black text-amber-300 tracking-wider">
+                    {createdMember?.id || 'APP-PENDING'}
                   </p>
-                )}
+                  {generatedTxn && (
+                    <p className="text-[11px] font-mono text-amber-100 mt-0.5">
+                      Txn: {generatedTxn} • ₹{applicationData.paymentAmount || 100} ({paymentMethod})
+                    </p>
+                  )}
+                </div>
+                <div className="text-right">
+                  <span className="bg-amber-400 text-slate-950 font-black text-[11px] px-3 py-1 rounded-full uppercase shadow">
+                    PENDING ADMIN APPROVAL
+                  </span>
+                  <p className="text-amber-100 text-[11px] mt-1 font-semibold">{applicationData.categoryName}</p>
+                </div>
               </div>
-              <div className="text-right text-xs">
-                <span className="bg-emerald-600 text-white font-black text-[10px] px-2.5 py-0.5 rounded-full uppercase">
-                  ACTIVE MEMBER
+
+              <div className="bg-black/30 backdrop-blur-sm p-3 rounded-xl border border-white/10 text-xs text-amber-100/90 leading-relaxed">
+                <p className="font-semibold text-amber-300 flex items-center gap-1.5 mb-1">
+                  <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>{currentLang === 'ta' ? 'நிர்வாக ஒப்புதல் & ID கார்டு எண் அறிவிப்பு:' : 'Admin Approval & ID Card Notice:'}</span>
+                </p>
+                <span>
+                  {currentLang === 'ta'
+                    ? `மாநில நிர்வாகி தங்கள் ஆவணங்களை சரிபார்த்து ஒப்புதல் அளித்தவுடன், உங்களின் அதிகாரப்பூர்வ உறுப்பினர் அடையாள அட்டை எண் (ID Card Number) உருவாக்கப்பட்டு உங்கள் மின்னஞ்சல் (${applicationData.email || 'Email'}) மற்றும் SMS வழியாக அனுப்பப்படும்.`
+                    : `Once the State Admin reviews and approves your documents, your official Membership ID Card Number will be generated and dispatched to your email (${applicationData.email || 'Email'}) and phone.`}
                 </span>
-                <p className="text-amber-100/90 text-[11px] mt-1 font-semibold">{createdMember?.categoryName || applicationData.categoryName}</p>
               </div>
             </div>
 
-            {/* Real Digital ID Card Preview */}
-            {createdMember && (
-              <div className="bg-slate-50 dark:bg-slate-900/90 p-4 rounded-3xl border border-slate-200 dark:border-slate-800">
-                <p className="text-xs font-bold text-center text-slate-600 dark:text-slate-300 mb-3 flex items-center justify-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-[#8B1E26] dark:text-amber-400" />
-                  <span>{currentLang === 'ta' ? 'உங்களின் அதிகாரப்பூர்வ டிஜிட்டல் உறுப்பினர் அடையாள அட்டை' : 'Your Official Digital Membership ID Card'}</span>
-                </p>
-                <DigitalIdCard member={createdMember} currentLang={currentLang} />
-              </div>
-            )}
-
-            {/* OTP LOGIN FORM - User must enter OTP to proceed */}
+            {/* OTP LOGIN FORM - User must enter OTP from phone to proceed */}
             <div className="bg-amber-50/70 dark:bg-slate-900 p-6 rounded-3xl border-2 border-amber-400 dark:border-amber-500/50 space-y-4">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-[#8B1E26] text-white flex items-center justify-center shrink-0 shadow">
@@ -291,18 +295,17 @@ export const ReviewAndPaymentModal: React.FC<ReviewAndPaymentModalProps> = ({
                 </div>
               </div>
 
-              {/* SMS Notification Banner (Live simulation of mobile SMS) */}
-              {showSmsBanner && generatedOtp && (
-                <div className="bg-gradient-to-r from-emerald-800 to-teal-900 text-white p-3.5 rounded-xl border border-emerald-400/50 shadow-md text-xs space-y-1 animate-fadeIn">
-                  <div className="flex items-center justify-between text-[11px] font-bold text-emerald-200">
-                    <span className="flex items-center gap-1">
-                      <Bell className="w-3.5 h-3.5 text-amber-300" />
-                      <span>SMS Received on +91 {applicationData.mobile}</span>
-                    </span>
-                    <span className="text-[10px] text-emerald-300">Just Now</span>
+              {/* Status Notice - Never displays OTP on system screen */}
+              {showSmsBanner && (
+                <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700/60 text-slate-800 dark:text-gray-200 p-3.5 rounded-xl text-xs space-y-1 animate-fadeIn">
+                  <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-bold">
+                    <Smartphone className="w-4 h-4" />
+                    <span>{currentLang === 'ta' ? 'OTP உங்கள் கைபேசிக்கு அனுப்பப்பட்டது' : 'OTP Dispatched via SMS'}</span>
                   </div>
-                  <p className="font-mono text-xs sm:text-sm text-emerald-100 font-semibold bg-emerald-950/60 p-2 rounded-lg border border-emerald-500/30">
-                    [தமிழ் சங்கம்] உங்களின் உள்நுழைவு OTP எண்: <strong className="text-amber-300 font-extrabold text-base tracking-widest">{generatedOtp}</strong>
+                  <p className="text-slate-600 dark:text-gray-300 text-[11px] leading-relaxed">
+                    {currentLang === 'ta'
+                      ? `+91 ${applicationData.mobile} என்ற எண்ணிற்கு 6 இலக்க உள்நுழைவு OTP SMS வழியாக அனுப்பப்பட்டுள்ளது. உங்கள் மொபைலைப் பார்த்து கீழே உள்ளிடவும்.`
+                      : `A 6-digit login OTP code has been dispatched to +91 ${applicationData.mobile} via SMS. Please enter the code below to log in.`}
                   </p>
                 </div>
               )}

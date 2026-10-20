@@ -108,13 +108,6 @@ export const MemberLoginModal: React.FC<MemberLoginModalProps> = ({
     }
   };
 
-  const handleAutoFillOtp = () => {
-    if (generatedOtp.length === 6) {
-      setOtpDigits(generatedOtp.split(''));
-      setErrorMsg('');
-    }
-  };
-
   const handleVerifyOtpAndLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     let enteredOtp = otpDigits.join('');
@@ -248,35 +241,24 @@ export const MemberLoginModal: React.FC<MemberLoginModalProps> = ({
           </p>
         </div>
 
-        {/* Simulated Real-Time SMS Toast Alert Banner */}
+        {/* Sent OTP Status Notice - Never displays OTP on system screen */}
         {step === 'OTP' && showSmsBanner && (
-          <div className="mb-6 bg-gradient-to-r from-amber-500/10 via-amber-500/20 to-amber-500/10 border-2 border-amber-400 rounded-xl p-3.5 shadow-lg animate-bounce-subtle">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-start gap-2.5">
-                <div className="p-1.5 bg-amber-400 text-slate-950 rounded-lg shrink-0 mt-0.5 font-bold text-xs">
-                  SMS
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-[#8B1E26] dark:text-amber-400 flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Tamil Sangam OTP Alert</span>
-                  </p>
-                  <p className="text-xs text-slate-700 dark:text-gray-200 mt-0.5">
-                    Your login verification OTP for <span className="text-[#8B1E26] dark:text-amber-300 font-mono font-bold">+91 {mobileNumber}</span> is:{' '}
-                    <span className="font-mono text-base font-extrabold text-[#8B1E26] dark:text-amber-300 tracking-wider bg-white dark:bg-slate-900 px-2 py-0.5 rounded border border-amber-400/40 shadow-sm">
-                      {generatedOtp}
-                    </span>
-                  </p>
-                </div>
+          <div className="mb-6 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700/60 rounded-2xl p-4 text-xs shadow-sm animate-fadeIn">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 bg-emerald-600 text-white rounded-xl shrink-0 mt-0.5 shadow-sm">
+                <Smartphone className="w-5 h-5" />
               </div>
-
-              <button
-                type="button"
-                onClick={handleAutoFillOtp}
-                className="shrink-0 bg-amber-400 hover:bg-amber-300 text-slate-950 text-[11px] font-extrabold px-2.5 py-1.5 rounded-lg shadow transition-all active:scale-95 cursor-pointer"
-              >
-                Auto-Fill
-              </button>
+              <div className="space-y-1">
+                <p className="font-extrabold text-emerald-800 dark:text-emerald-300 text-sm flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span>{currentLang === 'ta' ? 'OTP உங்கள் கைபேசிக்கு அனுப்பப்பட்டது' : 'OTP Dispatched to Your Mobile'}</span>
+                </p>
+                <p className="text-slate-600 dark:text-gray-300 text-xs leading-relaxed">
+                  {currentLang === 'ta'
+                    ? `+91 ${mobileNumber} என்ற எண்ணிற்கு 6 இலக்க சரிபார்ப்புக் குறியீடு (OTP) SMS வழியாக அனுப்பப்பட்டுள்ளது. உங்கள் கைபேசியில் வந்த OTP எண்ணை கீழே உள்ளிடவும்.`
+                    : `A 6-digit verification code has been dispatched via SMS to +91 ${mobileNumber}. Please check your phone SMS and enter the code below.`}
+                </p>
+              </div>
             </div>
           </div>
         )}

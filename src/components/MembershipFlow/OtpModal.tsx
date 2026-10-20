@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Smartphone, ShieldCheck, ArrowRight, RefreshCw, X, Lock, CheckCircle2, Zap, UserCheck } from 'lucide-react';
+import { Smartphone, ShieldCheck, ArrowRight, RefreshCw, X, Lock, CheckCircle2, UserCheck } from 'lucide-react';
 import { normalizeDigits } from '../../utils/numberUtils';
 import { api } from '../../services/apiClient';
 import { getMemberById } from '../../services/storageService';
@@ -110,13 +110,6 @@ export const OtpModal: React.FC<OtpModalProps> = ({
     setTimer(30);
     setShowSmsBanner(true);
     setOtpDigits(['', '', '', '', '', '']);
-  };
-
-  const handleAutoFillOtp = () => {
-    if (generatedOtp.length === 6) {
-      setOtpDigits(generatedOtp.split(''));
-      setErrorMsg('');
-    }
   };
 
   const handleVerifyOtp = async (e?: React.FormEvent) => {
@@ -249,35 +242,24 @@ export const OtpModal: React.FC<OtpModalProps> = ({
           </p>
         </div>
 
-        {/* Simulated Real-Time SMS Toast Alert Banner */}
+        {/* Sent OTP Status Notice - Never displays OTP on system screen */}
         {step === 'OTP' && showSmsBanner && (
-          <div className="mb-6 bg-[#FAF8F5] dark:bg-slate-900 border-2 border-[#8B1E26] rounded-2xl p-3.5 shadow-md">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-start gap-2.5">
-                <div className="p-1.5 bg-[#8B1E26] text-white rounded-lg shrink-0 mt-0.5 font-bold text-xs">
-                  SMS
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-[#8B1E26] dark:text-red-400 flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>{currentLang === 'ta' ? 'தமிழ் சங்கம் OTP அறிவிப்பு' : 'Tamil Sangam OTP Alert'}</span>
-                  </p>
-                  <p className="text-xs text-slate-700 dark:text-gray-200 mt-0.5">
-                    {currentLang === 'ta' ? 'சரிபார்ப்பு OTP எண் (+91 ' : 'Verification OTP for '}<span className="font-mono font-bold text-[#8B1E26] dark:text-amber-400">{currentLang === 'ta' ? `${mobileNumber})` : `+91 ${mobileNumber}`}</span>:{' '}
-                    <span className="font-mono text-base font-extrabold text-[#8B1E26] dark:text-amber-300 tracking-wider bg-white dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-300 dark:border-gray-700 shadow-sm">
-                      {generatedOtp}
-                    </span>
-                  </p>
-                </div>
+          <div className="mb-6 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700/60 rounded-2xl p-4 text-xs shadow-sm animate-fadeIn">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 bg-[#8B1E26] text-white rounded-xl shrink-0 mt-0.5 shadow-sm">
+                <Smartphone className="w-5 h-5" />
               </div>
-
-              <button
-                type="button"
-                onClick={handleAutoFillOtp}
-                className="shrink-0 bg-[#8B1E26] hover:bg-[#72151C] text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg shadow transition-all active:scale-95 cursor-pointer"
-              >
-                {currentLang === 'ta' ? 'தானியங்கி நிரப்பு' : 'Auto-Fill'}
-              </button>
+              <div className="space-y-1">
+                <p className="font-extrabold text-[#8B1E26] dark:text-red-400 text-sm flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>{currentLang === 'ta' ? 'OTP உங்கள் கைபேசிக்கு அனுப்பப்பட்டது' : 'OTP Dispatched to Your Mobile'}</span>
+                </p>
+                <p className="text-slate-600 dark:text-gray-300 text-xs leading-relaxed">
+                  {currentLang === 'ta'
+                    ? `+91 ${mobileNumber} என்ற எண்ணிற்கு 6 இலக்க சரிபார்ப்புக் குறியீடு (OTP) SMS வழியாக அனுப்பப்பட்டுள்ளது. உங்கள் மொபைலில் வந்த OTP எண்ணை கீழே உள்ளிடவும்.`
+                    : `A 6-digit verification code has been dispatched via SMS to +91 ${mobileNumber}. Please check your phone SMS and enter the code below.`}
+                </p>
+              </div>
             </div>
           </div>
         )}
@@ -369,16 +351,8 @@ export const OtpModal: React.FC<OtpModalProps> = ({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                  {currentLang === 'ta' ? '6 இலக்க OTP உள்ளிடவும்' : 'Enter 6-Digit OTP Code'}
+                  {currentLang === 'ta' ? 'உங்கள் கைபேசிக்கு வந்த 6 இலக்க OTP உள்ளிடவும்:' : 'Enter 6-Digit OTP sent to your phone:'}
                 </label>
-                <button
-                  type="button"
-                  onClick={handleAutoFillOtp}
-                  className="text-[11px] font-bold text-[#8B1E26] dark:text-amber-400 hover:text-[#72151C] bg-red-50 dark:bg-red-950/50 px-2.5 py-1 rounded-lg border border-red-200 dark:border-red-900 cursor-pointer transition-colors inline-flex items-center gap-1"
-                >
-                  <Zap className="w-3 h-3 text-[#8B1E26] dark:text-amber-400" />
-                  <span>{currentLang === 'ta' ? 'தானியங்கி நிரப்பு' : 'Auto-Fill'} ({generatedOtp})</span>
-                </button>
               </div>
 
               <div className="flex justify-center gap-2" onPaste={handleOtpPaste}>
