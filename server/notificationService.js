@@ -1,17 +1,41 @@
 import { db } from './db.js';
 import nodemailer from 'nodemailer';
 
+// Helper to read dynamic settings from SQLite database
+export function getSetting(key) {
+  try {
+    const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key);
+    return row ? row.value : null;
+  } catch {
+    return null;
+  }
+}
+
+// Helper to save dynamic settings to SQLite database
+export function setSetting(key, value) {
+  try {
+    db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(key, value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // Create Nodemailer Transporter if SMTP credentials exist
 let emailTransporter = null;
-if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+const smtpHost = process.env.SMTP_HOST || getSetting('smtp_host');
+const smtpUser = process.env.SMTP_USER || getSetting('smtp_user');
+const smtpPass = process.env.SMTP_PASS || getSetting('smtp_pass');
+
+if (smtpHost && smtpUser && smtpPass) {
   try {
     emailTransporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: process.env.SMTP_SECURE === 'true',
+      host: smtpHost,
+      port: Number(process.env.SMTP_PORT || getSetting('smtp_port')) || 587,
+      secure: process.env.SMTP_SECURE === 'true' || getSetting('smtp_secure') === 'true',
       auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
+        user: smtpUser,
+        pass: smtpPass
       }
     });
     console.log('📧 SMTP Email Transporter configured successfully');
@@ -20,7 +44,79 @@ if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
   }
 }
 
-// Send or Dispatch an SMS / WhatsApp / Email notification and log it to DB
+// ----------------------------------------------------
+// 1. FAST2SMS Integration (Instant Indian Mobile SMS)
+// ----------------------------------------------------
+async function sendViaFast2Sms({ mobile, otp, message }) {
+  const apiKey = process.env.FAST2SMS_API_KEY || getSetting('fast2sms_api_key');
+  if (!apiKey) return false;
+
+  const cleanMobile = mobile.replace(/\D/g, '').slice(-10);
+  try {
+    // Fast2SMS Quick OTP route
+    const payload = otp
+      ? { variables_values: otp, route: 'otp', numbers: cleanMobile }
+      : { message: message, language: 'english', route: 'q', numbers: cleanMobile };
+
+    const response = await fetch('https://www.fast2sms.com/dev/bulkV2', {
+      method: 'POST',
+      headers: {
+        'authorization': apiKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+    console.log(`📱 [Fast2SMS Live Dispatch] To: ${cleanMobile} | Status:`, data.message || data);
+    return data.return === true;
+  } catch (err) {
+    console.warn(`⚠️ Fast2SMS delivery error to ${cleanMobile}:`, err.message);
+    return false;
+  }
+}
+
+// ----------------------------------------------------
+// 2. TWILIO Integration (Global Mobile SMS)
+// ----------------------------------------------------
+async function sendViaTwilio({ mobile, message }) {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID || getSetting('twilio_account_sid');
+  const authToken = process.env.TWILIO_AUTH_TOKEN || getSetting('twilio_auth_token');
+  const fromPhone = process.env.TWILIO_PHONE_NUMBER || getSetting('twilio_phone_number');
+
+  if (!accountSid || !authToken || !fromPhone) return false;
+
+  const cleanMobile = mobile.replace(/\D/g, '').slice(-10);
+  const toPhone = cleanMobile.length === 10 ? `+91${cleanMobile}` : `+${cleanMobile}`;
+
+  try {
+    const params = new URLSearchParams({
+      To: toPhone,
+      From: fromPhone,
+      Body: message
+    });
+
+    const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64'),
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: params.toString()
+    });
+
+    const data = await response.json();
+    console.log(`📱 [Twilio Live Dispatch] To: ${toPhone} | Status:`, data.sid || data.message);
+    return !data.error_code;
+  } catch (err) {
+    console.warn(`⚠️ Twilio delivery error to ${toPhone}:`, err.message);
+    return false;
+  }
+}
+
+// ----------------------------------------------------
+// 3. Dispatch SMS / WhatsApp / Email
+// ----------------------------------------------------
 export async function dispatchMessage({ recipient, recipientType = 'USER', channel = 'SMS', subject = '', message, html = '' }) {
   const id = `MSG-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   
@@ -34,11 +130,31 @@ export async function dispatchMessage({ recipient, recipientType = 'USER', chann
     console.warn('Failed to insert message into messages_log:', dbErr.message);
   }
 
-  // If Email and Transporter available, send real email
+  // A. REAL SMS DISPATCH (Fast2SMS or Twilio)
+  if (channel === 'SMS') {
+    const cleanMobile = recipient.replace(/\D/g, '').slice(-10);
+    const otpMatch = message.match(/\b\d{6}\b/)?.[0] || '';
+
+    let delivered = await sendViaFast2Sms({ mobile: cleanMobile, otp: otpMatch, message });
+    if (!delivered) {
+      delivered = await sendViaTwilio({ mobile: cleanMobile, message });
+    }
+
+    if (!delivered) {
+      console.log(`\n======================================================`);
+      console.log(`ℹ️ [SIMULATED SMS GATEWAY] Recipient: +91 ${cleanMobile}`);
+      console.log(`Message: ${message}`);
+      if (otpMatch) console.log(`👉 OTP Code: ${otpMatch}`);
+      console.log(`💡 NOTE: To deliver real physical SMS to mobile SIM card, set FAST2SMS_API_KEY in .env or Admin Settings.`);
+      console.log(`======================================================\n`);
+    }
+  }
+
+  // B. REAL EMAIL DISPATCH (Nodemailer)
   if (channel === 'EMAIL' && emailTransporter && recipient && recipient.includes('@')) {
     try {
       await emailTransporter.sendMail({
-        from: process.env.SMTP_FROM || '"தமிழ் சங்கம் தமிழ்நாடு" <noreply@tamilsangamtn.org>',
+        from: process.env.SMTP_FROM || getSetting('smtp_from') || '"தமிழ் சங்கம் தமிழ்நாடு" <noreply@tamilsangamtn.org>',
         to: recipient,
         subject: subject,
         text: message,
@@ -49,12 +165,6 @@ export async function dispatchMessage({ recipient, recipientType = 'USER', chann
       console.warn(`⚠️ Live email delivery failed to ${recipient}:`, mailErr.message);
     }
   }
-
-  console.log(`\n======================================================`);
-  console.log(`[DISPATCH LOG] Channel: ${channel} | To: ${recipient} (${recipientType})`);
-  if (subject) console.log(`Subject: ${subject}`);
-  console.log(`Message: ${message}`);
-  console.log(`======================================================\n`);
 
   return { id, recipient, channel, status: 'SENT', message };
 }
@@ -78,7 +188,7 @@ export function createNotification({ title, message, type = 'SYSTEM', recipientM
 }
 
 // Generate & save OTP
-export function generateAndSaveOtp(mobile, purpose = 'LOGIN') {
+export async function generateAndSaveOtp(mobile, purpose = 'LOGIN') {
   const cleanMobile = mobile.replace(/\D/g, '').slice(-10) || '9840123456';
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes validity
@@ -92,10 +202,10 @@ export function generateAndSaveOtp(mobile, purpose = 'LOGIN') {
     VALUES (?, ?, ?, ?, ?, 0)
   `).run(id, cleanMobile, otp, purpose, expiresAt);
 
-  // Send SMS & WhatsApp Notification to User's Mobile (Real dispatch log)
-  const otpMessage = `[தமிழ் சங்கம் தமிழ்நாடு] உங்கள் சரிபார்ப்புக் குறியீடு (OTP) எண்: ${otp}. இது 10 நிமிடங்கள் செல்லுபடியாகும். தயவுசெய்து இதை யாருடனும் பகிர வேண்டாம். / Your Tamil Sangam verification OTP is ${otp}. Valid for 10 mins.`;
+  // Send SMS to User's Mobile
+  const otpMessage = `[தமிழ் சங்கம்] உங்கள் சரிபார்ப்புக் குறியீடு (OTP): ${otp}. இது 10 நிமிடங்கள் செல்லுபடியாகும். தயவுசெய்து இதை யாருடனும் பகிர வேண்டாம். / Tamil Sangam OTP is ${otp}. Valid for 10 mins.`;
   
-  dispatchMessage({
+  await dispatchMessage({
     recipient: cleanMobile,
     recipientType: 'USER',
     channel: 'SMS',
@@ -103,7 +213,36 @@ export function generateAndSaveOtp(mobile, purpose = 'LOGIN') {
     message: otpMessage
   });
 
-  return { otp, cleanMobile, expiresAt };
+  // Check if member has registered email to ALSO dispatch OTP to email (instant mobile notification via Gmail)
+  try {
+    const member = db.prepare('SELECT email, fullName FROM members WHERE mobile = ? OR mobile LIKE ? LIMIT 1').get(cleanMobile, `%${cleanMobile}`);
+    if (member && member.email) {
+      await dispatchMessage({
+        recipient: member.email,
+        recipientType: 'USER',
+        channel: 'EMAIL',
+        subject: `[தமிழ் சங்கம்] உங்களின் உள்நுழைவு OTP எண்: ${otp}`,
+        message: `வணக்கம் ${member.fullName}, தமிழ் சங்கத்தில் உள்நுழைவதற்கான உங்கள் 6 இலக்க OTP எண்: ${otp}. இது 10 நிமிடங்கள் செல்லுபடியாகும்.`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 500px; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff;">
+            <h2 style="color: #8B1E26; margin: 0 0 10px;">தமிழ் சங்கம் தமிழ்நாடு</h2>
+            <p>வணக்கம் <strong>${member.fullName}</strong>,</p>
+            <p>உங்கள் கணக்கில் உள்நுழைவதற்கான 6 இலக்க சரிபார்ப்புக் குறியீடு (OTP):</p>
+            <div style="background: #fef3c7; border: 2px dashed #f59e0b; padding: 15px; border-radius: 8px; text-align: center; margin: 15px 0;">
+              <span style="font-family: monospace; font-size: 28px; font-weight: bold; letter-spacing: 4px; color: #8B1E26;">${otp}</span>
+            </div>
+            <p style="font-size: 12px; color: #64748b;">இது 10 நிமிடங்கள் மட்டுமே செல்லுபடியாகும். பாதுகாப்பு கருதி இதை யாருடனும் பகிர வேண்டாம்.</p>
+          </div>
+        `
+      });
+    }
+  } catch (emailOtpErr) {
+    console.warn('Email OTP dispatch error:', emailOtpErr.message);
+  }
+
+  const isRealSmsGatewayActive = !!(process.env.FAST2SMS_API_KEY || getSetting('fast2sms_api_key') || process.env.TWILIO_ACCOUNT_SID || getSetting('twilio_account_sid'));
+
+  return { otp, cleanMobile, expiresAt, isRealSmsGatewayActive };
 }
 
 // Verify OTP

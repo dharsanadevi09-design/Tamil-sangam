@@ -13,7 +13,9 @@ import {
   notifyMembershipPayment, 
   notifyMembershipApproval, 
   notifyMembershipRejection, 
-  notifyDonation 
+  notifyDonation,
+  getSetting,
+  setSetting
 } from './notificationService.js';
 
 dotenv.config();
@@ -178,7 +180,7 @@ app.get('/api/members/check-mobile/:mobile', (req, res) => {
 });
 
 // Step 1: Send OTP to User Mobile
-app.post('/api/auth/send-otp', (req, res) => {
+app.post('/api/auth/send-otp', async (req, res) => {
   try {
     const { mobile, purpose = 'LOGIN' } = req.body;
     if (!mobile) {
@@ -198,12 +200,13 @@ app.post('/api/auth/send-otp', (req, res) => {
       });
     }
 
-    const result = generateAndSaveOtp(cleanMobile, purpose);
+    const result = await generateAndSaveOtp(cleanMobile, purpose);
     res.json({
       success: true,
       message: 'OTP dispatched successfully via SMS to user mobile',
       mobile: result.cleanMobile,
       expiresAt: result.expiresAt,
+      isRealSmsActive: result.isRealSmsGatewayActive,
       isAlreadyRegistered: !!existingMember,
       existingMember: existingMember || null
     });
@@ -1049,6 +1052,48 @@ app.delete('/api/contact/:id', (req, res) => {
   } catch (err) {
     console.error('Error deleting contact message:', err);
     res.status(500).json({ error: 'Failed to delete inquiry' });
+  }
+});
+
+// Get SMS Gateway Status & Settings
+app.get('/api/settings/sms', (req, res) => {
+  const fast2smsKey = process.env.FAST2SMS_API_KEY || getSetting('fast2sms_api_key');
+  const twilioSid = process.env.TWILIO_ACCOUNT_SID || getSetting('twilio_account_sid');
+
+  res.json({
+    fast2smsConfigured: !!fast2smsKey,
+    twilioConfigured: !!twilioSid,
+    activeProvider: fast2smsKey ? 'Fast2SMS (India)' : twilioSid ? 'Twilio (Global)' : 'Simulated Gateway (Demo Mode)',
+    senderId: 'TAMSNG',
+    instructions: {
+      fast2sms: 'Sign up for free at fast2sms.com, get ₹50 free wallet credits and copy Dev API Key',
+      twilio: 'Sign up at twilio.com, copy Account SID, Auth Token and Phone Number'
+    }
+  });
+});
+
+// Update SMS Gateway Settings
+app.post('/api/settings/sms', (req, res) => {
+  try {
+    const { fast2sms_api_key, twilio_account_sid, twilio_auth_token, twilio_phone_number } = req.body;
+    if (fast2sms_api_key) setSetting('fast2sms_api_key', fast2sms_api_key.trim());
+    if (twilio_account_sid) setSetting('twilio_account_sid', twilio_account_sid.trim());
+    if (twilio_auth_token) setSetting('twilio_auth_token', twilio_auth_token.trim());
+    if (twilio_phone_number) setSetting('twilio_phone_number', twilio_phone_number.trim());
+
+    res.json({ success: true, message: 'SMS Gateway settings updated in database' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update SMS settings' });
+  }
+});
+
+// Get Live Message / Dispatch Logs
+app.get('/api/messages', (req, res) => {
+  try {
+    const logs = db.prepare('SELECT * FROM messages_log ORDER BY createdAt DESC LIMIT 50').all();
+    res.json(logs);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch message logs' });
   }
 });
 

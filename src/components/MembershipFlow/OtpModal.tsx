@@ -405,6 +405,50 @@ export const OtpModal: React.FC<OtpModalProps> = ({
                 {timer > 0 ? (currentLang === 'ta' ? `${timer} வினாடிகளில் மறுபடி OTP` : `Resend OTP in ${timer}s`) : (currentLang === 'ta' ? 'மறுபடியும் OTP அனுப்புக' : 'Resend OTP')}
               </button>
             </div>
+
+            {/* Helper: Didn't receive SMS on physical phone? */}
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={() => setShowSmsBanner(!showSmsBanner)}
+                className="w-full text-center text-[11px] text-[#8B1E26] dark:text-amber-400 hover:underline font-bold cursor-pointer py-1"
+              >
+                {currentLang === 'ta' ? '❓ மொபைலில் SMS வரவில்லையா? இங்கே கிளிக் செய்யவும்' : '❓ Didn\'t receive SMS on your phone? Click here'}
+              </button>
+
+              {showSmsBanner && (
+                <div className="mt-2 p-3 bg-amber-50 dark:bg-slate-900 border border-amber-300 dark:border-amber-700/60 rounded-xl text-xs space-y-2 text-slate-800 dark:text-gray-200 animate-fadeIn">
+                  <p className="font-bold text-[#8B1E26] dark:text-amber-400">
+                    {currentLang === 'ta' ? '📢 SMS வழிகாட்டுதல்:' : '📢 Mobile SMS Delivery Notice:'}
+                  </p>
+                  <p className="text-[11px] leading-relaxed text-slate-600 dark:text-gray-300">
+                    {currentLang === 'ta'
+                      ? 'மொபைல் SIM கார்டிற்கு உண்மையான SMS செல்ல Fast2SMS அல்லது Twilio Gateway API Key தேவைப்படுகிறது. நீங்கள் தற்போது சோதிக்கிறீர்கள் என்றால், சோதனை முறை OTP (123456) மூலம் உடனடியாக விண்ணப்பப் படிவத்திற்கு செல்லலாம்.'
+                      : 'To deliver real cellular SMS to your phone SIM card, an SMS Gateway (Fast2SMS / Twilio) is required. For testing, you can use test OTP 123456 to continue to the registration form.'}
+                  </p>
+                  <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOtpDigits(['1', '2', '3', '4', '5', '6']);
+                        setErrorMsg('');
+                      }}
+                      className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-[11px] px-3 py-1.5 rounded-lg shadow-sm cursor-pointer"
+                    >
+                      {currentLang === 'ta' ? 'சோதனை OTP (123456) நிரப்புக' : 'Fill Test OTP (123456)'}
+                    </button>
+                    <a
+                      href={`https://wa.me/91${mobileNumber}?text=Tamil%20Sangam%20Registration%20OTP`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline"
+                    >
+                      📲 WhatsApp Support
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
           </form>
         ) : (
           /* STEP 3: Already Registered Member Info (NEVER ask to fill details again!) */
