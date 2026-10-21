@@ -56,12 +56,12 @@ async function sendViaFast2Sms({ mobile, otp, message }) {
   if (cleanMobile.length !== 10) return false;
 
   try {
-    // Fast2SMS Quick OTP route
+    // Attempt 1: Fast2SMS Quick OTP POST Route
     const payload = otp
-      ? { variables_values: otp, route: 'otp', numbers: cleanMobile }
+      ? { variables_values: String(otp), route: 'otp', numbers: cleanMobile }
       : { message: message, language: 'english', route: 'q', numbers: cleanMobile };
 
-    const response = await fetch('https://www.fast2sms.com/dev/bulkV2', {
+    let response = await fetch('https://www.fast2sms.com/dev/bulkV2', {
       method: 'POST',
       headers: {
         'authorization': apiKey,
@@ -70,9 +70,20 @@ async function sendViaFast2Sms({ mobile, otp, message }) {
       body: JSON.stringify(payload)
     });
 
-    const data = await response.json();
-    console.log(`📱 [Fast2SMS Live Dispatch] To: ${cleanMobile} | Status:`, data.message || data);
-    return data.return === true;
+    let data = await response.json();
+    console.log(`📱 [Fast2SMS Live POST Dispatch] To: ${cleanMobile} | Status:`, data.message || data);
+    if (data.return === true) return true;
+
+    // Attempt 2: Fast2SMS Quick OTP GET Fallback
+    if (otp) {
+      const getUrl = `https://www.fast2sms.com/dev/bulkV2?authorization=${encodeURIComponent(apiKey)}&route=otp&variables_values=${encodeURIComponent(otp)}&numbers=${cleanMobile}`;
+      response = await fetch(getUrl, { method: 'GET' });
+      data = await response.json();
+      console.log(`📱 [Fast2SMS Live GET Dispatch] To: ${cleanMobile} | Status:`, data.message || data);
+      return data.return === true;
+    }
+
+    return false;
   } catch (err) {
     console.warn(`⚠️ Fast2SMS delivery error to ${cleanMobile}:`, err.message);
     return false;
@@ -90,10 +101,21 @@ async function sendVia2Factor({ mobile, otp }) {
   if (cleanMobile.length !== 10) return false;
 
   try {
-    const url = `https://2factor.in/API/V1/${apiKey}/SMS/${cleanMobile}/${otp}/TamilSangam`;
-    const response = await fetch(url, { method: 'GET' });
-    const data = await response.json();
-    console.log(`📱 [2Factor Live Dispatch] To: ${cleanMobile} | Status:`, data.Status || data);
+    // Attempt 1: Default universal transactional route (no template pre-approval needed)
+    let url = `https://2factor.in/API/V1/${apiKey}/SMS/${cleanMobile}/${otp}`;
+    let response = await fetch(url, { method: 'GET' });
+    let data = await response.json();
+
+    if (data.Status === 'Success') {
+      console.log(`📱 [2Factor Live Universal Dispatch] To: ${cleanMobile} | Session:`, data.Details);
+      return true;
+    }
+
+    // Attempt 2: Route with TamilSangam sender tag
+    url = `https://2factor.in/API/V1/${apiKey}/SMS/${cleanMobile}/${otp}/TamilSangam`;
+    response = await fetch(url, { method: 'GET' });
+    data = await response.json();
+    console.log(`📱 [2Factor Custom Dispatch] To: ${cleanMobile} | Status:`, data.Status || data);
     return data.Status === 'Success';
   } catch (err) {
     console.warn(`⚠️ 2Factor delivery error to ${cleanMobile}:`, err.message);

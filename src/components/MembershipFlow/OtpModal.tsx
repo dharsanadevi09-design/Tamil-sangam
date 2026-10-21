@@ -27,6 +27,7 @@ export const OtpModal: React.FC<OtpModalProps> = ({
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [existingMember, setExistingMember] = useState<MemberApplication | null>(null);
+  const [isRealSmsActive, setIsRealSmsActive] = useState(true);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -40,6 +41,7 @@ export const OtpModal: React.FC<OtpModalProps> = ({
       setTimer(45);
       setOtpDigits(['', '', '', '', '', '']);
       setExistingMember(null);
+      setIsRealSmsActive(true);
       setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus();
@@ -81,6 +83,7 @@ export const OtpModal: React.FC<OtpModalProps> = ({
     try {
       // Connect to Backend Express + SQLite Database
       const res = await api.sendOtp(cleanNumber, 'REGISTRATION');
+      setIsRealSmsActive(res.isRealSmsActive !== false);
       if (res.isAlreadyRegistered && res.existingMember) {
         foundMember = res.existingMember;
         setExistingMember(res.existingMember);
@@ -238,24 +241,54 @@ export const OtpModal: React.FC<OtpModalProps> = ({
 
         {/* Sent OTP Status Notice - Real SMS Dispatched to Mobile */}
         {step === 'OTP' && (
-          <div className="mb-6 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700/60 rounded-2xl p-4 text-xs shadow-sm animate-fadeIn">
-            <div className="flex items-start gap-3">
-              <div className="p-2.5 bg-emerald-600 text-white rounded-xl shrink-0 mt-0.5 shadow-sm">
-                <Smartphone className="w-5 h-5" />
-              </div>
-              <div className="space-y-1">
-                <p className="font-extrabold text-emerald-800 dark:text-emerald-300 text-sm flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  <span>{currentLang === 'ta' ? 'OTP உங்கள் கைபேசிக்கு அனுப்பப்பட்டது' : 'OTP Dispatched to Your Mobile'}</span>
-                </p>
-                <p className="text-slate-600 dark:text-gray-300 text-xs leading-relaxed">
-                  {currentLang === 'ta'
-                    ? `+91 ${mobileNumber} என்ற உங்கள் கைபேசி எண்ணிற்கு 6 இலக்க சரிபார்ப்புக் குறியீடு (OTP) SMS வழியாக தானாக அனுப்பப்பட்டுள்ளது. உங்கள் மொபைலில் வந்த SMS-ஐப் பார்த்து கீழே உள்ளிடவும்.`
-                    : `A 6-digit random verification code has been dispatched via SMS directly to +91 ${mobileNumber}. Please check your phone SMS and enter the code below.`}
-                </p>
+          isRealSmsActive ? (
+            <div className="mb-6 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700/60 rounded-2xl p-4 text-xs shadow-sm animate-fadeIn">
+              <div className="flex items-start gap-3">
+                <div className="p-2.5 bg-emerald-600 text-white rounded-xl shrink-0 mt-0.5 shadow-sm">
+                  <Smartphone className="w-5 h-5" />
+                </div>
+                <div className="space-y-1">
+                  <p className="font-extrabold text-emerald-800 dark:text-emerald-300 text-sm flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <span>{currentLang === 'ta' ? 'OTP உங்கள் கைபேசிக்கு அனுப்பப்பட்டது' : 'OTP Dispatched to Your Mobile'}</span>
+                  </p>
+                  <p className="text-slate-600 dark:text-gray-300 text-xs leading-relaxed">
+                    {currentLang === 'ta'
+                      ? `+91 ${mobileNumber} என்ற உங்கள் கைபேசி எண்ணிற்கு 6 இலக்க சரிபார்ப்புக் குறியீடு (OTP) SMS வழியாக அனுப்பப்பட்டுள்ளது. உங்கள் மொபைலில் வந்த SMS-ஐப் பார்த்து கீழே உள்ளிடவும்.`
+                      : `A 6-digit random verification code has been dispatched via SMS directly to +91 ${mobileNumber}. Please check your phone SMS and enter the code below.`}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="mb-6 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 rounded-2xl p-4 text-xs shadow-sm animate-fadeIn">
+              <div className="flex items-start gap-3">
+                <div className="p-2.5 bg-[#8B1E26] text-white rounded-xl shrink-0 mt-0.5 shadow-sm">
+                  <Smartphone className="w-5 h-5 text-amber-300" />
+                </div>
+                <div className="space-y-1.5">
+                  <p className="font-extrabold text-amber-900 dark:text-amber-300 text-sm flex items-center gap-1.5">
+                    <span>⚠️ {currentLang === 'ta' ? 'நேரலை SMS கேட்வே Render-ல் செயல்படுத்தப்படவில்லை' : 'Cellular SMS Gateway Pending in Render'}</span>
+                  </p>
+                  <p className="text-slate-700 dark:text-gray-300 text-[11px] leading-relaxed">
+                    {currentLang === 'ta'
+                      ? `Render சர்வரில் FAST2SMS_API_KEY சேர்க்கப்படாததால் உங்கள் மொபைல் SIM கார்டிற்கு நேரடி செல்லுலார் SMS வரவில்லை. Render Dashboard -> Environment Variables-ல் FAST2SMS_API_KEY சேர்த்தால் நேரடி SMS வரும்.`
+                      : `Live cellular SMS requires FAST2SMS_API_KEY in Render Dashboard Environment Variables.`}
+                  </p>
+                  <div className="pt-1 flex items-center gap-2">
+                    <a
+                      href={`https://wa.me/91${mobileNumber}?text=Tamil%20Sangam%20Registration%20OTP%20Support`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm"
+                    >
+                      <span>📲 WhatsApp உதவி (+91 {mobileNumber})</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
         )}
 
         {/* Locked Feature Notice */}
