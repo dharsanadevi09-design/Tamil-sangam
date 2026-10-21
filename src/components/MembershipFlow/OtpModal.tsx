@@ -22,20 +22,13 @@ export const OtpModal: React.FC<OtpModalProps> = ({
 }) => {
   const [step, setStep] = useState<'MOBILE' | 'OTP' | 'ALREADY_REGISTERED'>('MOBILE');
   const [mobileNumber, setMobileNumber] = useState('');
-  const [generatedOtp, setGeneratedOtp] = useState('');
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
-  const [timer, setTimer] = useState(30);
+  const [timer, setTimer] = useState(45);
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSmsBanner, setShowSmsBanner] = useState(false);
   const [existingMember, setExistingMember] = useState<MemberApplication | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // Generate random fallback 6-digit OTP
-  const generateRandomOtp = () => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-  };
 
   // Reset modal state when opened
   useEffect(() => {
@@ -44,8 +37,7 @@ export const OtpModal: React.FC<OtpModalProps> = ({
       setMobileNumber('');
       setErrorMsg('');
       setIsSubmitting(false);
-      setShowSmsBanner(false);
-      setTimer(30);
+      setTimer(45);
       setOtpDigits(['', '', '', '', '', '']);
       setExistingMember(null);
       setTimeout(() => {
@@ -71,11 +63,14 @@ export const OtpModal: React.FC<OtpModalProps> = ({
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    let cleanNumber = normalizeDigits(mobileNumber);
-    if (!cleanNumber) {
-      cleanNumber = '9840123456';
-    } else if (cleanNumber.length > 10) {
-      cleanNumber = cleanNumber.slice(-10);
+    const cleanNumber = normalizeDigits(mobileNumber).slice(-10);
+    if (!cleanNumber || cleanNumber.length !== 10) {
+      setErrorMsg(
+        currentLang === 'ta'
+          ? 'தயவுசெய்து உங்கள் சரியான 10 இலக்க மொபைல் எண்ணை உள்ளிடவும்.'
+          : 'Please enter a valid 10-digit mobile number.'
+      );
+      return;
     }
 
     setMobileNumber(cleanNumber);
@@ -90,11 +85,8 @@ export const OtpModal: React.FC<OtpModalProps> = ({
         foundMember = res.existingMember;
         setExistingMember(res.existingMember);
       }
-      setGeneratedOtp(res.otp || generateRandomOtp());
     } catch (err: any) {
-      console.warn('Backend send-otp error, using local fallback:', err);
-      const newOtp = generateRandomOtp();
-      setGeneratedOtp(newOtp);
+      console.warn('Backend send-otp error:', err);
     }
 
     // Also check local database cache
@@ -107,27 +99,27 @@ export const OtpModal: React.FC<OtpModalProps> = ({
 
     setIsSubmitting(false);
     setStep('OTP');
-    setTimer(30);
-    setShowSmsBanner(true);
+    setTimer(45);
     setOtpDigits(['', '', '', '', '', '']);
   };
 
   const handleVerifyOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    let enteredOtp = otpDigits.join('');
+    const enteredOtp = otpDigits.join('');
 
     if (enteredOtp.length < 6) {
-      enteredOtp = generatedOtp;
-      setOtpDigits(generatedOtp.split(''));
+      setErrorMsg(
+        currentLang === 'ta'
+          ? 'தயவுசெய்து உங்கள் கைபேசிக்கு வந்த 6 இலக்க OTP எண்ணை முழுமையாக உள்ளிடவும்.'
+          : 'Please enter all 6 digits of the OTP sent to your mobile phone.'
+      );
+      return;
     }
 
     setErrorMsg('');
     setIsSubmitting(true);
 
-    let cleanMobile = normalizeDigits(mobileNumber);
-    if (!cleanMobile) {
-      cleanMobile = '9840123456';
-    }
+    const cleanMobile = normalizeDigits(mobileNumber).slice(-10);
 
     try {
       const verifyRes = await api.verifyOtp(cleanMobile, enteredOtp, 'REGISTRATION');
@@ -143,20 +135,13 @@ export const OtpModal: React.FC<OtpModalProps> = ({
 
       onOtpVerified(cleanMobile);
     } catch (err: any) {
-      // If entered OTP matches generated or fallback
-      if (enteredOtp === generatedOtp || enteredOtp === '123456') {
-        setIsSubmitting(false);
-        const mem = existingMember || getMemberById(cleanMobile);
-        if (mem) {
-          setExistingMember(mem);
-          setStep('ALREADY_REGISTERED');
-          return;
-        }
-        onOtpVerified(cleanMobile);
-      } else {
-        setIsSubmitting(false);
-        setErrorMsg(err.message || 'Invalid or expired OTP');
-      }
+      setIsSubmitting(false);
+      setErrorMsg(
+        err.message ||
+        (currentLang === 'ta'
+          ? 'தவறான OTP எண். உங்கள் மொபைலுக்கு வந்த சரியான OTP எண்ணை உள்ளிடவும்.'
+          : 'Invalid or expired OTP. Please enter the correct OTP sent to your phone.')
+      );
     }
   };
 
@@ -202,13 +187,22 @@ export const OtpModal: React.FC<OtpModalProps> = ({
     }
   };
 
-  const handleResendOtp = () => {
-    const newCode = generateRandomOtp();
-    setGeneratedOtp(newCode);
-    setTimer(30);
-    setShowSmsBanner(true);
-    setOtpDigits(['', '', '', '', '', '']);
+  const handleResendOtp = async () => {
+    const cleanMobile = normalizeDigits(mobileNumber).slice(-10);
+    if (cleanMobile.length !== 10) return;
+    setIsSubmitting(true);
     setErrorMsg('');
+    try {
+      await api.sendOtp(cleanMobile, 'REGISTRATION');
+      setTimer(45);
+      setOtpDigits(['', '', '', '', '', '']);
+    } catch (err: any) {
+      setErrorMsg(
+        err.message || (currentLang === 'ta' ? 'OTP அனுப்புவதில் சிக்கல் ஏற்பட்டது' : 'Failed to resend OTP')
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const cleanDigitsCount = normalizeDigits(mobileNumber).length;
@@ -232,32 +226,32 @@ export const OtpModal: React.FC<OtpModalProps> = ({
           </div>
           <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white font-heading">
             {step === 'MOBILE'
-              ? (currentLang === 'ta' ? 'அலைபேசி எண் சரிபார்ப்பு' : 'Step 1: Mobile OTP Verification')
+              ? (currentLang === 'ta' ? 'அலைபேசி எண் சரிபார்ப்பு' : 'Step 1: Mobile Verification')
               : (currentLang === 'ta' ? '6 இலக்க OTP உள்ளிடவும்' : 'Step 2: Enter 6-Digit OTP')}
           </h3>
           <p className="text-xs text-slate-500 dark:text-gray-400">
             {step === 'MOBILE'
-              ? (currentLang === 'ta' ? 'எந்த கைபேசி எண்ணையும் உள்ளிட்டு OTP பெறலாம்' : 'Enter ANY 10-digit mobile number of your choice to receive OTP')
-              : (currentLang === 'ta' ? `OTP +91 ${mobileNumber} எண்ணிற்கு அனுப்பப்பட்டது` : `Verification OTP sent to +91 ${mobileNumber}`)}
+              ? (currentLang === 'ta' ? 'உங்கள் 10 இலக்க மொபைல் எண்ணை உள்ளிட்டு OTP பெறவும்' : 'Enter your 10-digit mobile number to receive verification OTP')
+              : (currentLang === 'ta' ? `ரகசிய OTP எண் +91 ${mobileNumber} மொபைலுக்கு அனுப்பப்பட்டது` : `Secret OTP sent to +91 ${mobileNumber} via SMS`)}
           </p>
         </div>
 
-        {/* Sent OTP Status Notice - Never displays OTP on system screen */}
-        {step === 'OTP' && showSmsBanner && (
+        {/* Sent OTP Status Notice - Real SMS Dispatched to Mobile */}
+        {step === 'OTP' && (
           <div className="mb-6 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700/60 rounded-2xl p-4 text-xs shadow-sm animate-fadeIn">
             <div className="flex items-start gap-3">
-              <div className="p-2.5 bg-[#8B1E26] text-white rounded-xl shrink-0 mt-0.5 shadow-sm">
+              <div className="p-2.5 bg-emerald-600 text-white rounded-xl shrink-0 mt-0.5 shadow-sm">
                 <Smartphone className="w-5 h-5" />
               </div>
               <div className="space-y-1">
-                <p className="font-extrabold text-[#8B1E26] dark:text-red-400 text-sm flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <p className="font-extrabold text-emerald-800 dark:text-emerald-300 text-sm flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <span>{currentLang === 'ta' ? 'OTP உங்கள் கைபேசிக்கு அனுப்பப்பட்டது' : 'OTP Dispatched to Your Mobile'}</span>
                 </p>
                 <p className="text-slate-600 dark:text-gray-300 text-xs leading-relaxed">
                   {currentLang === 'ta'
-                    ? `+91 ${mobileNumber} என்ற எண்ணிற்கு 6 இலக்க சரிபார்ப்புக் குறியீடு (OTP) SMS வழியாக அனுப்பப்பட்டுள்ளது. உங்கள் மொபைலில் வந்த OTP எண்ணை கீழே உள்ளிடவும்.`
-                    : `A 6-digit verification code has been dispatched via SMS to +91 ${mobileNumber}. Please check your phone SMS and enter the code below.`}
+                    ? `+91 ${mobileNumber} என்ற உங்கள் கைபேசி எண்ணிற்கு 6 இலக்க சரிபார்ப்புக் குறியீடு (OTP) SMS வழியாக தானாக அனுப்பப்பட்டுள்ளது. உங்கள் மொபைலில் வந்த SMS-ஐப் பார்த்து கீழே உள்ளிடவும்.`
+                    : `A 6-digit random verification code has been dispatched via SMS directly to +91 ${mobileNumber}. Please check your phone SMS and enter the code below.`}
                 </p>
               </div>
             </div>
@@ -294,8 +288,8 @@ export const OtpModal: React.FC<OtpModalProps> = ({
                   id="reg-mobile-input"
                   type="tel"
                   inputMode="numeric"
-                  maxLength={15}
-                  placeholder={currentLang === 'ta' ? 'எ.கா. 9876543210' : 'Type any number e.g. 9876543210'}
+                  maxLength={10}
+                  placeholder="e.g. 9876543210"
                   value={mobileNumber}
                   onChange={(e) => {
                     const clean = e.target.value.replace(/\D/g, '').slice(0, 10);
@@ -307,23 +301,11 @@ export const OtpModal: React.FC<OtpModalProps> = ({
                 />
               </div>
 
-              {/* Live Count & Sample Chips */}
+              {/* Live Count */}
               <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-500 dark:text-gray-400 flex-wrap gap-1">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-slate-500 dark:text-gray-400 font-medium">
-                    {currentLang === 'ta' ? 'மாதிரி எண்கள்:' : 'Sample Numbers:'}
-                  </span>
-                  {['9840123456', '9789012345', '9123456789', '9444012345'].map((demoNum) => (
-                    <button
-                      key={demoNum}
-                      type="button"
-                      onClick={() => { setMobileNumber(demoNum); setErrorMsg(''); }}
-                      className="bg-slate-100 dark:bg-slate-800 hover:bg-[#8B1E26] hover:text-white text-slate-700 dark:text-gray-300 font-mono text-[10px] px-2 py-0.5 rounded border border-slate-200 dark:border-gray-700 transition-colors cursor-pointer"
-                    >
-                      {demoNum}
-                    </button>
-                  ))}
-                </div>
+                <span className="text-slate-500 dark:text-gray-400 font-medium">
+                  {currentLang === 'ta' ? '10 இலக்க கைபேசி எண்' : '10-Digit Mobile Number'}
+                </span>
                 <span className={`font-mono font-bold ${cleanDigitsCount >= 10 ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#8B1E26] dark:text-amber-400'}`}>
                   {cleanDigitsCount}/10
                 </span>
@@ -332,21 +314,21 @@ export const OtpModal: React.FC<OtpModalProps> = ({
 
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="w-full flex items-center justify-center gap-2 bg-[#8B1E26] hover:bg-[#72151C] text-white font-extrabold py-3.5 rounded-xl shadow-lg transition-all uppercase text-sm tracking-wider cursor-pointer"
+              disabled={isSubmitting || cleanDigitsCount !== 10}
+              className="w-full flex items-center justify-center gap-2 bg-[#8B1E26] hover:bg-[#72151C] disabled:opacity-50 text-white font-extrabold py-3.5 rounded-xl shadow-lg transition-all uppercase text-sm tracking-wider cursor-pointer"
             >
               {isSubmitting ? (
                 <RefreshCw className="w-5 h-5 animate-spin" />
               ) : (
                 <>
-                  <span>{currentLang === 'ta' ? 'OTP அனுப்புக' : 'SEND RANDOM OTP'}</span>
+                  <span>{currentLang === 'ta' ? 'OTP அனுப்புக' : 'SEND OTP TO MOBILE'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
         ) : step === 'OTP' ? (
-          /* STEP 2: Enter 6-Digit Random OTP */
+          /* STEP 2: Enter 6-Digit Random OTP (User types code received on phone) */
           <form onSubmit={handleVerifyOtp} className="space-y-6">
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -374,8 +356,8 @@ export const OtpModal: React.FC<OtpModalProps> = ({
 
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="w-full flex items-center justify-center gap-2 bg-[#8B1E26] hover:bg-[#72151C] text-white font-extrabold py-3.5 rounded-xl shadow-lg transition-all uppercase text-sm tracking-wider cursor-pointer"
+              disabled={isSubmitting || otpDigits.join('').length !== 6}
+              className="w-full flex items-center justify-center gap-2 bg-[#8B1E26] hover:bg-[#72151C] disabled:opacity-50 text-white font-extrabold py-3.5 rounded-xl shadow-lg transition-all uppercase text-sm tracking-wider cursor-pointer"
             >
               {isSubmitting ? (
                 <RefreshCw className="w-5 h-5 animate-spin" />
@@ -398,7 +380,7 @@ export const OtpModal: React.FC<OtpModalProps> = ({
 
               <button
                 type="button"
-                disabled={timer > 0}
+                disabled={timer > 0 || isSubmitting}
                 onClick={handleResendOtp}
                 className="hover:text-[#8B1E26] dark:hover:text-amber-400 transition-colors disabled:opacity-50 cursor-pointer font-semibold"
               >
@@ -406,48 +388,16 @@ export const OtpModal: React.FC<OtpModalProps> = ({
               </button>
             </div>
 
-            {/* Helper: Didn't receive SMS on physical phone? */}
-            <div className="pt-1">
-              <button
-                type="button"
-                onClick={() => setShowSmsBanner(!showSmsBanner)}
-                className="w-full text-center text-[11px] text-[#8B1E26] dark:text-amber-400 hover:underline font-bold cursor-pointer py-1"
+            {/* Quick SMS & WhatsApp Help */}
+            <div className="pt-1 text-center">
+              <a
+                href={`https://wa.me/91${mobileNumber}?text=Tamil%20Sangam%20Registration%20OTP%20Support`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[11px] font-bold text-slate-500 hover:text-emerald-700 dark:text-gray-400 dark:hover:text-emerald-400 hover:underline inline-flex items-center gap-1"
               >
-                {currentLang === 'ta' ? '❓ மொபைலில் SMS வரவில்லையா? இங்கே கிளிக் செய்யவும்' : '❓ Didn\'t receive SMS on your phone? Click here'}
-              </button>
-
-              {showSmsBanner && (
-                <div className="mt-2 p-3 bg-amber-50 dark:bg-slate-900 border border-amber-300 dark:border-amber-700/60 rounded-xl text-xs space-y-2 text-slate-800 dark:text-gray-200 animate-fadeIn">
-                  <p className="font-bold text-[#8B1E26] dark:text-amber-400">
-                    {currentLang === 'ta' ? '📢 SMS வழிகாட்டுதல்:' : '📢 Mobile SMS Delivery Notice:'}
-                  </p>
-                  <p className="text-[11px] leading-relaxed text-slate-600 dark:text-gray-300">
-                    {currentLang === 'ta'
-                      ? 'மொபைல் SIM கார்டிற்கு உண்மையான SMS செல்ல Fast2SMS அல்லது Twilio Gateway API Key தேவைப்படுகிறது. நீங்கள் தற்போது சோதிக்கிறீர்கள் என்றால், சோதனை முறை OTP (123456) மூலம் உடனடியாக விண்ணப்பப் படிவத்திற்கு செல்லலாம்.'
-                      : 'To deliver real cellular SMS to your phone SIM card, an SMS Gateway (Fast2SMS / Twilio) is required. For testing, you can use test OTP 123456 to continue to the registration form.'}
-                  </p>
-                  <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setOtpDigits(['1', '2', '3', '4', '5', '6']);
-                        setErrorMsg('');
-                      }}
-                      className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-[11px] px-3 py-1.5 rounded-lg shadow-sm cursor-pointer"
-                    >
-                      {currentLang === 'ta' ? 'சோதனை OTP (123456) நிரப்புக' : 'Fill Test OTP (123456)'}
-                    </button>
-                    <a
-                      href={`https://wa.me/91${mobileNumber}?text=Tamil%20Sangam%20Registration%20OTP`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline"
-                    >
-                      📲 WhatsApp Support
-                    </a>
-                  </div>
-                </div>
-              )}
+                <span>📲 {currentLang === 'ta' ? 'SMS தாமதமானால்: WhatsApp ஆதரவு' : 'SMS delayed? WhatsApp Support'}</span>
+              </a>
             </div>
           </form>
         ) : (

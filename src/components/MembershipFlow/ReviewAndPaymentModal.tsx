@@ -28,9 +28,7 @@ export const ReviewAndPaymentModal: React.FC<ReviewAndPaymentModalProps> = ({
 
   // OTP Login States
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
-  const [generatedOtp, setGeneratedOtp] = useState('');
-  const [timer, setTimer] = useState(30);
-  const [showSmsBanner, setShowSmsBanner] = useState(false);
+  const [timer, setTimer] = useState(45);
   const [otpError, setOtpError] = useState('');
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
 
@@ -69,17 +67,16 @@ export const ReviewAndPaymentModal: React.FC<ReviewAndPaymentModalProps> = ({
       }
 
       // Dispatch Login OTP to User's Mobile Phone
-      const cleanMobile = normalizeDigits(applicationData.mobile || '9840123456');
-      try {
-        const otpRes = await api.sendOtp(cleanMobile, 'LOGIN');
-        setGeneratedOtp(otpRes.otp || '123456');
-      } catch (otpErr) {
-        const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
-        setGeneratedOtp(randomCode);
+      const cleanMobile = normalizeDigits(applicationData.mobile || '').slice(-10);
+      if (cleanMobile.length === 10) {
+        try {
+          await api.sendOtp(cleanMobile, 'LOGIN');
+        } catch (otpErr) {
+          console.warn('Post-payment send OTP error:', otpErr);
+        }
       }
 
-      setShowSmsBanner(true);
-      setTimer(30);
+      setTimer(45);
       setOtpDigits(['', '', '', '', '', '']);
 
       try {
@@ -106,16 +103,14 @@ export const ReviewAndPaymentModal: React.FC<ReviewAndPaymentModalProps> = ({
 
   const handleResendOtp = async () => {
     if (!createdMember && !applicationData.mobile) return;
-    const cleanMobile = normalizeDigits(createdMember?.mobile || applicationData.mobile || '9840123456');
+    const cleanMobile = normalizeDigits(createdMember?.mobile || applicationData.mobile || '').slice(-10);
+    if (cleanMobile.length !== 10) return;
     try {
-      const res = await api.sendOtp(cleanMobile, 'LOGIN');
-      setGeneratedOtp(res.otp || '123456');
+      await api.sendOtp(cleanMobile, 'LOGIN');
     } catch (err) {
-      const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
-      setGeneratedOtp(randomCode);
+      console.warn('Resend OTP error:', err);
     }
-    setTimer(30);
-    setShowSmsBanner(true);
+    setTimer(45);
     setOtpDigits(['', '', '', '', '', '']);
     setOtpError('');
   };
@@ -168,7 +163,7 @@ export const ReviewAndPaymentModal: React.FC<ReviewAndPaymentModalProps> = ({
     setIsVerifyingOtp(true);
     setOtpError('');
 
-    const targetMobile = normalizeDigits(createdMember?.mobile || applicationData.mobile || '9840123456');
+    const targetMobile = normalizeDigits(createdMember?.mobile || applicationData.mobile || '').slice(-10);
 
     try {
       const verifyRes = await api.verifyOtp(targetMobile, enteredOtp, 'LOGIN');
@@ -184,14 +179,6 @@ export const ReviewAndPaymentModal: React.FC<ReviewAndPaymentModalProps> = ({
         setOtpError(verifyRes.message || (currentLang === 'ta' ? 'தவறான OTP எண்' : 'Invalid OTP code'));
       }
     } catch (err: any) {
-      // In dev mode allow match with generated OTP
-      if (enteredOtp === generatedOtp || enteredOtp === '123456') {
-        setIsVerifyingOtp(false);
-        if (createdMember) {
-          onLoginSuccess(createdMember);
-          return;
-        }
-      }
       setIsVerifyingOtp(false);
       setOtpError(err.message || (currentLang === 'ta' ? 'தவறான OTP எண். மீண்டும் சரிபார்க்கவும்.' : 'Invalid OTP code. Please try again.'));
     }
@@ -295,20 +282,18 @@ export const ReviewAndPaymentModal: React.FC<ReviewAndPaymentModalProps> = ({
                 </div>
               </div>
 
-              {/* Status Notice - Never displays OTP on system screen */}
-              {showSmsBanner && (
-                <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700/60 text-slate-800 dark:text-gray-200 p-3.5 rounded-xl text-xs space-y-1 animate-fadeIn">
-                  <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-bold">
-                    <Smartphone className="w-4 h-4" />
-                    <span>{currentLang === 'ta' ? 'OTP உங்கள் கைபேசிக்கு அனுப்பப்பட்டது' : 'OTP Dispatched via SMS'}</span>
-                  </div>
-                  <p className="text-slate-600 dark:text-gray-300 text-[11px] leading-relaxed">
-                    {currentLang === 'ta'
-                      ? `+91 ${applicationData.mobile} என்ற எண்ணிற்கு 6 இலக்க உள்நுழைவு OTP SMS வழியாக அனுப்பப்பட்டுள்ளது. உங்கள் மொபைலைப் பார்த்து கீழே உள்ளிடவும்.`
-                      : `A 6-digit login OTP code has been dispatched to +91 ${applicationData.mobile} via SMS. Please enter the code below to log in.`}
-                  </p>
+              {/* Status Notice - Real SMS Dispatched to Mobile */}
+              <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700/60 text-slate-800 dark:text-gray-200 p-3.5 rounded-xl text-xs space-y-1 animate-fadeIn">
+                <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-bold">
+                  <Smartphone className="w-4 h-4" />
+                  <span>{currentLang === 'ta' ? 'OTP உங்கள் கைபேசிக்கு அனுப்பப்பட்டது' : 'OTP Dispatched via SMS'}</span>
                 </div>
-              )}
+                <p className="text-slate-600 dark:text-gray-300 text-[11px] leading-relaxed">
+                  {currentLang === 'ta'
+                    ? `+91 ${applicationData.mobile} என்ற எண்ணிற்கு 6 இலக்க உள்நுழைவு OTP SMS வழியாக அனுப்பப்பட்டுள்ளது. உங்கள் மொபைலைப் பார்த்து கீழே உள்ளிடவும்.`
+                    : `A 6-digit login OTP code has been dispatched to +91 ${applicationData.mobile} via SMS. Please enter the code below to log in.`}
+                </p>
+              </div>
 
               {/* 6-Digit OTP Form */}
               <form onSubmit={handleVerifyOtpAndLogin} className="space-y-4">
@@ -375,48 +360,16 @@ export const ReviewAndPaymentModal: React.FC<ReviewAndPaymentModalProps> = ({
                   )}
                 </button>
 
-                {/* Helper: Didn't receive SMS on physical phone? */}
-                <div className="pt-2 border-t border-amber-200/60 dark:border-gray-800">
-                  <button
-                    type="button"
-                    onClick={() => setShowSmsBanner(!showSmsBanner)}
-                    className="w-full text-center text-[11px] text-[#8B1E26] dark:text-amber-400 hover:underline font-bold cursor-pointer py-1"
+                {/* Helper / WhatsApp Support */}
+                <div className="pt-2 border-t border-amber-200/60 dark:border-gray-800 text-center">
+                  <a
+                    href={`https://wa.me/91${applicationData.mobile}?text=Tamil%20Sangam%20Payment%20OTP%20Support`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[11px] font-bold text-slate-500 hover:text-emerald-700 dark:text-gray-400 dark:hover:text-emerald-400 hover:underline inline-flex items-center gap-1"
                   >
-                    {currentLang === 'ta' ? '❓ மொபைலில் SMS வரவில்லையா? இங்கே கிளிக் செய்யவும்' : '❓ Didn\'t receive SMS on your phone? Click here'}
-                  </button>
-
-                  {showSmsBanner && (
-                    <div className="mt-2 p-3 bg-amber-50 dark:bg-slate-900 border border-amber-300 dark:border-amber-700/60 rounded-xl text-xs space-y-2 text-slate-800 dark:text-gray-200 animate-fadeIn">
-                      <p className="font-bold text-[#8B1E26] dark:text-amber-400">
-                        {currentLang === 'ta' ? '📢 SMS வழிகாட்டுதல்:' : '📢 Mobile SMS Delivery Notice:'}
-                      </p>
-                      <p className="text-[11px] leading-relaxed text-slate-600 dark:text-gray-300">
-                        {currentLang === 'ta'
-                          ? 'மொபைல் SIM கார்டிற்கு உண்மையான SMS செல்ல Fast2SMS அல்லது Twilio Gateway API Key தேவைப்படுகிறது. நீங்கள் தற்போது சோதிக்கிறீர்கள் என்றால், சோதனை முறை OTP (123456) மூலம் உடனடியாக உங்கள் Member Dashboard-க்குள் நுழையலாம்.'
-                          : 'To deliver real cellular SMS to your phone SIM card, an SMS Gateway (Fast2SMS / Twilio) is required. For testing, you can use test OTP 123456 to open your Member Dashboard.'}
-                      </p>
-                      <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setOtpDigits(['1', '2', '3', '4', '5', '6']);
-                            setOtpError('');
-                          }}
-                          className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-[11px] px-3 py-1.5 rounded-lg shadow-sm cursor-pointer"
-                        >
-                          {currentLang === 'ta' ? 'சோதனை OTP (123456) நிரப்புக' : 'Fill Test OTP (123456)'}
-                        </button>
-                        <a
-                          href={`https://wa.me/91${applicationData.mobile}?text=Tamil%20Sangam%20Payment%20OTP`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline"
-                        >
-                          📲 WhatsApp Support
-                        </a>
-                      </div>
-                    </div>
-                  )}
+                    <span>📲 {currentLang === 'ta' ? 'SMS தாமதமானால்: WhatsApp ஆதரவு' : 'SMS delayed? WhatsApp Support'}</span>
+                  </a>
                 </div>
               </form>
             </div>

@@ -46,8 +46,8 @@ export const api = {
       success: boolean;
       message: string;
       mobile: string;
-      otp: string;
       expiresAt: number;
+      isRealSmsActive?: boolean;
       isAlreadyRegistered?: boolean;
       existingMember?: MemberApplication | null;
       notRegistered?: boolean;
@@ -246,6 +246,39 @@ export const api = {
       status: string;
       createdAt: string;
     }>>('/messages/logs'),
+
+  // SMS Gateway Settings
+  getSmsSettings: () =>
+    request<{
+      fast2smsConfigured: boolean;
+      twofactorConfigured: boolean;
+      twilioConfigured: boolean;
+      activeProvider: string;
+      senderId: string;
+      instructions: {
+        fast2sms: string;
+        twofactor: string;
+        twilio: string;
+      };
+    }>('/settings/sms'),
+
+  updateSmsSettings: (data: {
+    fast2sms_api_key?: string;
+    twofactor_api_key?: string;
+    twilio_account_sid?: string;
+    twilio_auth_token?: string;
+    twilio_phone_number?: string;
+  }) =>
+    request<{ success: boolean; message: string }>('/settings/sms', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+
+  testSmsDispatch: (mobile: string) =>
+    request<{ success: boolean; message: string; mobile: string; isRealSmsActive?: boolean }>('/settings/test-sms', {
+      method: 'POST',
+      body: JSON.stringify({ mobile })
+    }),
 
   // Contact Messages & Inquiries
   sendContactMessage: (data: { name: string; mobile: string; email?: string; district: string; message: string }) =>

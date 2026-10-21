@@ -187,7 +187,11 @@ app.post('/api/auth/send-otp', async (req, res) => {
       return res.status(400).json({ error: 'Mobile number is required' });
     }
 
-    const cleanMobile = mobile.replace(/\D/g, '').slice(-10) || '9840123456';
+    const cleanMobile = mobile.replace(/\D/g, '').slice(-10);
+    if (!cleanMobile || cleanMobile.length !== 10) {
+      return res.status(400).json({ error: 'சரியான 10 இலக்க மொபைல் எண் தேவை / Valid 10-digit mobile number is required' });
+    }
+
     const existingMember = db.prepare('SELECT * FROM members WHERE mobile = ? OR mobile LIKE ? ORDER BY createdAt DESC LIMIT 1')
       .get(cleanMobile, `%${cleanMobile}`);
 
@@ -224,12 +228,17 @@ app.post('/api/auth/verify-otp', (req, res) => {
       return res.status(400).json({ error: 'Mobile number and OTP are required' });
     }
 
-    const verification = verifyOtpCode(mobile, otp, purpose);
+    const cleanMobile = mobile.replace(/\D/g, '').slice(-10);
+    if (!cleanMobile || cleanMobile.length !== 10) {
+      return res.status(400).json({ error: 'சரியான 10 இலக்க மொபைல் எண் தேவை / Valid 10-digit mobile number is required' });
+    }
+
+    const cleanOtp = String(otp).trim();
+    const verification = verifyOtpCode(cleanMobile, cleanOtp, purpose);
     if (!verification.success) {
       return res.status(400).json({ error: verification.message });
     }
 
-    const cleanMobile = mobile.replace(/\D/g, '').slice(-10) || '9840123456';
     const existingMember = db.prepare('SELECT * FROM members WHERE mobile = ? OR mobile LIKE ? ORDER BY createdAt DESC LIMIT 1')
       .get(cleanMobile, `%${cleanMobile}`);
 
@@ -252,15 +261,21 @@ app.post('/api/auth/member-login', (req, res) => {
     if (!mobile) {
       return res.status(400).json({ error: 'Mobile number is required' });
     }
-
-    if (otp) {
-      const verification = verifyOtpCode(mobile, otp, 'LOGIN');
-      if (!verification.success) {
-        return res.status(400).json({ error: verification.message });
-      }
+    if (!otp) {
+      return res.status(400).json({ error: 'OTP எண் தேவை / OTP code is required for member login' });
     }
 
-    const cleanMobile = mobile.replace(/\D/g, '').slice(-10) || '9840123456';
+    const cleanMobile = mobile.replace(/\D/g, '').slice(-10);
+    if (!cleanMobile || cleanMobile.length !== 10) {
+      return res.status(400).json({ error: 'சரியான 10 இலக்க மொபைல் எண் தேவை / Valid 10-digit mobile number is required' });
+    }
+
+    const cleanOtp = String(otp).trim();
+    const verification = verifyOtpCode(cleanMobile, cleanOtp, 'LOGIN');
+    if (!verification.success) {
+      return res.status(400).json({ error: verification.message });
+    }
+
     const member = db.prepare('SELECT * FROM members WHERE mobile = ? OR mobile LIKE ? ORDER BY createdAt DESC LIMIT 1')
       .get(cleanMobile, `%${cleanMobile}`);
 
@@ -1058,15 +1073,18 @@ app.delete('/api/contact/:id', (req, res) => {
 // Get SMS Gateway Status & Settings
 app.get('/api/settings/sms', (req, res) => {
   const fast2smsKey = process.env.FAST2SMS_API_KEY || getSetting('fast2sms_api_key');
+  const twofactorKey = process.env.TWOFACTOR_API_KEY || getSetting('twofactor_api_key');
   const twilioSid = process.env.TWILIO_ACCOUNT_SID || getSetting('twilio_account_sid');
 
   res.json({
     fast2smsConfigured: !!fast2smsKey,
+    twofactorConfigured: !!twofactorKey,
     twilioConfigured: !!twilioSid,
-    activeProvider: fast2smsKey ? 'Fast2SMS (India)' : twilioSid ? 'Twilio (Global)' : 'Simulated Gateway (Demo Mode)',
+    activeProvider: fast2smsKey ? 'Fast2SMS (India)' : twofactorKey ? '2Factor.in (India)' : twilioSid ? 'Twilio (Global)' : 'Simulated Gateway (Ready to Activate)',
     senderId: 'TAMSNG',
     instructions: {
-      fast2sms: 'Sign up for free at fast2sms.com, get ₹50 free wallet credits and copy Dev API Key',
+      fast2sms: 'Sign up at fast2sms.com, get ₹50 free wallet credits and copy Dev API Key',
+      twofactor: 'Sign up at 2factor.in, copy API Key (gives 100 free SMS OTPs)',
       twilio: 'Sign up at twilio.com, copy Account SID, Auth Token and Phone Number'
     }
   });
@@ -1075,11 +1093,12 @@ app.get('/api/settings/sms', (req, res) => {
 // Update SMS Gateway Settings
 app.post('/api/settings/sms', (req, res) => {
   try {
-    const { fast2sms_api_key, twilio_account_sid, twilio_auth_token, twilio_phone_number } = req.body;
-    if (fast2sms_api_key) setSetting('fast2sms_api_key', fast2sms_api_key.trim());
-    if (twilio_account_sid) setSetting('twilio_account_sid', twilio_account_sid.trim());
-    if (twilio_auth_token) setSetting('twilio_auth_token', twilio_auth_token.trim());
-    if (twilio_phone_number) setSetting('twilio_phone_number', twilio_phone_number.trim());
+    const { fast2sms_api_key, twofactor_api_key, twilio_account_sid, twilio_auth_token, twilio_phone_number } = req.body;
+    if (fast2sms_api_key !== undefined) setSetting('fast2sms_api_key', fast2sms_api_key.trim());
+    if (twofactor_api_key !== undefined) setSetting('twofactor_api_key', twofactor_api_key.trim());
+    if (twilio_account_sid !== undefined) setSetting('twilio_account_sid', twilio_account_sid.trim());
+    if (twilio_auth_token !== undefined) setSetting('twilio_auth_token', twilio_auth_token.trim());
+    if (twilio_phone_number !== undefined) setSetting('twilio_phone_number', twilio_phone_number.trim());
 
     res.json({ success: true, message: 'SMS Gateway settings updated in database' });
   } catch (err) {
@@ -1087,8 +1106,23 @@ app.post('/api/settings/sms', (req, res) => {
   }
 });
 
+// Test Live SMS Dispatch endpoint
+app.post('/api/settings/test-sms', async (req, res) => {
+  try {
+    const { mobile } = req.body;
+    const cleanMobile = mobile?.replace(/\D/g, '').slice(-10);
+    if (!cleanMobile || cleanMobile.length !== 10) {
+      return res.status(400).json({ error: 'சரியான 10 இலக்க மொபைல் எண் தேவை / Valid 10-digit mobile number required' });
+    }
+    const result = await generateAndSaveOtp(cleanMobile, 'TEST');
+    res.json({ success: true, message: `Test random OTP dispatched to +91 ${cleanMobile}`, mobile: cleanMobile, isRealSmsActive: result.isRealSmsGatewayActive });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Get Live Message / Dispatch Logs
-app.get('/api/messages', (req, res) => {
+app.get(['/api/messages', '/api/messages/logs'], (req, res) => {
   try {
     const logs = db.prepare('SELECT * FROM messages_log ORDER BY createdAt DESC LIMIT 50').all();
     res.json(logs);

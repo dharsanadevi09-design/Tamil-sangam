@@ -15,7 +15,7 @@ import { TN_DISTRICTS, PASARAI_WINGS } from '../../data/mockData';
 import { 
   Shield, Users, Heart, CheckCircle2, XCircle, Search, Download, Plus, Trash2, 
   Calendar, Newspaper, Award, UserPlus, Lock, Eye, MapPin, Crown, Landmark, X,
-  Image as ImageIcon, Layers, Upload, MessageSquare, Send, Phone, Clock, Database, Mail
+  Image as ImageIcon, Layers, Upload, MessageSquare, Send, Phone, Clock, Database, Mail, Smartphone
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -42,6 +42,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [messageLogs, setMessageLogs] = useState<any[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [messagesFilterChannel, setMessagesFilterChannel] = useState<'ALL' | 'SMS' | 'WHATSAPP'>('ALL');
+
+  // SMS Gateway States
+  const [smsGatewaySettings, setSmsGatewaySettings] = useState<{
+    fast2smsConfigured: boolean;
+    twofactorConfigured: boolean;
+    twilioConfigured: boolean;
+    activeProvider: string;
+  } | null>(null);
+  const [fast2smsKeyInput, setFast2smsKeyInput] = useState('');
+  const [twofactorKeyInput, setTwofactorKeyInput] = useState('');
+  const [testMobileInput, setTestMobileInput] = useState('');
+  const [isSendingTestSms, setIsSendingTestSms] = useState(false);
+  const [isSavingSmsSettings, setIsSavingSmsSettings] = useState(false);
 
   const [inspectMember, setInspectMember] = useState<MemberApplication | null>(null);
   const [zoomedAadhaarUrl, setZoomedAadhaarUrl] = useState<string | null>(null);
@@ -162,6 +175,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       if (wings) { setWingsList(wings); savePasaraiWings(wings); }
       if (logs) setMessageLogs(logs);
       if (contacts) setContactMessagesList(contacts);
+      api.getSmsSettings().then(setSmsGatewaySettings).catch(() => {});
     } catch (err) {
       console.warn('Backend refresh fallback to local storage:', err);
       setMembersList(getMembers());
@@ -1502,6 +1516,137 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <Clock className="w-3.5 h-3.5" />
                 <span>Refresh Logs</span>
               </button>
+            </div>
+          </div>
+
+          {/* SMS Gateway Live Gateway Settings Card */}
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-slate-900 dark:to-slate-900 border border-amber-300 dark:border-amber-800/60 rounded-2xl p-5 space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Smartphone className="w-5 h-5 text-[#8B1E26] dark:text-amber-400" />
+                  <h4 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">
+                    உண்மையான மொபைல் SMS கேட்வே அமைப்புகள் / Real Cellular SMS Gateway Configuration
+                  </h4>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-gray-300 mt-1">
+                  பயனர்கள் நுழையும் போது அல்லது பதிவு செய்யும் போது அவர்களின் சொந்த மொபைல் SIM கார்டிற்கு நேரலை SMS (OTP) தானாக செல்ல Fast2SMS அல்லது 2Factor API Key-ஐ இங்கே பதிவு செய்யவும்.
+                </p>
+              </div>
+
+              <div className="shrink-0">
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
+                  smsGatewaySettings?.fast2smsConfigured || smsGatewaySettings?.twofactorConfigured || smsGatewaySettings?.twilioConfigured
+                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300'
+                    : 'bg-amber-100 text-amber-900 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300'
+                }`}>
+                  <span className={`w-2 h-2 rounded-full ${
+                    smsGatewaySettings?.fast2smsConfigured || smsGatewaySettings?.twofactorConfigured || smsGatewaySettings?.twilioConfigured
+                      ? 'bg-emerald-500 animate-pulse'
+                      : 'bg-amber-500'
+                  }`} />
+                  <span>{smsGatewaySettings?.activeProvider || 'Simulated Gateway'}</span>
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Fast2SMS API Key (India SMS Gateway)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="password"
+                    placeholder={smsGatewaySettings?.fast2smsConfigured ? '•••••••••••••••• (Configured)' : 'Paste Fast2SMS API Key'}
+                    value={fast2smsKeyInput}
+                    onChange={(e) => setFast2smsKeyInput(e.target.value)}
+                    className="flex-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-gray-700 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#8B1E26]"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-500 dark:text-gray-400">
+                  Free at <a href="https://www.fast2sms.com" target="_blank" rel="noreferrer" className="text-[#8B1E26] dark:text-amber-400 underline font-bold">fast2sms.com</a> (Get ₹50 free credits on signup)
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  2Factor.in API Key (Indian Mobile OTP)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="password"
+                    placeholder={smsGatewaySettings?.twofactorConfigured ? '•••••••••••••••• (Configured)' : 'Paste 2Factor.in API Key'}
+                    value={twofactorKeyInput}
+                    onChange={(e) => setTwofactorKeyInput(e.target.value)}
+                    className="flex-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-gray-700 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#8B1E26]"
+                  />
+                  <button
+                    type="button"
+                    disabled={isSavingSmsSettings}
+                    onClick={async () => {
+                      setIsSavingSmsSettings(true);
+                      try {
+                        await api.updateSmsSettings({
+                          fast2sms_api_key: fast2smsKeyInput.trim() || undefined,
+                          twofactor_api_key: twofactorKeyInput.trim() || undefined
+                        });
+                        const updated = await api.getSmsSettings();
+                        setSmsGatewaySettings(updated);
+                        setToastMessage('SMS Gateway settings updated successfully in SQLite database!');
+                        setFast2smsKeyInput('');
+                        setTwofactorKeyInput('');
+                      } catch (err: any) {
+                        setToastMessage(err.message || 'Failed to update SMS settings');
+                      } finally {
+                        setIsSavingSmsSettings(false);
+                      }
+                    }}
+                    className="bg-[#8B1E26] hover:bg-[#72151C] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer whitespace-nowrap"
+                  >
+                    {isSavingSmsSettings ? 'Saving...' : 'Save & Activate'}
+                  </button>
+                </div>
+                <p className="text-[10px] text-slate-500 dark:text-gray-400">
+                  Free at <a href="https://2factor.in" target="_blank" rel="noreferrer" className="text-[#8B1E26] dark:text-amber-400 underline font-bold">2factor.in</a> (Provides 100 free instant OTP SMS)
+                </p>
+              </div>
+            </div>
+
+            {/* Test Live SMS to any Mobile */}
+            <div className="pt-3 border-t border-amber-200 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                📲 Send Live Test Random OTP to Mobile:
+              </span>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <input
+                  type="tel"
+                  maxLength={10}
+                  placeholder="e.g. 9876543210"
+                  value={testMobileInput}
+                  onChange={(e) => setTestMobileInput(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-gray-700 rounded-xl text-xs font-mono w-40 focus:outline-none focus:ring-2 focus:ring-[#8B1E26]"
+                />
+                <button
+                  type="button"
+                  disabled={isSendingTestSms || testMobileInput.length !== 10}
+                  onClick={async () => {
+                    setIsSendingTestSms(true);
+                    try {
+                      await api.testSmsDispatch(testMobileInput);
+                      setToastMessage(`Random OTP successfully dispatched to +91 ${testMobileInput}!`);
+                      api.getMessageLogs().then(setMessageLogs).catch(() => {});
+                    } catch (err: any) {
+                      setToastMessage(err.message || 'Failed to send test SMS');
+                    } finally {
+                      setIsSendingTestSms(false);
+                    }
+                  }}
+                  className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all shadow-sm cursor-pointer whitespace-nowrap"
+                >
+                  {isSendingTestSms ? 'Sending...' : 'Send Test OTP SMS'}
+                </button>
+              </div>
             </div>
           </div>
 

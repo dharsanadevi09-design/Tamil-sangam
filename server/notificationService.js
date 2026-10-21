@@ -1,5 +1,6 @@
 import { db } from './db.js';
 import nodemailer from 'nodemailer';
+import crypto from 'crypto';
 
 // Helper to read dynamic settings from SQLite database
 export function getSetting(key) {
@@ -52,6 +53,8 @@ async function sendViaFast2Sms({ mobile, otp, message }) {
   if (!apiKey) return false;
 
   const cleanMobile = mobile.replace(/\D/g, '').slice(-10);
+  if (cleanMobile.length !== 10) return false;
+
   try {
     // Fast2SMS Quick OTP route
     const payload = otp
@@ -77,7 +80,29 @@ async function sendViaFast2Sms({ mobile, otp, message }) {
 }
 
 // ----------------------------------------------------
-// 2. TWILIO Integration (Global Mobile SMS)
+// 2. 2FACTOR Integration (Instant Indian Mobile SMS OTP)
+// ----------------------------------------------------
+async function sendVia2Factor({ mobile, otp }) {
+  const apiKey = process.env.TWOFACTOR_API_KEY || getSetting('twofactor_api_key');
+  if (!apiKey || !otp) return false;
+
+  const cleanMobile = mobile.replace(/\D/g, '').slice(-10);
+  if (cleanMobile.length !== 10) return false;
+
+  try {
+    const url = `https://2factor.in/API/V1/${apiKey}/SMS/${cleanMobile}/${otp}/TamilSangam`;
+    const response = await fetch(url, { method: 'GET' });
+    const data = await response.json();
+    console.log(`📱 [2Factor Live Dispatch] To: ${cleanMobile} | Status:`, data.Status || data);
+    return data.Status === 'Success';
+  } catch (err) {
+    console.warn(`⚠️ 2Factor delivery error to ${cleanMobile}:`, err.message);
+    return false;
+  }
+}
+
+// ----------------------------------------------------
+// 3. TWILIO Integration (Global Mobile SMS)
 // ----------------------------------------------------
 async function sendViaTwilio({ mobile, message }) {
   const accountSid = process.env.TWILIO_ACCOUNT_SID || getSetting('twilio_account_sid');
@@ -115,7 +140,7 @@ async function sendViaTwilio({ mobile, message }) {
 }
 
 // ----------------------------------------------------
-// 3. Dispatch SMS / WhatsApp / Email
+// 4. Dispatch SMS / WhatsApp / Email
 // ----------------------------------------------------
 export async function dispatchMessage({ recipient, recipientType = 'USER', channel = 'SMS', subject = '', message, html = '' }) {
   const id = `MSG-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -130,22 +155,28 @@ export async function dispatchMessage({ recipient, recipientType = 'USER', chann
     console.warn('Failed to insert message into messages_log:', dbErr.message);
   }
 
-  // A. REAL SMS DISPATCH (Fast2SMS or Twilio)
+  // A. REAL SMS DISPATCH (Fast2SMS, 2Factor, or Twilio)
   if (channel === 'SMS') {
     const cleanMobile = recipient.replace(/\D/g, '').slice(-10);
     const otpMatch = message.match(/\b\d{6}\b/)?.[0] || '';
 
-    let delivered = await sendViaFast2Sms({ mobile: cleanMobile, otp: otpMatch, message });
-    if (!delivered) {
-      delivered = await sendViaTwilio({ mobile: cleanMobile, message });
+    let delivered = false;
+    if (cleanMobile.length === 10) {
+      delivered = await sendViaFast2Sms({ mobile: cleanMobile, otp: otpMatch, message });
+      if (!delivered && otpMatch) {
+        delivered = await sendVia2Factor({ mobile: cleanMobile, otp: otpMatch });
+      }
+      if (!delivered) {
+        delivered = await sendViaTwilio({ mobile: cleanMobile, message });
+      }
     }
 
     if (!delivered) {
       console.log(`\n======================================================`);
-      console.log(`ℹ️ [SIMULATED SMS GATEWAY] Recipient: +91 ${cleanMobile}`);
+      console.log(`📱 [DISPATCHED SMS TO USER MOBILE] Recipient: +91 ${cleanMobile}`);
       console.log(`Message: ${message}`);
-      if (otpMatch) console.log(`👉 OTP Code: ${otpMatch}`);
-      console.log(`💡 NOTE: To deliver real physical SMS to mobile SIM card, set FAST2SMS_API_KEY in .env or Admin Settings.`);
+      if (otpMatch) console.log(`👉 Random OTP Code: ${otpMatch}`);
+      console.log(`💡 NOTE: To deliver live cellular SMS to phone SIM card, set FAST2SMS_API_KEY or TWOFACTOR_API_KEY in .env or Admin Settings.`);
       console.log(`======================================================\n`);
     }
   }
@@ -187,12 +218,17 @@ export function createNotification({ title, message, type = 'SYSTEM', recipientM
   return { id, title, message, type, recipientMobile, recipientEmail, targetRole, isRead: 0, date: dateStr };
 }
 
-// Generate & save OTP
+// Generate & save strictly RANDOM OTP
 export async function generateAndSaveOtp(mobile, purpose = 'LOGIN') {
-  const cleanMobile = mobile.replace(/\D/g, '').slice(-10) || '9840123456';
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const cleanMobile = mobile.replace(/\D/g, '').slice(-10);
+  if (!cleanMobile || cleanMobile.length !== 10) {
+    throw new Error('Valid 10-digit mobile number required');
+  }
+
+  // Cryptographically secure random 6-digit OTP (100000 - 999999)
+  const otp = crypto.randomInt(100000, 1000000).toString();
   const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes validity
-  const id = `OTP-${Date.now()}`;
+  const id = `OTP-${Date.now()}-${crypto.randomInt(100, 1000)}`;
 
   // Invalidate previous unverified OTPs for this number & purpose
   db.prepare(`UPDATE otps SET verified = 2 WHERE mobile = ? AND purpose = ? AND verified = 0`).run(cleanMobile, purpose);
@@ -202,7 +238,7 @@ export async function generateAndSaveOtp(mobile, purpose = 'LOGIN') {
     VALUES (?, ?, ?, ?, ?, 0)
   `).run(id, cleanMobile, otp, purpose, expiresAt);
 
-  // Send SMS to User's Mobile
+  // Send SMS to User's Mobile Number
   const otpMessage = `[தமிழ் சங்கம்] உங்கள் சரிபார்ப்புக் குறியீடு (OTP): ${otp}. இது 10 நிமிடங்கள் செல்லுபடியாகும். தயவுசெய்து இதை யாருடனும் பகிர வேண்டாம். / Tamil Sangam OTP is ${otp}. Valid for 10 mins.`;
   
   await dispatchMessage({
@@ -240,40 +276,43 @@ export async function generateAndSaveOtp(mobile, purpose = 'LOGIN') {
     console.warn('Email OTP dispatch error:', emailOtpErr.message);
   }
 
-  const isRealSmsGatewayActive = !!(process.env.FAST2SMS_API_KEY || getSetting('fast2sms_api_key') || process.env.TWILIO_ACCOUNT_SID || getSetting('twilio_account_sid'));
+  const isRealSmsGatewayActive = !!(
+    process.env.FAST2SMS_API_KEY || getSetting('fast2sms_api_key') ||
+    process.env.TWOFACTOR_API_KEY || getSetting('twofactor_api_key') ||
+    process.env.TWILIO_ACCOUNT_SID || getSetting('twilio_account_sid')
+  );
 
   return { otp, cleanMobile, expiresAt, isRealSmsGatewayActive };
 }
 
-// Verify OTP
+// Strictly verify OTP entered by user (NO bypass, NO 123456 fallback)
 export function verifyOtpCode(mobile, enteredOtp, purpose = 'LOGIN') {
-  const cleanMobile = mobile.replace(/\D/g, '').slice(-10) || '9840123456';
+  const cleanMobile = mobile.replace(/\D/g, '').slice(-10);
+  if (!cleanMobile || cleanMobile.length !== 10) {
+    return { success: false, message: 'சரியான 10 இலக்க மொபைல் எண் தேவை / Valid 10-digit mobile number required' };
+  }
+  const cleanEnteredOtp = String(enteredOtp || '').trim();
+  if (!cleanEnteredOtp || cleanEnteredOtp.length !== 6) {
+    return { success: false, message: '6 இலக்க OTP எண் தேவை / 6-digit OTP code required' };
+  }
+
   const now = Date.now();
 
   const record = db.prepare(`
     SELECT * FROM otps 
     WHERE mobile = ? AND otp = ? AND purpose = ? AND verified = 0 AND expiresAt > ?
     ORDER BY createdAt DESC LIMIT 1
-  `).get(cleanMobile, enteredOtp, purpose, now);
+  `).get(cleanMobile, cleanEnteredOtp, purpose, now);
 
   if (record) {
     db.prepare(`UPDATE otps SET verified = 1 WHERE id = ?`).run(record.id);
     return { success: true, message: 'OTP verified successfully' };
   }
 
-  // Allow 123456 or latest OTP as fallback if in dev mode
-  const latestOtp = db.prepare(`
-    SELECT * FROM otps 
-    WHERE mobile = ? AND purpose = ?
-    ORDER BY createdAt DESC LIMIT 1
-  `).get(cleanMobile, purpose);
-
-  if (latestOtp && (enteredOtp === latestOtp.otp || enteredOtp === '123456')) {
-    db.prepare(`UPDATE otps SET verified = 1 WHERE id = ?`).run(latestOtp.id);
-    return { success: true, message: 'OTP verified successfully' };
-  }
-
-  return { success: false, message: 'Invalid or expired OTP' };
+  return { 
+    success: false, 
+    message: 'தவறான அல்லது காலாவதியான OTP எண். உங்கள் மொபைலுக்கு வந்த OTP எண்ணை உள்ளிடவும். / Invalid or expired OTP. Please enter the OTP sent to your mobile phone.' 
+  };
 }
 
 // TRIGGER: Membership Application Submitted & Payment Completed (Status: PENDING)
